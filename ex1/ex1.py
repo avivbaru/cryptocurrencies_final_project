@@ -10,7 +10,6 @@ TxID = NewType("TxID", bytes)  # this will be a hash of a transaction
 
 GENESIS_BLOCK_PREV = BlockHash(b"Genesis")  # these are the bytes written as the prev_block_hash of the 1st block.
 
-
 class Transaction:
     """Represents a transaction that moves a single coin
     A transaction with no source creates money. It will only be created by the bank."""
@@ -20,35 +19,39 @@ class Transaction:
         self.input: Optional[TxID] = input  # DO NOT change these field names.
         self.signature: Signature = signature  # DO NOT change these field names.
 
+        self.id_value = self.output + self.signature if input is not None else self.output + self.signature + self.input
+        self.id = hashlib.sha256(self.id_value)
+
     def get_txid(self) -> TxID:
         """Returns the identifier of this transaction. This is the sha256 of the transaction contents."""
-        raise NotImplementedError()
-
+        return self.id
 
 class Block:
     """This class represents a block."""
 
-    # define the __init__ as you wish
+    def __init__(self, transactions: List[Transaction], previous_block_hash: BlockHash):
+        self.transactions = transactions
+        self.previous_block_hash = previous_block_hash
+        self.my_hash = hashlib.sha256(transactions)
 
     def get_block_hash(self) -> BlockHash:
         """Gets the hash of this block"""
-        raise NotImplementedError()
+        return self.my_hash
 
     def get_transactions(self) -> List[Transaction]:
         """
         returns the list of transactions in this block.
         """
-        raise NotImplementedError()
+        return self.transactions
 
     def get_prev_block_hash(self) -> BlockHash:
         """Gets the hash of the previous block"""
-        raise NotImplementedError()
-
+        return self.previous_block_hash
 
 class Bank:
     def __init__(self) -> None:
         """Creates a bank with an empty blockchain and an empty mempool."""
-        raise NotImplementedError()
+        self.mempool: List[Transaction] = []
 
     def add_transaction_to_mempool(self, transaction: Transaction) -> bool:
         """
@@ -58,7 +61,24 @@ class Bank:
         (ii) the source doesn't have the coin that he tries to spend
         (iii) there is contradicting tx in the mempool.
         """
-        raise NotImplementedError()
+        is_transaction_ok = not (self._is_transaction_invalid(transaction) or self._source_has_no_money_for(transaction)
+                                 or self._contradicting_transaction_exists_for(transaction))
+        if is_transaction_ok:
+            self.mempool.append(transaction)
+
+        return is_transaction_ok
+
+    def _is_transaction_invalid(self, transaction: Transaction) -> bool:
+        try:
+            return ecdsa.VerifyingKey.from_der(transaction.output).verify(transaction.get_txid(), transaction.signature)
+        except:
+            return False
+
+    def _source_has_no_money_for(self, transaction: Transaction) -> bool:
+        return True
+
+    def _contradicting_transaction_exists_for(self, transaction: Transaction) -> bool:
+        return True
 
     def end_day(self, limit: int = 10) -> BlockHash:
         """
@@ -102,7 +122,6 @@ class Bank:
         We assume only the bank calls this function (wallets will never call it).
         """
         raise NotImplementedError()
-
 
 class Wallet:
     """The Wallet class. Each wallet controls a single private key, and has a single corresponding public key (address).
