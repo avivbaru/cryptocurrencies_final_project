@@ -20,7 +20,7 @@ class Transaction:
         self.signature: Signature = signature  # DO NOT change these field names.
 
         self.id_value = self.output + self.signature if input is not None else self.output + self.signature + self.input
-        self.id = hashlib.sha256(self.id_value)
+        self.id = TxID(hashlib.sha256(self.id_value))
 
     def get_txid(self) -> TxID:
         """Returns the identifier of this transaction. This is the sha256 of the transaction contents."""
@@ -32,7 +32,14 @@ class Block:
     def __init__(self, transactions: List[Transaction], previous_block_hash: BlockHash):
         self.transactions = transactions
         self.previous_block_hash = previous_block_hash
-        self.my_hash = hashlib.sha256(transactions)
+        self.my_hash = self._get_hash()
+
+    def _get_hash(self):
+        temp_hash = self.previous_block_hash
+        for transaction in self.transactions:
+            temp_hash += transaction.get_txid()  # TODO: see if a hash tree is needed
+
+        return BlockHash(hashlib.sha256(temp_hash))
 
     def get_block_hash(self) -> BlockHash:
         """Gets the hash of this block"""
@@ -52,6 +59,9 @@ class Bank:
     def __init__(self) -> None:
         """Creates a bank with an empty blockchain and an empty mempool."""
         self.mempool: List[Transaction] = []
+        self.blockchain: List[Block] = []
+        self.id_to_unspent_transactions = {}
+        self.block_hash_to_block = {}
 
     def add_transaction_to_mempool(self, transaction: Transaction) -> bool:
         """
@@ -61,23 +71,39 @@ class Bank:
         (ii) the source doesn't have the coin that he tries to spend
         (iii) there is contradicting tx in the mempool.
         """
-        is_transaction_ok = not (self._is_transaction_invalid(transaction) or self._source_has_no_money_for(transaction)
-                                 or self._contradicting_transaction_exists_for(transaction))
+        is_transaction_ok = (self._is_transaction_valid(transaction) and self._source_has_money_for(transaction) and
+                             self._no_conflicts_for(transaction))
         if is_transaction_ok:
             self.mempool.append(transaction)
 
         return is_transaction_ok
 
-    def _is_transaction_invalid(self, transaction: Transaction) -> bool:
+    def _is_transaction_valid(self, transaction: Transaction) -> bool:
+        if transaction.input is None:
+            return False
+
         try:
-            return ecdsa.VerifyingKey.from_der(transaction.output).verify(transaction.get_txid(), transaction.signature)
+            return ecdsa.VerifyingKey.from_der(transaction.input).verify(transaction.signature, transaction.output)
         except:
             return False
 
-    def _source_has_no_money_for(self, transaction: Transaction) -> bool:
-        return True
+    def _source_has_money_for(self, transaction: Transaction) -> bool:
+        if transaction.input not in self.id_to_unspent_transactions:
+            return False
 
-    def _contradicting_transaction_exists_for(self, transaction: Transaction) -> bool:
+        unspent_transactions = self.id_to_unspent_transactions[transaction.input]
+
+        for unspent_transaction in unspent_transactions:
+            if unspent_transaction.get_txid() == transaction.input:
+                return True
+
+        return False
+
+    def _no_conflicts_for(self, transaction: Transaction) -> bool:
+        for unblocked_transaction in self.mempool:
+            if unblocked_transaction.get_txid() == transaction.input:
+                return False
+
         return True
 
     def end_day(self, limit: int = 10) -> BlockHash:
@@ -88,31 +114,48 @@ class Bank:
          If there are no transactions, an empty block is created.
          The hash of this new block is returned.
          """
-        raise NotImplementedError()
+        transactions_for_block = self.mempool[:limit]
+        for transaction in transactions_for_block:
+            if self.id_to_unspent_transactions[transaction.output]:
+                self.id_to_unspent_transactions[transaction.output].add(transaction)
+            else:
+                self.id_to_unspent_transactions[transaction.output] = {transaction}
+            if transaction.input:
+                self.id_to_unspent_transactions[transaction.input].remove(transaction)
+
+        prev_block_hash = self.blockchain[-1].get_block_hash() if self.blockchain else GENESIS_BLOCK_PREV
+        block_to_add = Block(transactions_for_block, prev_block_hash)
+        self.blockchain.append(block_to_add)
+        self.block_hash_to_block[block_to_add.get_block_hash()] = block_to_add
+        self.mempool = self.mempool[limit:]
+        return block_to_add.get_block_hash()
 
     def get_block(self, block_hash: BlockHash) -> Block:
         """
         This function returns a block object given its hash. If the block doesnt exist, an exception is thrown..
         """
-        raise NotImplementedError()
+        if block_hash in self.block_hash_to_block:
+            return self.block_hash_to_block[block_hash]
+
+        raise Exception("No block found with this hash code.")  # TODO: ask if our own exception is needed
 
     def get_latest_hash(self) -> BlockHash:
         """
         This function returns the last block hash the was created.
         """
-        raise NotImplementedError()
+        return self.blockchain[-1].get_block_hash()  # TODO: ask what to do if the blockchain is empty.
 
     def get_mempool(self) -> List[Transaction]:
         """
         This function returns the list of transactions that didn't enter any block yet.
         """
-        raise NotImplementedError()
+        return self.mempool
 
     def get_utxo(self) -> List[Transaction]:
         """
         This function returns the list of unspent transactions.
         """
-        raise NotImplementedError()
+        return [x for sub_list in list(self.id_to_unspent_transactions.values()) for x in sub_list]
 
     def create_money(self, target: PublicKey) -> None:
         """
@@ -121,7 +164,9 @@ class Bank:
         generate these random bytes using secrets.token_bytes(48).
         We assume only the bank calls this function (wallets will never call it).
         """
-        raise NotImplementedError()
+        signature = secrets.token_bytes(48)
+        new_money_transaction = Transaction(target, None, signature)
+        self.mempool.append(new_money_transaction)
 
 class Wallet:
     """The Wallet class. Each wallet controls a single private key, and has a single corresponding public key (address).
@@ -131,7 +176,11 @@ class Wallet:
         """
         This function generates a new wallet with a new private key.
         """
-        raise NotImplementedError()
+        self._private_key = ecdsa.SigningKey.generate()
+        self.public_key = PublicKey(self._private_key.get_verifying_key().to_der())
+        self._blockchain: List[Block] = []
+        self.balance: set = set()
+        self._transactions_used_since_last_update: set = set()
 
     def update(self, bank: Bank) -> None:
         """
@@ -140,7 +189,21 @@ class Wallet:
         For this exercise, there is no need to validate all transactions in the block
         """
         # first build a list of blocks until our latest update.
-        raise NotImplementedError()
+        block_hash = bank.get_latest_hash()
+        current_latest_hash = self._blockchain[-1].get_block_hash() if self._blockchain else None
+        updates_blockchain = []
+        while block_hash != current_latest_hash and block_hash != GENESIS_BLOCK_PREV:
+            block = bank.get_block(block_hash)
+            for transaction in block.get_transactions():
+                if transaction.input == self.public_key:
+                    self.balance.add(transaction)
+                if transaction.output == self.public_key:
+                    self.balance.remove(transaction)
+            updates_blockchain.append(block)
+            block_hash = updates_blockchain[-1].get_prev_block_hash()
+        updates_blockchain.reverse()
+        self._blockchain += updates_blockchain
+
 
     def create_transaction(self, target: PublicKey) -> Optional[Transaction]:
         """
@@ -149,7 +212,9 @@ class Wallet:
         If the wallet already spent a specific coin, then he should'nt spend it again until unfreeze_all() is called.
         The method returns None if there are no outputs that have not been spent already.
         """
-        raise NotImplementedError()
+        if self._coin_used_since_update < self.balance:
+            signature = Signature(self._private_key.sign(target))
+            Transaction(target, self.public_key, signature)
 
     def unfreeze_all(self) -> None:
         """
