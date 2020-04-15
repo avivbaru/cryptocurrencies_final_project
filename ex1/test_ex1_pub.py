@@ -2,6 +2,14 @@ from ex1 import *
 
 
 def test_block(bank: Bank, alice: Wallet, bob: Wallet, alice_coin: Transaction) -> None:
+    """
+
+    :param bank:
+    :param alice:
+    :param bob:
+    :param alice_coin:
+    :return:
+    """
     hash1 = bank.get_latest_hash()
     block = bank.get_block(hash1)
     assert len(block.get_transactions()) == 1
@@ -121,3 +129,34 @@ def test_double_spend_fail(bank: Bank, alice: Wallet, bob: Wallet, charlie: Wall
     assert alice.get_balance() == 0
     assert bob.get_balance() == 1
     assert charlie.get_balance() == 0
+
+def test_update_unspent_txs(bank: Bank, alice: Wallet, bob: Wallet, charlie: Wallet,
+                            alice_coin: Transaction) -> None:
+    tx1 = alice.create_transaction(bob.get_address())
+    assert tx1 is not None
+    # make alice spend the same coin
+    alice.update(bank)
+    tx2 = alice.create_transaction(charlie.get_address())
+    assert tx2 is None
+
+def test_transaction_happy_flow_actual_limit(bank: Bank, alice: Wallet, bob: Wallet, charlie: Wallet,
+                                             alice_coin: Transaction) -> None:
+    tx = alice.create_transaction(bob.get_address())
+    bank.create_money(bob.get_address())
+    assert tx is not None
+    assert bank.add_transaction_to_mempool(tx)
+    assert len(bank.get_mempool()) == 2
+
+    bank.end_day(limit=1)
+
+    assert len(bank.get_mempool()) == 1
+    assert len(bank.get_block(bank.get_latest_hash()).get_transactions()) == 1
+
+def test_create_transaction_no_update_ok(bank: Bank, alice: Wallet, bob: Wallet, charlie: Wallet,
+                                         alice_coin: Transaction) -> None:
+    tx = alice.create_transaction(bob.get_address())
+    assert tx is not None
+    assert bank.add_transaction_to_mempool(tx)
+    bob.update(bank)
+    assert bob.get_balance() == 0
+    

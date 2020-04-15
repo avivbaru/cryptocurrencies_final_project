@@ -1,4 +1,4 @@
-from typing import List, Optional, NewType, Set # TODO: check if its ok to import more
+from typing import List, Optional, NewType, Set
 import ecdsa  # type: ignore
 import hashlib
 import secrets
@@ -37,7 +37,7 @@ class Block:
     def _get_hash(self):
         temp_hash = self.previous_block_hash
         for transaction in self.transactions:
-            temp_hash += transaction.get_txid()  # TODO: see if a hash tree is needed
+            temp_hash += transaction.get_txid()
 
         return BlockHash(hashlib.sha256(temp_hash).digest())
 
@@ -127,13 +127,13 @@ class Bank:
         if block_hash in self.block_hash_to_block:
             return self.block_hash_to_block[block_hash]
 
-        raise Exception("No block found with this hash code.")  # TODO: ask if our own exception is needed
+        raise Exception("No block found with this hash code.")
 
     def get_latest_hash(self) -> BlockHash:
         """
         This function returns the last block hash the was created.
         """
-        return self.blockchain[-1].get_block_hash()  # TODO: ask what to do if the blockchain is empty.
+        return self.blockchain[-1].get_block_hash()
 
     def get_mempool(self) -> List[Transaction]:
         """
@@ -193,7 +193,7 @@ class Wallet:
             block_hash = block.get_prev_block_hash()
         updates_blockchain.reverse()
         self._blockchain += updates_blockchain
-        self.unfreeze_all()
+        self._transactions_used_since_last_update.intersection_update(self._unspent_transactions)
 
     def create_transaction(self, target: PublicKey) -> Optional[Transaction]:
         """
