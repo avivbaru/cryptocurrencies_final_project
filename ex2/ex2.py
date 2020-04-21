@@ -1,4 +1,4 @@
-from typing import List, Optional, NewType, Set, Dict
+from typing import List, Optional, NewType, Set, Dict, Tuple
 import ecdsa  # type: ignore
 import hashlib
 import secrets
@@ -89,6 +89,7 @@ class Node:
             raise Exception("Could not connect to myself")
         if other not in self.connections:
             self.connections.add(other)
+            other.notify_of_block(self.get_latest_hash(), self)
             other.connect(self)
 
     def disconnect_from(self, other: 'Node') -> None:
@@ -180,42 +181,50 @@ class Node:
         prev_index = self.blockchain.index(split_block) + 1 if split_block else 0
         if len(blocks_from_sender) + prev_index > len(self.blockchain):
             new_blockchain = self.blockchain[:prev_index] + blocks_from_sender
-            new_unspent_transactions = self._get_new_unspent_transactions(new_blockchain, prev_index)
+            new_state = self._get_new_blockchain_state(new_blockchain, prev_index)
 
-            if new_unspent_transactions is not None:
-                self.blockchain = new_blockchain
+            if new_state is not None:
+                self.blockchain, self.unspent_transactions = new_state
                 for block in self.blockchain:
                     self.block_hash_to_block[block.get_block_hash()] = block
 
-                self.unspent_transactions = new_unspent_transactions
                 self._update_wallet_state()
                 self._notifiy_all_my_friends_of(block_hash)
 
-    def _get_new_unspent_transactions(self, blockchain: List[Block], split_block_index: int) -> Optional[Dict]:
+    def _get_new_blockchain_state(self, blockchain: List[Block], split_block_index: int) -> Optional[Tuple[List, Dict]]:
         new_unspent_transactions = self.get_unspent_until(split_block_index)
 
-        for block in blockchain:
+        for block_index, block in enumerate(blockchain):
+            current_unspent_transactions = {}
+            current_transactions_to_delete = set()
             blocks_transactions = block.get_transactions()
             if len(blocks_transactions) > BLOCK_SIZE:
-                return None
+                return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
 
             number_of_money_creation_transaction = 0
             for transaction in blocks_transactions:
-                new_unspent_transactions[transaction.get_txid()] = transaction
+                current_unspent_transactions[transaction.get_txid()] = transaction
 
                 if transaction.input is None:
                     number_of_money_creation_transaction += 1
                 elif transaction.input not in new_unspent_transactions:
-                    return None
+                    return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
                 elif not Node._is_transaction_valid(transaction, new_unspent_transactions):
-                    return None
+                    return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
                 else:
-                    del new_unspent_transactions[transaction.input]
+                    current_transactions_to_delete.add(transaction.input)
 
-            if number_of_money_creation_transaction != 1:
-                return None
+            # TODO: check if no transaction is using another in same block
+            if current_transactions_to_delete.intersection(set(current_unspent_transactions.keys())) or \
+                    number_of_money_creation_transaction != 1:
+                return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
 
-        return new_unspent_transactions
+            new_unspent_transactions = {**new_unspent_transactions, **current_unspent_transactions}
+
+            for transaction_id in current_transactions_to_delete:
+                del new_unspent_transactions[transaction_id]
+
+        return blockchain, new_unspent_transactions
 
     def _notifiy_all_my_friends_of(self, block_hash: BlockHash):
         for node in self.connections:
@@ -324,9 +333,9 @@ class Node:
         The method returns None if there are no outputs that have not been spent already.
         The transaction is added to the mempool (and as a result it is also published to connected nodes).
         """
-        set_mempool = set(self.mempool)
+        set_mempool_inputs = {transaction.input for transaction in self.mempool}
         transactions_id_to_use = [transaction_id for transaction_id in self._my_unspent_transactions
-                                  if self.unspent_transactions[transaction_id] not in set_mempool]
+                                  if transaction_id not in set_mempool_inputs]
         if transactions_id_to_use:
             transaction_id_to_use = transactions_id_to_use[0]
             signature = Signature(self._private_key.sign(target + transaction_id_to_use))
