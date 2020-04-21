@@ -35,9 +35,11 @@ class Transaction:
 class Block:
     """This class represents a block."""
 
-    def __init__(self, transactions: List[Transaction], previous_block_hash: BlockHash):
+    def __init__(self, prev_block_hash: BlockHash, transactions: List[Transaction]) -> None:
+        """Creates a block with the given previous block hash and a list of transactions.
+        Note that this is now part of the API (wasn't in ex1)."""
         self.transactions = transactions
-        self.previous_block_hash = previous_block_hash
+        self.previous_block_hash = prev_block_hash
         self.my_hash = self._get_hash()
 
     def _get_hash(self):
@@ -163,26 +165,27 @@ class Node:
         """
         if block_hash in self.block_hash_to_block:
             return
-        current_block = sender.get_block(block_hash)
+        current_block = sender.get_block(block_hash)  # TODO: check if needed to check block hash
         blocks_from_sender = [current_block]
-        while current_block.get_prev_block_hash() not in self.block_hash_to_block or \
+        while current_block.get_prev_block_hash() not in self.block_hash_to_block and \
                 current_block.get_prev_block_hash() != GENESIS_BLOCK_PREV:
             current_block = sender.get_block(current_block.get_prev_block_hash())
             blocks_from_sender.append(current_block)
 
+        blocks_from_sender.reverse()
         split_block = self.block_hash_to_block.get(current_block.get_prev_block_hash())
         prev_index = self.blockchain.index(split_block) + 1 if split_block else 0
-        if current_block.get_prev_block_hash() == self.blockchain[-1].get_block_hash() or len(blocks_from_sender) + prev_index > len(self.blockchain):
+        if len(blocks_from_sender) + prev_index > len(self.blockchain):
             new_blockchain = self.blockchain[:prev_index] + blocks_from_sender
             new_unspent_transactions = self._get_new_unspent_transactions(new_blockchain, prev_index)
 
-            if new_unspent_transactions is None:
+            if new_unspent_transactions is not None:
                 self.blockchain = new_blockchain
                 for block in self.blockchain:
                     self.block_hash_to_block[block.get_block_hash()] = block
 
-                self._update_wallet_state()
                 self.unspent_transactions = new_unspent_transactions
+                self._update_wallet_state()
                 self._notifiy_all_my_friends_of(block_hash)
 
     def _get_new_unspent_transactions(self, blockchain: List[Block], split_block_index: int) -> Optional[Dict]:
@@ -201,11 +204,10 @@ class Node:
                     number_of_money_creation_transaction += 1
                 elif transaction.input not in new_unspent_transactions:
                     return None
+                elif not Node._is_transaction_valid(transaction, new_unspent_transactions):
+                    return None
                 else:
                     del new_unspent_transactions[transaction.input]
-
-                if not Node._is_transaction_valid(transaction, new_unspent_transactions):
-                    return None
 
             if number_of_money_creation_transaction != 1:
                 return None
@@ -218,7 +220,7 @@ class Node:
 
     def get_unspent_until(self, split_block_index: int) -> Dict:
         new_unspent_transactions = self.unspent_transactions.copy()
-        for my_block in self.blockchain[split_block_index:, -1]:
+        for my_block in reversed(self.blockchain[split_block_index:]):
             current_block_transactions = my_block.get_transactions()
 
             for transaction in current_block_transactions:
@@ -262,7 +264,7 @@ class Node:
         self._update_my_unspent_transactions()
 
         prev_block_hash = self.get_latest_hash() if self.blockchain else GENESIS_BLOCK_PREV
-        block_to_add = Block(transactions_for_block, prev_block_hash)
+        block_to_add = Block(prev_block_hash, transactions_for_block)
         self.blockchain.append(block_to_add)
         self.block_hash_to_block[block_to_add.get_block_hash()] = block_to_add
         block_hash = block_to_add.get_block_hash()
