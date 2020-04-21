@@ -24,29 +24,42 @@ class Transaction:
         self.input: Optional[TxID] = tx_input  # DO NOT change these field names.
         self.signature: Signature = signature  # DO NOT change these field names.
 
+        self.id_value = self.output + self.signature if input is None else self.output + self.signature + self.input
+        self.id = TxID(hashlib.sha256(self.id_value).digest())
+
     def get_txid(self) -> TxID:
-        raise NotImplementedError()
+        """Returns the identifier of this transaction. This is the sha256 of the transaction contents."""
+        return self.id
 
 
 class Block:
     """This class represents a block."""
 
-    def __init__(self, prev_block_hash: BlockHash, transactions: List[Transaction]) -> None:
-        """Creates a block with the given previous block hash and a list of transactions.
-        Note that this is now part of the API (wasn't in ex1)."""
-        raise NotImplementedError()
+    def __init__(self, transactions: List[Transaction], previous_block_hash: BlockHash):
+        self.transactions = transactions
+        self.previous_block_hash = previous_block_hash
+        self.my_hash = self._get_hash()
+
+    def _get_hash(self):
+        temp_hash = self.previous_block_hash
+        for transaction in self.transactions:
+            temp_hash += transaction.get_txid()
+
+        return BlockHash(hashlib.sha256(temp_hash).digest())
 
     def get_block_hash(self) -> BlockHash:
-        """Gets the hash of this block."""
-        raise NotImplementedError()
+        """Gets the hash of this block"""
+        return self.my_hash
 
     def get_transactions(self) -> List[Transaction]:
-        """Returns the list of transactions in this block."""
-        raise NotImplementedError()
+        """
+        returns the list of transactions in this block.
+        """
+        return self.transactions
 
     def get_prev_block_hash(self) -> BlockHash:
-        """Gets the hash of the previous block."""
-        raise NotImplementedError()
+        """Gets the hash of the previous block"""
+        return self.previous_block_hash
 
 
 class Node:
@@ -54,7 +67,15 @@ class Node:
         """Creates a new node with an empty mempool and no connections to others.
         Blocks mined by this nodes will reward the miner with a single new coin,
         created out of thin air and associated with the mining reward address."""
-        raise NotImplementedError()
+        self.mempool: List[Transaction] = []
+        self.blockchain: List[Block] = []
+        self.connections: Set[Node] = set()
+        self.unspent_transactions = {}
+        self.block_hash_to_block = {}
+        self._private_key = ecdsa.SigningKey.generate()
+        self.public_key = PublicKey(self._private_key.get_verifying_key().to_der())
+        self._unspent_transactions: Set[TxID] = set()
+        self._transactions_used_since_last_update: Set[TxID] = set()
 
     def connect(self, other: 'Node') -> None:
         """Connects this node to another node for block and transaction updates.
@@ -62,15 +83,21 @@ class Node:
         Raises an exception if asked to connect to itself.
         The connection itself does not trigger updates about the mempool,
         but nodes instantly notify of their latest block to each other."""
-        raise NotImplementedError()
+        if other is self:
+            raise Exception("Could not connect to myself")
+        if other not in self.connections:
+            self.connections.add(other)
+            other.connect(self)
 
     def disconnect_from(self, other: 'Node') -> None:
         """Disconnects this node from the other node. If the two were not connected, then nothing happens."""
-        raise NotImplementedError()
+        if other in self.connections:
+            self.connections.remove(other)
+            other.disconnect_from(self)
 
     def get_connections(self) -> Set['Node']:
         """Returns a set of the connections of this node."""
-        raise NotImplementedError()
+        return self.connections
 
     def add_transaction_to_mempool(self, transaction: Transaction) -> bool:
         """
@@ -81,7 +108,36 @@ class Node:
         (ii) The source doesn't have the coin that he tries to spend.
         (iii) There is contradicting tx in the mempool.
         """
-        raise NotImplementedError()
+        is_transaction_ok = (
+                    self._is_transaction_valid(transaction) and self._source_has_money_for(transaction) and
+                    self._no_conflicts_for(transaction))
+        if is_transaction_ok:
+            self.mempool.append(transaction)
+            for node in self.connections:
+                node.add_transaction_to_mempool(transaction)
+
+        return is_transaction_ok
+
+    def _is_transaction_valid(self, transaction: Transaction) -> bool:
+        if transaction.input is None:
+            return False
+
+        transaction_pay = self.unspent_transactions.get(transaction.input, None)
+        try:
+            return ecdsa.VerifyingKey.from_der(transaction_pay.output).verify(transaction.signature,
+                                                                              transaction.output + transaction.input)
+        except:
+            return False
+
+    def _source_has_money_for(self, transaction: Transaction) -> bool:
+        return transaction.input in self.unspent_transactions
+
+    def _no_conflicts_for(self, transaction: Transaction) -> bool:
+        for unblocked_transaction in self.mempool:
+            if unblocked_transaction.input == transaction.input:
+                return False
+
+        return True
 
     def notify_of_block(self, block_hash: BlockHash, sender: 'Node') -> None:
         """
@@ -101,7 +157,31 @@ class Node:
         and then rolled forward along the new branch.
         The mempool is similarly emptied of transactions that cannot be executed now.
         """
-        raise NotImplementedError()
+        if block_hash in self.block_hash_to_block:
+            return
+        current_block = sender.get_block(block_hash)
+        blocks_from_sender = [current_block]
+        while current_block.get_prev_block_hash() not in self.block_hash_to_block or \
+                current_block.get_prev_block_hash() != GENESIS_BLOCK_PREV:
+            current_block = sender.get_block(current_block.get_prev_block_hash())
+            blocks_from_sender.append(current_block)
+
+        if not self._validate_blocks(blocks_from_sender):
+            return
+        split_block = self.block_hash_to_block.get(current_block.get_prev_block_hash())
+        prev_index = self.blockchain.index(split_block) + 1 if split_block else 0
+        if current_block.get_prev_block_hash() == self.blockchain[-1].get_block_hash() or len(blocks_from_sender) + prev_index > len(self.blockchain):
+            self.blockchain = self.blockchain[:prev_index] + blocks_from_sender
+            self.update_according_to_new_blockchain()
+            for node in self.connections:
+                node.notify_of_block(block_hash, self)
+
+    def _validate_blocks(self, blockchain: List[Block]) -> bool:
+        for block in blockchain:
+            if len(block.get_transactions()) > BLOCK_SIZE:
+                return False
+
+        return True
 
     def mine_block(self) -> BlockHash:
         """"
