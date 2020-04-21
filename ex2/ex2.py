@@ -168,6 +168,8 @@ class Node:
             return
         try:
             current_block = sender.get_block(block_hash)  # TODO: check if needed to check block hash
+            if block_hash != current_block.get_block_hash(): # TODO: yakkkkkkkkkkk
+                return
             blocks_from_sender = [current_block]
             while current_block.get_prev_block_hash() not in self.block_hash_to_block and \
                 current_block.get_prev_block_hash() != GENESIS_BLOCK_PREV:
@@ -176,6 +178,7 @@ class Node:
         except ValueError as e:
             return
 
+        # TODO: restore transaction to mempool after replacing block with longer chain
         blocks_from_sender.reverse()
         split_block = self.block_hash_to_block.get(current_block.get_prev_block_hash())
         prev_index = self.blockchain.index(split_block) + 1 if split_block else 0
@@ -250,6 +253,7 @@ class Node:
                         if Node._source_has_money_for(transaction, self.unspent_transactions)]
 
     def _update_my_unspent_transactions(self):
+        self._my_unspent_transactions = set()
         for transaction in self.unspent_transactions.values():
             if transaction.output == self.public_key:
                 self._my_unspent_transactions.add(transaction.get_txid())
@@ -340,8 +344,8 @@ class Node:
             transaction_id_to_use = transactions_id_to_use[0]
             signature = Signature(self._private_key.sign(target + transaction_id_to_use))
             transaction = Transaction(target, transaction_id_to_use, signature)
-            self.add_transaction_to_mempool(transaction)
-            return transaction
+            is_inserted_to_mempool = self.add_transaction_to_mempool(transaction)
+            return transaction if is_inserted_to_mempool else None
 
         return None
 
