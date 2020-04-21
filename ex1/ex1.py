@@ -133,7 +133,7 @@ class Bank:
         """
         This function returns the last block hash the was created.
         """
-        return self.blockchain[-1].get_block_hash()
+        return self.blockchain[-1].get_block_hash() if self.blockchain else GENESIS_BLOCK_PREV
 
     def get_mempool(self) -> List[Transaction]:
         """

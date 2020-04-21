@@ -1,4 +1,4 @@
-from typing import List, Optional, NewType, Set
+from typing import List, Optional, NewType, Set, Dict
 import ecdsa  # type: ignore
 import hashlib
 import secrets
@@ -74,7 +74,7 @@ class Node:
         self.block_hash_to_block = {}
         self._private_key = ecdsa.SigningKey.generate()
         self.public_key = PublicKey(self._private_key.get_verifying_key().to_der())
-        self._unspent_transactions: Set[TxID] = set()
+        self._my_unspent_transactions: Set[TxID] = set()
         self._transactions_used_since_last_update: Set[TxID] = set()
 
     def connect(self, other: 'Node') -> None:
@@ -109,8 +109,9 @@ class Node:
         (iii) There is contradicting tx in the mempool.
         """
         is_transaction_ok = (
-                    self._is_transaction_valid(transaction) and self._source_has_money_for(transaction) and
-                    self._no_conflicts_for(transaction))
+                Node._is_transaction_valid(transaction, self.unspent_transactions) and
+                Node._source_has_money_for(transaction, self.unspent_transactions) and
+                Node._no_conflicts_for(transaction, self.mempool))
         if is_transaction_ok:
             self.mempool.append(transaction)
             for node in self.connections:
@@ -118,22 +119,25 @@ class Node:
 
         return is_transaction_ok
 
-    def _is_transaction_valid(self, transaction: Transaction) -> bool:
+    @staticmethod
+    def _is_transaction_valid(transaction: Transaction, unspent_transactions) -> bool:
         if transaction.input is None:
             return False
 
-        transaction_pay = self.unspent_transactions.get(transaction.input, None)
+        transaction_pay = unspent_transactions.get(transaction.input, None)
         try:
             return ecdsa.VerifyingKey.from_der(transaction_pay.output).verify(transaction.signature,
                                                                               transaction.output + transaction.input)
         except:
             return False
 
-    def _source_has_money_for(self, transaction: Transaction) -> bool:
-        return transaction.input in self.unspent_transactions
+    @staticmethod
+    def _source_has_money_for(transaction: Transaction, unspent_transactions) -> bool:
+        return transaction.input in unspent_transactions
 
-    def _no_conflicts_for(self, transaction: Transaction) -> bool:
-        for unblocked_transaction in self.mempool:
+    @staticmethod
+    def _no_conflicts_for(transaction: Transaction, current_transactions: List[Transaction]) -> bool:
+        for unblocked_transaction in current_transactions:
             if unblocked_transaction.input == transaction.input:
                 return False
 
@@ -166,22 +170,75 @@ class Node:
             current_block = sender.get_block(current_block.get_prev_block_hash())
             blocks_from_sender.append(current_block)
 
-        if not self._validate_blocks(blocks_from_sender):
-            return
         split_block = self.block_hash_to_block.get(current_block.get_prev_block_hash())
         prev_index = self.blockchain.index(split_block) + 1 if split_block else 0
         if current_block.get_prev_block_hash() == self.blockchain[-1].get_block_hash() or len(blocks_from_sender) + prev_index > len(self.blockchain):
-            self.blockchain = self.blockchain[:prev_index] + blocks_from_sender
-            self.update_according_to_new_blockchain()
-            for node in self.connections:
-                node.notify_of_block(block_hash, self)
+            new_blockchain = self.blockchain[:prev_index] + blocks_from_sender
+            new_unspent_transactions = self._get_new_unspent_transactions(new_blockchain, prev_index)
 
-    def _validate_blocks(self, blockchain: List[Block]) -> bool:
+            if new_unspent_transactions is None:
+                self.blockchain = new_blockchain
+                for block in self.blockchain:
+                    self.block_hash_to_block[block.get_block_hash()] = block
+
+                self._update_wallet_state()
+                self.unspent_transactions = new_unspent_transactions
+                self._notifiy_all_my_friends_of(block_hash)
+
+    def _get_new_unspent_transactions(self, blockchain: List[Block], split_block_index: int) -> Optional[Dict]:
+        new_unspent_transactions = self.get_unspent_until(split_block_index)
+
         for block in blockchain:
-            if len(block.get_transactions()) > BLOCK_SIZE:
-                return False
+            blocks_transactions = block.get_transactions()
+            if len(blocks_transactions) > BLOCK_SIZE:
+                return None
 
-        return True
+            number_of_money_creation_transaction = 0
+            for transaction in blocks_transactions:
+                new_unspent_transactions[transaction.get_txid()] = transaction
+
+                if transaction.input is None:
+                    number_of_money_creation_transaction += 1
+                elif transaction.input not in new_unspent_transactions:
+                    return None
+                else:
+                    del new_unspent_transactions[transaction.input]
+
+                if not Node._is_transaction_valid(transaction, new_unspent_transactions):
+                    return None
+
+            if number_of_money_creation_transaction != 1:
+                return None
+
+        return new_unspent_transactions
+
+    def _notifiy_all_my_friends_of(self, block_hash: BlockHash):
+        for node in self.connections:
+            node.notify_of_block(block_hash, self)
+
+    def get_unspent_until(self, split_block_index: int) -> Dict:
+        new_unspent_transactions = self.unspent_transactions.copy()
+        for my_block in self.blockchain[split_block_index:, -1]:
+            current_block_transactions = my_block.get_transactions()
+
+            for transaction in current_block_transactions:
+                if transaction.get_txid() in new_unspent_transactions:
+                    del new_unspent_transactions[transaction.get_txid()]
+
+                if transaction.input not in new_unspent_transactions:
+                    new_unspent_transactions[transaction.input] = transaction
+        return new_unspent_transactions
+
+    def _update_wallet_state(self):
+        self._update_my_unspent_transactions()
+
+        self.mempool = [transaction for transaction in self.mempool
+                        if Node._source_has_money_for(transaction, self.unspent_transactions)]
+
+    def _update_my_unspent_transactions(self):
+        for transaction in self.unspent_transactions.values():
+            if transaction.output == self.public_key:
+                self._my_unspent_transactions.add(transaction)
 
     def mine_block(self) -> BlockHash:
         """"
@@ -193,33 +250,60 @@ class Node:
         If a new block is created, all connections of this node are notified by calling their notify_of_block() method.
         The method returns the new block hash.
         """
-        raise NotImplementedError()
+        # TODO: ask if there is a situation where we wouldn't create a block
+        transactions_for_block = self.mempool[:BLOCK_SIZE]
+        self.mempool = self.mempool[BLOCK_SIZE:]
+
+        for transaction in transactions_for_block:
+            self.unspent_transactions[transaction.get_txid()] = transaction
+            if transaction.input:
+                del self.unspent_transactions[transaction.input]
+        self._update_my_unspent_transactions()
+
+        prev_block_hash = self.get_latest_hash() if self.blockchain else GENESIS_BLOCK_PREV
+        block_to_add = Block(transactions_for_block, prev_block_hash)
+        self.blockchain.append(block_to_add)
+        self.block_hash_to_block[block_to_add.get_block_hash()] = block_to_add
+        block_hash = block_to_add.get_block_hash()
+        self._notifiy_all_my_friends_of(block_hash)
+        return block_hash
+
+    def _create_money(self) -> Transaction:
+        """
+        This function inserts a transaction into the mempool that creates a single coin out of thin air. Instead of a signature,
+        this transaction includes a random string of 48 bytes (so that every two creation transactions are different).
+        generate these random bytes using secrets.token_bytes(48).
+        We assume only the bank calls this function (wallets will never call it).
+        """
+        signature = secrets.token_bytes(48)
+        new_money_transaction = Transaction(self.public_key, None, signature)
+        return new_money_transaction
 
     def get_block(self, block_hash: BlockHash) -> Block:
         """
         This function returns a block object given its hash.
         If the block doesnt exist, a ValueError is raised. Make sure to throw the correct exception here!
         """
-        raise NotImplementedError()
+        return self.block_hash_to_block[block_hash]
 
     def get_latest_hash(self) -> BlockHash:
         """
         This function returns the hash of the block that is the current tip of the longest chain.
         If no blocks were created, return GENESIS_BLOCK_PREV.
         """
-        raise NotImplementedError()
+        return self.blockchain[-1].get_block_hash() if self.blockchain else GENESIS_BLOCK_PREV
 
     def get_mempool(self) -> List[Transaction]:
         """
         This function returns the list of transactions that are waiting to be included in blocks.
         """
-        raise NotImplementedError()
+        return self.mempool
 
     def get_utxo(self) -> List[Transaction]:
         """
         This function returns the list of unspent transactions.
         """
-        raise NotImplementedError()
+        return list(self.unspent_transactions.values())
 
     def create_transaction(self, target: PublicKey) -> Optional[Transaction]:
         """
@@ -231,13 +315,21 @@ class Node:
         The method returns None if there are no outputs that have not been spent already.
         The transaction is added to the mempool (and as a result it is also published to connected nodes).
         """
-        raise NotImplementedError()
+        transactions_id_to_use = self._my_unspent_transactions.difference(set(self.mempool))
+        if transactions_id_to_use:
+            transaction_id_to_use = transactions_id_to_use.pop()
+            signature = Signature(self._private_key.sign(target + transaction_id_to_use))
+            transaction = Transaction(target, transaction_id_to_use, signature)
+            self.add_transaction_to_mempool(transaction)
+            return transaction
+
+        return None
 
     def clear_mempool(self) -> None:
         """
         Clears this nodes mempool. All transactions waiting to be entered into the next block are cleared.
         """
-        raise NotImplementedError()
+        self.mempool = []
 
     def get_balance(self) -> int:
         """
@@ -245,13 +337,13 @@ class Node:
         Coins that the node owned and sent away will still be considered as part of the balance until the spending
         transaction is in the blockchain.
         """
-        raise NotImplementedError()
+        return len(self._my_unspent_transactions)
 
     def get_address(self) -> PublicKey:
         """
         This function returns the public address of this node in DER format (follow the code snippet in the pdf of ex1).
         """
-        raise NotImplementedError()
+        return self.public_key
 
 
 """
