@@ -165,12 +165,15 @@ class Node:
         """
         if block_hash in self.block_hash_to_block:
             return
-        current_block = sender.get_block(block_hash)  # TODO: check if needed to check block hash
-        blocks_from_sender = [current_block]
-        while current_block.get_prev_block_hash() not in self.block_hash_to_block and \
+        try:
+            current_block = sender.get_block(block_hash)  # TODO: check if needed to check block hash
+            blocks_from_sender = [current_block]
+            while current_block.get_prev_block_hash() not in self.block_hash_to_block and \
                 current_block.get_prev_block_hash() != GENESIS_BLOCK_PREV:
-            current_block = sender.get_block(current_block.get_prev_block_hash())
-            blocks_from_sender.append(current_block)
+                current_block = sender.get_block(current_block.get_prev_block_hash())
+                blocks_from_sender.append(current_block)
+        except ValueError as e:
+            return
 
         blocks_from_sender.reverse()
         split_block = self.block_hash_to_block.get(current_block.get_prev_block_hash())

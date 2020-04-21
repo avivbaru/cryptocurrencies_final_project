@@ -180,10 +180,14 @@ class Wallet:
         """
         # first build a list of blocks until our latest update.
         block_hash = bank.get_latest_hash()
-        current_latest_hash = self._blockchain[-1].get_block_hash() if self._blockchain else None
+        current_latest_hash = self._blockchain[-1].get_block_hash() if self._blockchain else GENESIS_BLOCK_PREV
         updates_blockchain = []
         while block_hash != current_latest_hash and block_hash != GENESIS_BLOCK_PREV:
-            block = bank.get_block(block_hash)
+            try:
+                block = bank.get_block(block_hash)
+            except Exception as e:
+                return
+
             for transaction in block.get_transactions():
                 if transaction.input in self._unspent_transactions:
                     self._unspent_transactions.remove(transaction.input)
