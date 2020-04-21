@@ -24,7 +24,7 @@ class Transaction:
         self.input: Optional[TxID] = tx_input  # DO NOT change these field names.
         self.signature: Signature = signature  # DO NOT change these field names.
 
-        self.id_value = self.output + self.signature if input is None else self.output + self.signature + self.input
+        self.id_value = self.output + self.signature if tx_input is None else self.output + self.signature + self.input
         self.id = TxID(hashlib.sha256(self.id_value).digest())
 
     def get_txid(self) -> TxID:
@@ -238,7 +238,7 @@ class Node:
     def _update_my_unspent_transactions(self):
         for transaction in self.unspent_transactions.values():
             if transaction.output == self.public_key:
-                self._my_unspent_transactions.add(transaction)
+                self._my_unspent_transactions.add(transaction.get_txid())
 
     def mine_block(self) -> BlockHash:
         """"
@@ -251,8 +251,9 @@ class Node:
         The method returns the new block hash.
         """
         # TODO: ask if there is a situation where we wouldn't create a block
-        transactions_for_block = self.mempool[:BLOCK_SIZE]
-        self.mempool = self.mempool[BLOCK_SIZE:]
+        transactions_for_block = self.mempool[:BLOCK_SIZE - 1]
+        self.mempool = self.mempool[BLOCK_SIZE - 1:]
+        transactions_for_block.append(self._create_money())
 
         for transaction in transactions_for_block:
             self.unspent_transactions[transaction.get_txid()] = transaction
@@ -284,7 +285,10 @@ class Node:
         This function returns a block object given its hash.
         If the block doesnt exist, a ValueError is raised. Make sure to throw the correct exception here!
         """
-        return self.block_hash_to_block[block_hash]
+        if block_hash in self.block_hash_to_block:
+            return self.block_hash_to_block[block_hash]
+
+        raise ValueError("No block found with this hash code.")
 
     def get_latest_hash(self) -> BlockHash:
         """
@@ -315,9 +319,11 @@ class Node:
         The method returns None if there are no outputs that have not been spent already.
         The transaction is added to the mempool (and as a result it is also published to connected nodes).
         """
-        transactions_id_to_use = self._my_unspent_transactions.difference(set(self.mempool))
+        set_mempool = set(self.mempool)
+        transactions_id_to_use = [transaction_id for transaction_id in self._my_unspent_transactions
+                                  if self.unspent_transactions[transaction_id] not in set_mempool]
         if transactions_id_to_use:
-            transaction_id_to_use = transactions_id_to_use.pop()
+            transaction_id_to_use = transactions_id_to_use[0]
             signature = Signature(self._private_key.sign(target + transaction_id_to_use))
             transaction = Transaction(target, transaction_id_to_use, signature)
             self.add_transaction_to_mempool(transaction)
