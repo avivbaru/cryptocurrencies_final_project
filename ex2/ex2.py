@@ -89,8 +89,8 @@ class Node:
             raise Exception("Could not connect to myself")
         if other not in self.connections:
             self.connections.add(other)
-            other.notify_of_block(self.get_latest_hash(), self)
             other.connect(self)
+            other.notify_of_block(self.get_latest_hash(), self)
 
     def disconnect_from(self, other: 'Node') -> None:
         """Disconnects this node from the other node. If the two were not connected, then nothing happens."""
@@ -185,6 +185,7 @@ class Node:
 
             if new_state is not None:
                 self.blockchain, self.unspent_transactions = new_state
+                self.block_hash_to_block = {}
                 for block in self.blockchain:
                     self.block_hash_to_block[block.get_block_hash()] = block
 
@@ -238,8 +239,7 @@ class Node:
             for transaction in current_block_transactions:
                 if transaction.get_txid() in new_unspent_transactions:
                     del new_unspent_transactions[transaction.get_txid()]
-
-                if transaction.input not in new_unspent_transactions:
+                if transaction.input is not None and transaction.input not in new_unspent_transactions:
                     new_unspent_transactions[transaction.input] = transaction
         return new_unspent_transactions
 
@@ -275,7 +275,7 @@ class Node:
                 del self.unspent_transactions[transaction.input]
         self._update_my_unspent_transactions()
 
-        prev_block_hash = self.get_latest_hash() if self.blockchain else GENESIS_BLOCK_PREV
+        prev_block_hash = self.get_latest_hash()
         block_to_add = Block(prev_block_hash, transactions_for_block)
         self.blockchain.append(block_to_add)
         self.block_hash_to_block[block_to_add.get_block_hash()] = block_to_add
