@@ -40,11 +40,12 @@ class Block:
         Note that this is now part of the API (wasn't in ex1)."""
         self.transactions = transactions
         self.previous_block_hash = prev_block_hash
-        self.my_hash = self._get_hash()
+        self.my_hash = Block.get_hash(self.previous_block_hash, self.transactions)
 
-    def _get_hash(self):
-        temp_hash = self.previous_block_hash
-        for transaction in self.transactions:
+    @staticmethod
+    def get_hash(previous_block_hash, transactions):
+        temp_hash = previous_block_hash
+        for transaction in transactions:
             temp_hash += transaction.get_txid()
 
         return BlockHash(hashlib.sha256(temp_hash).digest())
@@ -146,6 +147,10 @@ class Node:
 
         return True
 
+    def _verify_block(self, block_hash: BlockHash, block: Block) -> bool:
+        return block_hash == block.get_block_hash() and \
+               Block.get_hash(block.get_prev_block_hash(), block.get_transactions()) == block.get_block_hash()
+
     def notify_of_block(self, block_hash: BlockHash, sender: 'Node') -> None:
         """
         This method is used by a node's connection to inform it that it has learned of a
@@ -168,12 +173,16 @@ class Node:
             return
         try:
             current_block = sender.get_block(block_hash)  # TODO: check if needed to check block hash
-            if block_hash != current_block.get_block_hash(): # TODO: yakkkkkkkkkkk
+            # TODO: move verify to _get_new_blockchain_state
+            if not self._verify_block(block_hash, current_block):
                 return
             blocks_from_sender = [current_block]
             while current_block.get_prev_block_hash() not in self.block_hash_to_block and \
                 current_block.get_prev_block_hash() != GENESIS_BLOCK_PREV:
-                current_block = sender.get_block(current_block.get_prev_block_hash())
+                prev_block_hash = current_block.get_prev_block_hash()
+                current_block = sender.get_block(prev_block_hash)
+                if not self._verify_block(prev_block_hash, current_block):
+                    break
                 blocks_from_sender.append(current_block)
         except ValueError as e:
             return
@@ -193,7 +202,7 @@ class Node:
                     self.block_hash_to_block[block.get_block_hash()] = block
 
                 self._update_wallet_state()
-                self._notifiy_all_my_friends_of(block_hash)
+                self._notifiy_all_my_friends_of(self.get_latest_hash())
 
     def _get_new_blockchain_state(self, blockchain: List[Block], split_block_index: int) -> Optional[Tuple[List, Dict]]:
         new_unspent_transactions = self.get_unspent_until(split_block_index)

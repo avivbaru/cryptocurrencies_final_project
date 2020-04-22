@@ -303,3 +303,52 @@ def test_bob_serves_wrong_block(alice: Node, bob: Node, charlie: Node, monkeypat
     alice.connect(bob)
     assert alice.get_latest_hash() == GENESIS_BLOCK_PREV
     assert alice.get_utxo() == []
+
+
+def test_bob_serves_block_with_wrong_hash(alice: Node, charlie: Node, monkeypatch: Any) -> None:
+    h1 = charlie.mine_block()
+    block = charlie.get_block(h1)
+
+    monkeypatch.setattr(block, "get_block_hash", lambda: "false_hash")
+    monkeypatch.setattr(charlie, "get_block", lambda block_hash: block)
+
+    alice.connect(charlie)
+    assert alice.get_latest_hash() == GENESIS_BLOCK_PREV
+    assert alice.get_utxo() == []
+
+
+def test_mempool_with_wrong_transaction_after_notify(alice: Node, bob: Node, charlie: Node, monkeypatch: Any) -> None:
+    alice_hash = alice.mine_block()
+    h1 = bob.mine_block()
+    block1 = bob.get_block(h1)
+    h2 = bob.mine_block()
+    block2 = bob.get_block(h2)
+    h3 = bob.mine_block()
+    block3 = bob.get_block(h3)
+    blocks = {h1:block1, h2:Block(block2.get_block_hash(), []), h3: block3}
+
+    monkeypatch.setattr(bob, "get_block", lambda block_hash: blocks[block_hash])
+
+    alice.connect(bob)
+    assert alice.get_latest_hash() == alice_hash
+
+
+def test_mempool_with_wrong_transaction_after_notify2(alice: Node, bob: Node, charlie: Node,
+                                                     monkeypatch: Any) -> None:
+    alice_hash = alice.mine_block()
+    h1 = bob.mine_block()
+    block1 = bob.get_block(h1)
+    h2 = bob.mine_block()
+    block2 = bob.get_block(h2)
+    h3 = bob.mine_block()
+    block3 = bob.get_block(h3)
+    h4 = bob.mine_block()
+    block4 = bob.get_block(h4)
+    h5 = bob.mine_block()
+    block5 = bob.get_block(h5)
+    blocks = {h1: block1, h2: block2, h3: Block(block3.get_block_hash(), []), h4: block4, h5: block5}
+
+    monkeypatch.setattr(bob, "get_block", lambda block_hash: blocks[block_hash])
+
+    alice.connect(bob)
+    assert alice.get_latest_hash() == h2
