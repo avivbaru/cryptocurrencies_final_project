@@ -80,6 +80,11 @@ class Node:
         self._my_unspent_transactions: Set[TxID] = set()
         self._transactions_used_since_last_update: Set[TxID] = set()
 
+    class _block_verification_model:
+        def __init__(self, block_hash, block):
+            self.block_hash = block_hash
+            self.block = block
+
     def connect(self, other: 'Node') -> None:
         """Connects this node to another node for block and transaction updates.
         Connections are bi-directional, so the other node is connected to this one as well.
@@ -147,9 +152,11 @@ class Node:
 
         return True
 
-    def _verify_block(self, block_hash: BlockHash, block: Block) -> bool:
-        return block_hash == block.get_block_hash() and \
-               Block.get_hash(block.get_prev_block_hash(), block.get_transactions()) == block.get_block_hash()
+    def _verify_block_hash(self, block: Block) -> bool:
+        return Block.get_hash(block.get_prev_block_hash(), block.get_transactions()) == block.get_block_hash()
+
+    def _verify_block_receive(self, block_hash: BlockHash, block: Block) -> bool:
+        return block_hash == block.get_block_hash()
 
     def notify_of_block(self, block_hash: BlockHash, sender: 'Node') -> None:
         """
@@ -172,78 +179,81 @@ class Node:
         if block_hash in self.block_hash_to_block:
             return
         try:
-            current_block = sender.get_block(block_hash)  # TODO: check if needed to check block hash
-            # TODO: move verify to _get_new_blockchain_state
-            if not self._verify_block(block_hash, current_block):
+            current_block = sender.get_block(block_hash)
+            if not self._verify_block_receive(block_hash, current_block):
                 return
             blocks_from_sender = [current_block]
             while current_block.get_prev_block_hash() not in self.block_hash_to_block and \
-                current_block.get_prev_block_hash() != GENESIS_BLOCK_PREV:
+                    current_block.get_prev_block_hash() != GENESIS_BLOCK_PREV:
                 prev_block_hash = current_block.get_prev_block_hash()
                 current_block = sender.get_block(prev_block_hash)
-                if not self._verify_block(prev_block_hash, current_block):
-                    break
+                if not self._verify_block_receive(prev_block_hash, current_block) or current_block in blocks_from_sender:
+                    return
                 blocks_from_sender.append(current_block)
         except ValueError as e:
             return
 
-        # TODO: restore transaction to mempool after replacing block with longer chain
         blocks_from_sender.reverse()
         split_block = self.block_hash_to_block.get(current_block.get_prev_block_hash())
         prev_index = self.blockchain.index(split_block) + 1 if split_block else 0
-        if len(blocks_from_sender) + prev_index > len(self.blockchain):
-            new_blockchain = self.blockchain[:prev_index] + blocks_from_sender
-            new_state = self._get_new_blockchain_state(new_blockchain, prev_index)
+        new_state = self._get_new_blockchain_state(blocks_from_sender, prev_index)
+        if new_state is not None:
+            self.blockchain, self.unspent_transactions = new_state
+            self.block_hash_to_block = {}
+            for block in self.blockchain:
+                self.block_hash_to_block[block.get_block_hash()] = block
 
-            if new_state is not None:
-                self.blockchain, self.unspent_transactions = new_state
-                self.block_hash_to_block = {}
-                for block in self.blockchain:
-                    self.block_hash_to_block[block.get_block_hash()] = block
+            self._update_wallet_state()
+            self._notifiy_all_my_friends_of(self.get_latest_hash())
 
-                self._update_wallet_state()
-                self._notifiy_all_my_friends_of(self.get_latest_hash())
+    def _get_new_blockchain_state(self, blockchain: List[Block], split_block_index: int) -> Optional[
+        Tuple[List, Dict]]:
+        def get_new_state_no_length_check(blockchain: List[Block], new_unspent_transactions: Dict):
+            for block_index, block in enumerate(blockchain):
+                current_unspent_transactions = {}
+                current_transactions_to_delete = set()
+                blocks_transactions = block.get_transactions()
+                if not self._verify_block_hash(block) or len(blocks_transactions) > BLOCK_SIZE:
+                    return blockchain[:block_index], new_unspent_transactions
 
-    def _get_new_blockchain_state(self, blockchain: List[Block], split_block_index: int) -> Optional[Tuple[List, Dict]]:
-        new_unspent_transactions = self.get_unspent_until(split_block_index)
+                number_of_money_creation_transaction = 0
+                for transaction in blocks_transactions:
+                    current_unspent_transactions[transaction.get_txid()] = transaction
 
-        for block_index, block in enumerate(blockchain):
-            current_unspent_transactions = {}
-            current_transactions_to_delete = set()
-            blocks_transactions = block.get_transactions()
-            if len(blocks_transactions) > BLOCK_SIZE:
-                return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
+                    if transaction.input is None:
+                        number_of_money_creation_transaction += 1
+                    elif transaction.input not in new_unspent_transactions or not Node._is_transaction_valid(
+                            transaction, new_unspent_transactions):
+                        return blockchain[:block_index], new_unspent_transactions
+                    else:
+                        current_transactions_to_delete.add(transaction.input)
 
-            number_of_money_creation_transaction = 0
-            for transaction in blocks_transactions:
-                current_unspent_transactions[transaction.get_txid()] = transaction
+                if current_transactions_to_delete.intersection(set(current_unspent_transactions.keys())) or \
+                        number_of_money_creation_transaction != 1:
+                    return blockchain[:block_index], new_unspent_transactions
 
-                if transaction.input is None:
-                    number_of_money_creation_transaction += 1
-                elif transaction.input not in new_unspent_transactions:
-                    return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
-                elif not Node._is_transaction_valid(transaction, new_unspent_transactions):
-                    return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
-                else:
-                    current_transactions_to_delete.add(transaction.input)
+                new_unspent_transactions = {**new_unspent_transactions, **current_unspent_transactions}
 
-            # TODO: check if no transaction is using another in same block
-            if current_transactions_to_delete.intersection(set(current_unspent_transactions.keys())) or \
-                    number_of_money_creation_transaction != 1:
-                return None if block_index == 0 else (blockchain[:block_index], new_unspent_transactions)
+                for transaction_id in current_transactions_to_delete:
+                    del new_unspent_transactions[transaction_id]
+            return blockchain, new_unspent_transactions
+        
+        new_unspent_transactions = self._get_unspent_until(split_block_index)
+        new_blockchain, new_unspent_transactions = get_new_state_no_length_check(blockchain, new_unspent_transactions)
 
-            new_unspent_transactions = {**new_unspent_transactions, **current_unspent_transactions}
-
-            for transaction_id in current_transactions_to_delete:
-                del new_unspent_transactions[transaction_id]
-
-        return blockchain, new_unspent_transactions
+        if len(new_blockchain) + split_block_index > len(self.blockchain):
+            return self.blockchain[:split_block_index] + new_blockchain, new_unspent_transactions
+        return None
 
     def _notifiy_all_my_friends_of(self, block_hash: BlockHash):
         for node in self.connections:
             node.notify_of_block(block_hash, self)
 
-    def get_unspent_until(self, split_block_index: int) -> Dict:
+    def _get_unspent_until(self, split_block_index: int) -> Dict:
+        all_transactions = {}
+        for block in self.blockchain:
+            for transaction in block.get_transactions():
+                all_transactions[transaction.get_txid()] = transaction
         new_unspent_transactions = self.unspent_transactions.copy()
         for my_block in reversed(self.blockchain[split_block_index:]):
             current_block_transactions = my_block.get_transactions()
@@ -252,7 +262,7 @@ class Node:
                 if transaction.get_txid() in new_unspent_transactions:
                     del new_unspent_transactions[transaction.get_txid()]
                 if transaction.input is not None and transaction.input not in new_unspent_transactions:
-                    new_unspent_transactions[transaction.input] = transaction
+                    new_unspent_transactions[transaction.input] = all_transactions[transaction.input]
         return new_unspent_transactions
 
     def _update_wallet_state(self):

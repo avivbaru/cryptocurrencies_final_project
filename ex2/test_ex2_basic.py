@@ -258,7 +258,7 @@ def test_tx_surives_in_mempool_if_not_included_in_block(alice: Node, bob: Node) 
     assert bob.get_latest_hash() == block_hash
     assert len(bob.get_mempool()) == 1
 
-
+@pytest.mark.our
 def test_tx_replaced_in_blockchain_when_double_spent(alice: Node, bob: Node, charlie: Node) -> None:
     alice.connect(bob)
     alice.connect(charlie)
@@ -270,6 +270,7 @@ def test_tx_replaced_in_blockchain_when_double_spent(alice: Node, bob: Node, cha
 
     assert tx1 in bob.get_utxo()
     assert tx1 in alice.get_utxo()
+    assert tx1 not in charlie.get_utxo()
 
     charlie.mine_block()
     charlie.mine_block()
@@ -317,7 +318,24 @@ def test_bob_serves_block_with_wrong_hash(alice: Node, charlie: Node, monkeypatc
     assert alice.get_utxo() == []
 
 @pytest.mark.our
-def test_mempool_with_wrong_transaction_after_notify(alice: Node, bob: Node, charlie: Node, monkeypatch: Any) -> None:
+def test_should_not_replace_in_block_hash_not_correct(alice: Node, bob: Node, charlie: Node, monkeypatch:
+                                                    Any) -> None:
+    alice_hash = alice.mine_block()
+    h1 = bob.mine_block()
+    block1 = bob.get_block(h1)
+    h2 = bob.mine_block()
+    block2 = bob.get_block(h2)
+    h3 = bob.mine_block()
+    block3 = bob.get_block(h3)
+    blocks = {h1:block1, h2:Block(alice_hash, []), h3: block3}
+
+    monkeypatch.setattr(bob, "get_block", lambda block_hash: blocks[block_hash])
+
+    alice.connect(bob)
+    assert alice.get_latest_hash() == alice_hash
+
+@pytest.mark.our
+def test_detect_cycle_in_notify(alice: Node, bob: Node, charlie: Node, monkeypatch: Any) -> None:
     alice_hash = alice.mine_block()
     h1 = bob.mine_block()
     block1 = bob.get_block(h1)
@@ -333,9 +351,10 @@ def test_mempool_with_wrong_transaction_after_notify(alice: Node, bob: Node, cha
     assert alice.get_latest_hash() == alice_hash
 
 @pytest.mark.our
-def test_mempool_with_wrong_transaction_after_notify2(alice: Node, bob: Node, charlie: Node,
+def test_should_replace_only_2_block(alice: Node, bob: Node, charlie: Node,
                                                      monkeypatch: Any) -> None:
-    alice_hash = alice.mine_block()
+    alice.mine_block()
+    alice_tx = alice.create_transaction(bob.get_address())
     h1 = bob.mine_block()
     block1 = bob.get_block(h1)
     h2 = bob.mine_block()
@@ -346,9 +365,12 @@ def test_mempool_with_wrong_transaction_after_notify2(alice: Node, bob: Node, ch
     block4 = bob.get_block(h4)
     h5 = bob.mine_block()
     block5 = bob.get_block(h5)
-    blocks = {h1: block1, h2: block2, h3: Block(block3.get_block_hash(), []), h4: block4, h5: block5}
+    false_block = Block(block2.get_block_hash(), [])
+    blocks = {h1: block1, h2: block2, h3: false_block, h4: block4, h5: block5}
 
+    monkeypatch.setattr(false_block, "get_block_hash", lambda: block3.get_block_hash())
     monkeypatch.setattr(bob, "get_block", lambda block_hash: blocks[block_hash])
 
     alice.connect(bob)
+    assert alice_tx not in alice.get_utxo()
     assert alice.get_latest_hash() == h2
