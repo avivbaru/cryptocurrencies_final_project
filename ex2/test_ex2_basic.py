@@ -304,7 +304,7 @@ def test_bob_serves_wrong_block(alice: Node, bob: Node, charlie: Node, monkeypat
     assert alice.get_latest_hash() == GENESIS_BLOCK_PREV
     assert alice.get_utxo() == []
 
-
+@pytest.mark.our
 def test_bob_serves_block_with_wrong_hash(alice: Node, charlie: Node, monkeypatch: Any) -> None:
     h1 = charlie.mine_block()
     block = charlie.get_block(h1)
@@ -316,7 +316,7 @@ def test_bob_serves_block_with_wrong_hash(alice: Node, charlie: Node, monkeypatc
     assert alice.get_latest_hash() == GENESIS_BLOCK_PREV
     assert alice.get_utxo() == []
 
-
+@pytest.mark.our
 def test_mempool_with_wrong_transaction_after_notify(alice: Node, bob: Node, charlie: Node, monkeypatch: Any) -> None:
     alice_hash = alice.mine_block()
     h1 = bob.mine_block()
@@ -332,7 +332,7 @@ def test_mempool_with_wrong_transaction_after_notify(alice: Node, bob: Node, cha
     alice.connect(bob)
     assert alice.get_latest_hash() == alice_hash
 
-
+@pytest.mark.our
 def test_mempool_with_wrong_transaction_after_notify2(alice: Node, bob: Node, charlie: Node,
                                                      monkeypatch: Any) -> None:
     alice_hash = alice.mine_block()
