@@ -208,42 +208,44 @@ class Node:
 
     def _get_new_blockchain_state(self, blockchain: List[Block], split_block_index: int) -> Optional[
         Tuple[List, Dict]]:
-        def get_new_state_no_length_check(blockchain: List[Block], new_unspent_transactions: Dict):
-            for block_index, block in enumerate(blockchain):
-                current_unspent_transactions = {}
-                current_transactions_to_delete = set()
-                blocks_transactions = block.get_transactions()
-                if not self._verify_block_hash(block) or len(blocks_transactions) > BLOCK_SIZE:
-                    return blockchain[:block_index], new_unspent_transactions
-
-                number_of_money_creation_transaction = 0
-                for transaction in blocks_transactions:
-                    current_unspent_transactions[transaction.get_txid()] = transaction
-
-                    if transaction.input is None:
-                        number_of_money_creation_transaction += 1
-                    elif transaction.input not in new_unspent_transactions or not Node._is_transaction_valid(
-                            transaction, new_unspent_transactions):
-                        return blockchain[:block_index], new_unspent_transactions
-                    else:
-                        current_transactions_to_delete.add(transaction.input)
-
-                if current_transactions_to_delete.intersection(set(current_unspent_transactions.keys())) or \
-                        number_of_money_creation_transaction != 1:
-                    return blockchain[:block_index], new_unspent_transactions
-
-                new_unspent_transactions = {**new_unspent_transactions, **current_unspent_transactions}
-
-                for transaction_id in current_transactions_to_delete:
-                    del new_unspent_transactions[transaction_id]
-            return blockchain, new_unspent_transactions
-        
         new_unspent_transactions = self._get_unspent_until(split_block_index)
-        new_blockchain, new_unspent_transactions = get_new_state_no_length_check(blockchain, new_unspent_transactions)
+        new_blockchain, new_unspent_transactions = self._get_new_state_no_length_check(blockchain,
+                                                                                   new_unspent_transactions)
 
         if len(new_blockchain) + split_block_index > len(self.blockchain):
             return self.blockchain[:split_block_index] + new_blockchain, new_unspent_transactions
         return None
+
+    def _get_new_state_no_length_check(self, blockchain: List[Block], new_unspent_transactions: Dict):
+        for block_index, block in enumerate(blockchain):
+            current_unspent_transactions = {}
+            current_transactions_to_delete = set()
+            blocks_transactions = block.get_transactions()
+            if not self._verify_block_hash(block) or len(blocks_transactions) > BLOCK_SIZE:
+                return blockchain[:block_index], new_unspent_transactions
+
+            number_of_money_creation_transaction = 0
+            for transaction in blocks_transactions:
+                current_unspent_transactions[transaction.get_txid()] = transaction
+
+                if transaction.input is None:
+                    number_of_money_creation_transaction += 1
+                elif transaction.input not in new_unspent_transactions or not Node._is_transaction_valid(
+                        transaction, new_unspent_transactions) or transaction.input in current_transactions_to_delete:
+                    return blockchain[:block_index], new_unspent_transactions
+                else:
+                    current_transactions_to_delete.add(transaction.input)
+
+            if current_transactions_to_delete.intersection(set(current_unspent_transactions.keys())) or \
+                    number_of_money_creation_transaction != 1:
+                return blockchain[:block_index], new_unspent_transactions
+
+            new_unspent_transactions = {**new_unspent_transactions, **current_unspent_transactions}
+
+            for transaction_id in current_transactions_to_delete:
+                del new_unspent_transactions[transaction_id]
+        return blockchain, new_unspent_transactions
+
 
     def _notifiy_all_my_friends_of(self, block_hash: BlockHash):
         for node in self.connections:
