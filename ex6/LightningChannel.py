@@ -4,12 +4,12 @@ import eth_account.messages
 from contracts_variables import COMPILED_CHANNEL, ABI_CHANNEL
 import web3.contract
 from web3.contract import Contract
-from typing import Dict, AnyStr
+from typing import Dict
 
 SIG_TYPES = ['uint256', 'int256', 'address'] # the types of messages
 w3 = web3.Web3(web3.HTTPProvider("http://127.0.0.1:7545"))
 APPEAL_PERIOD = 3  # the appeal period in blocks.
-STARTING_SERIAL = 0 # first serial number
+STARTING_SERIAL = 0  # first serial number
 
 
 class ChannelData:
@@ -33,6 +33,17 @@ class ChannelState:
     def __init__(self, channel_data: ChannelData, message_state: MessageState=None):
         self.channel_data: ChannelData = channel_data
         self.message_state: MessageState = message_state
+
+
+def check_channel_address(func):
+    """
+    Decorator for Node method. Check if the Node know the channel address argument.
+    """
+    def wrapper(self, address, *args):
+        if address in self._channels:
+            return func(self, address, *args)
+
+    return wrapper
 
 
 class LightningNode:
@@ -77,22 +88,12 @@ class LightningNode:
         :param contract_address: channel address
         """
         contract = w3.eth.contract(address=contract_address, abi=ABI_CHANNEL)
-        balance = contract.functions.get_current_balance().call()
+        balance = contract.functions.get_initial_balance().call()
         # Get owner1 public address from the channel contract
         owner1 = contract.functions.get_owner1_address().call()
         channel_data = ChannelData(contract, owner1, self._account_address, balance)
         self._channels[contract_address] = ChannelState(channel_data)
 
-    @staticmethod
-    def check_channel_address(func):
-        """
-        Decorator for Node method. Check if the Node know the channel address argument.
-        """
-        def wrapper(self, address, *args):
-            if address in self._channels:
-                return func(self, address, *args)
-
-        return wrapper
 
     @staticmethod
     def get_v_r_s(sig):
@@ -107,6 +108,9 @@ class LightningNode:
         :param amount_in_wei: the amount to send to the other account
         :param other_node: the other account node
         """
+        if amount_in_wei < 0 or other_node is None:
+            return
+
         channel_state = self._channels[contract_address]
         last_message_state = channel_state.message_state
         channel_data = channel_state.channel_data
@@ -119,7 +123,7 @@ class LightningNode:
         if last_message_state is not None:
             serial = last_message_state.serial + 1
             other_new_balance = channel_data.total_wei - (last_message_state.balance - amount_in_wei)
-        if other_new_balance < 0 or other_new_balance > channel_data.total_wei or amount_in_wei < 0:
+        if other_new_balance < 0 or other_new_balance > channel_data.total_wei:
             return
 
         sign_hex = self._sign(other_new_balance, serial, contract_address)
@@ -248,6 +252,9 @@ class LightningNode:
                                                             self._account_address).transact(self._txn_dict)
         w3.eth.waitForTransactionReceipt(tx_hash)
 
+        del self._channels[contract_address]
+
+
     @check_channel_address
     def debug(self, contract_address):
         """
@@ -290,6 +297,10 @@ def init_scenario():
 
 # Opening and closing channel without sending any money.
 def scenario1():
+    print("\n\nScenario1")
+    alice_initial_balance = w3.eth.getBalance(w3.eth.accounts[0])
+    bob_initial_balance = w3.eth.getBalance(w3.eth.accounts[1])
+
     alice, bob, chan_address = init_scenario()
 
     print("channel created", chan_address)
@@ -305,8 +316,19 @@ def scenario1():
     print("Alice Withdraws")
     alice.withdraw_funds(chan_address)
 
+    alice_current_balance = w3.eth.getBalance(w3.eth.accounts[0])
+    bob_current_balance = w3.eth.getBalance(w3.eth.accounts[1])
+    assert bob_initial_balance - ((10 ** 18) * 0.4) <= bob_current_balance <= bob_initial_balance
+    assert alice_initial_balance - ((10 ** 18) * 0.4) <= alice_current_balance <= alice_initial_balance
+    # to account for gas
+
+
 # sending money back and forth and then closing with latest state.
 def scenario2():
+    print("\n\nScenario2")
+    alice_initial_balance = w3.eth.getBalance(w3.eth.accounts[0])
+    bob_initial_balance = w3.eth.getBalance(w3.eth.accounts[1])
+
     alice, bob, chan_address = init_scenario()
 
     print("Alice sends money")
@@ -328,8 +350,17 @@ def scenario2():
     print("Alice Withdraws")
     alice.withdraw_funds(chan_address)
 
+    alice_current_balance = w3.eth.getBalance(w3.eth.accounts[0])
+    bob_current_balance = w3.eth.getBalance(w3.eth.accounts[1])
+    assert bob_initial_balance + ((10 ** 18) * 4.6) <= bob_current_balance <= bob_initial_balance + ((10 ** 18) * 5)
+    assert alice_initial_balance - ((10 ** 18) * 5.4) <= alice_current_balance <= alice_initial_balance + ((10 ** 18) * 5)
+
+
 # sending money, alice tries to cheat, bob appeals.
 def scenario3():
+    print("\n\nScenario3")
+    alice_initial_balance = w3.eth.getBalance(w3.eth.accounts[0])
+    bob_initial_balance = w3.eth.getBalance(w3.eth.accounts[1])
     alice, bob, chan_address = init_scenario()
 
     print("Alice sends money thrice")
@@ -340,7 +371,7 @@ def scenario3():
     alice.send(chan_address, 1 * 10**18, bob)
 
     print("ALICE TRIES TO CHEAT")
-    alice.unilateral_close_channel(chan_address,old_state)
+    alice.unilateral_close_channel(chan_address, old_state)
 
     print("Waiting one blocks")
     wait_k_blocks(1)
@@ -356,34 +387,16 @@ def scenario3():
     print("Alice Withdraws")
     alice.withdraw_funds(chan_address)
 
+    alice_current_balance = w3.eth.getBalance(w3.eth.accounts[0])
+    bob_current_balance = w3.eth.getBalance(w3.eth.accounts[1])
+
+    assert bob_initial_balance + ((10 ** 18) * 2.6) <= bob_current_balance <= bob_initial_balance + ((10 ** 18) * 3)
+    assert alice_initial_balance - ((10 ** 18) * 3.4) <= alice_current_balance <= alice_initial_balance + ((10 ** 18) * 3)
+
+
+# check that alice cannot send invalid amount of wei
 def scenario4():
-    alice, bob, chan_address = init_scenario()
-
-    alice.send(chan_address, 2 * 10**18, bob)
-    bob.send(chan_address, 2 * 10**18, alice)
-    # alice.send(chan_address, 2 * 10**18, bob)
-    # alice.send(chan_address, 1 * 10**18, bob)
-
-    print("Alice close channel")
-    alice.unilateral_close_channel(chan_address)
-
-    current_state = alice.get_current_signed_channel_state(chan_address)
-    local_balance = current_state.message_state.balance
-    alice_balance = current_state.channel_data.channel_obj.functions.get_owner1_balance().call()
-
-    print(f"alice balance from contract is: {alice_balance}, local: {local_balance}")
-    assert(alice_balance == local_balance)
-    # assert((7 * 10**18) == alice_balance)
-
-    print("waiting")
-    wait_k_blocks(APPEAL_PERIOD)
-
-    print("Bob Withdraws")
-    bob.withdraw_funds(chan_address)
-    print("Alice Withdraws")
-    alice.withdraw_funds(chan_address)
-
-def scenario5():
+    print("\n\nScenario4")
     alice, bob, chan_address = init_scenario()
     alice.send(chan_address, 11 * 10**18, bob)
     alice.send(chan_address, -1 * 10**18, bob)
@@ -408,9 +421,174 @@ def scenario5():
     alice.withdraw_funds(chan_address)
 
 
-# simple_scenerio()
-# scenario1()
-# scenario2()
-# scenario3()
+# test check that alice cannot call unilateral_close_channel twice
+def scenario5():
+    print("\n\nScenario5")
+    alice, bob, chan_address = init_scenario()
+    alice.send(chan_address, 1 * 10**18, bob)
+    old_state = alice.get_current_signed_channel_state(chan_address)
+    assert old_state is not None
+    alice.send(chan_address, 4 * 10 ** 18, bob)
+
+    print("Alice close channel")
+    alice.unilateral_close_channel(chan_address)
+
+    #  tries to take money back by calling one_sided_close again:
+    print("Alice is cheating")
+    try:
+        alice.unilateral_close_channel(chan_address, old_state)
+        assert False
+    except Exception as e:
+        print("No cheating today, Alice!")
+
+    current_state = alice.get_current_signed_channel_state(chan_address)
+    alice_balance = current_state.channel_data.channel_obj.functions.get_owner1_balance().call()
+
+    print(f"alice balance from contract is: {alice_balance}")
+    assert (5 * 10**18) == alice_balance
+
+    print("waiting")
+    wait_k_blocks(APPEAL_PERIOD)
+
+    print("Bob Withdraws")
+    bob.withdraw_funds(chan_address)
+    print("Alice Withdraws")
+    alice.withdraw_funds(chan_address)
+
+
+# bob tries to cheat by using a different channel's state
+def scenario6():
+    print("\n\nScenario6")
+    alice, bob, chan_address = init_scenario()
+    alice.send(chan_address, 1 * 10**18, bob)
+    old_state = bob.get_current_signed_channel_state(chan_address)
+    assert old_state is not None
+
+    print("Alice close channel")
+    alice.unilateral_close_channel(chan_address)
+
+    current_state = alice.get_current_signed_channel_state(chan_address)
+    alice_balance = current_state.channel_data.channel_obj.functions.get_owner1_balance().call()
+
+    print(f"alice balance from contract is: {alice_balance}")
+    assert((9 * 10**18) == alice_balance)
+
+    print("waiting")
+    wait_k_blocks(APPEAL_PERIOD)
+
+    print("Bob Withdraws")
+    bob.withdraw_funds(chan_address)
+    print("Alice Withdraws")
+    alice.withdraw_funds(chan_address)
+
+    print("creating second channel")
+    chan_address = alice.establish_channel(bob.get_address(), 10 * 10 ** 18)  # creates a channel between Alice and Bob.
+    print("Notifying bob of second channel")
+    bob.notify_of_channel(chan_address)
+
+    #  tries to take money back by using a state from a different channel.
+    print("Bob is cheating")
+    try:
+        bob.unilateral_close_channel(chan_address, old_state)
+        assert False
+    except Exception as e:
+        print("No cheating today, Bobby!")
+
+    bob.unilateral_close_channel(chan_address)
+
+    current_state = alice.get_current_signed_channel_state(chan_address)
+    alice_balance = current_state.channel_data.channel_obj.functions.get_owner1_balance().call()
+
+    print(f"alice balance from contract is: {alice_balance}")
+    assert((10 * 10**18) == alice_balance)
+
+    print("waiting")
+    wait_k_blocks(APPEAL_PERIOD)
+
+    print("Bob Withdraws")
+    bob.withdraw_funds(chan_address)
+    print("Alice Withdraws")
+    alice.withdraw_funds(chan_address)
+
+
+# bob returns an evil state of message from receive.
+def scenario7():
+    class EvilLightningNode(LightningNode):
+
+        def receive(self, state_msg):
+            sign_message = super(EvilLightningNode, self).receive(state_msg)
+            sign_message.serial = sign_message.serial + 1
+            sign_message.balance = sign_message.balance + 1
+            sign_message.sig = self._sign(sign_message.balance, sign_message.serial, sign_message.channel_address)
+            return sign_message
+    print("\n\nScenario7")
+    print("Creating nodes")
+    alice = LightningNode(w3.eth.accounts[0])
+    bob = EvilLightningNode(w3.eth.accounts[1])
+    print("Creating channel")
+    chan_address = alice.establish_channel(bob.get_address(), 10 * 10 ** 18)  # creates a channel between Alice and Bob.
+    print("Notifying bob of channel")
+    bob.notify_of_channel(chan_address)
+
+    print("channel created", chan_address)
+    alice.send(chan_address, 1 * 10**18, bob)
+    print("Alice close channel")
+    alice.unilateral_close_channel(chan_address)
+
+    current_state = alice.get_current_signed_channel_state(chan_address)
+    alice_balance = current_state.channel_data.channel_obj.functions.get_owner1_balance().call()
+
+    print(f"alice balance from contract is: {alice_balance}")
+    assert((10 * 10**18) == alice_balance)
+
+    print("waiting")
+    wait_k_blocks(APPEAL_PERIOD)
+
+    print("Bob Withdraws")
+    bob.withdraw_funds(chan_address)
+    print("Alice Withdraws")
+    alice.withdraw_funds(chan_address)
+
+
+#  appeals with an invalid serial num to the contract.
+def scenario8():
+    class EvilLightningNode(LightningNode):
+
+        def appeal_closed_chan(self, contract_address):
+            channel_state = self._channels[contract_address]
+            message_state = channel_state.message_state
+            v, r, s = LightningNode.get_v_r_s(message_state.sig)
+            tx_hash = channel_state.channel_data.channel_obj.functions.appeal_closure(message_state.balance,
+                                                                                      message_state.serial, v, r,
+                                                                                      s).transact(self._txn_dict)
+            w3.eth.waitForTransactionReceipt(tx_hash)
+    print("\n\nScenario8")
+    print("Creating nodes")
+    alice = LightningNode(w3.eth.accounts[0])
+    bob = EvilLightningNode(w3.eth.accounts[1])
+    print("Creating channel")
+    chan_address = alice.establish_channel(bob.get_address(), 10 * 10 ** 18)  # creates a channel between Alice and Bob.
+    print("Notifying bob of channel")
+    bob.notify_of_channel(chan_address)
+
+    print("channel created", chan_address)
+    alice.send(chan_address, 1 * 10**18, bob)
+    old_state = alice.get_current_signed_channel_state(chan_address)
+    alice.send(chan_address, 1 * 10**18, bob)
+    print("Alice close channel")
+    alice.unilateral_close_channel(chan_address)
+    try:
+        bob.appeal_closed_chan(old_state)
+        assert False
+    except Exception as e:
+        print("You can't cheat us Bob!")
+
+
+scenario1()
+scenario2()
+scenario3()
 scenario4()
-# scenario5()
+scenario5()
+scenario6()
+scenario7()
+scenario8()
