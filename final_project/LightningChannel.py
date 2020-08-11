@@ -32,10 +32,14 @@ class BlockChain:
         self._closed_channels[message_state.channel_address] = (self._block_number, message_state.serial,
                                                                 channel)
 
+    def close_channel_default_split(self, channel_address):
+        channel = self._open_channels[channel_address]
+        del self._open_channels[channel_address]
+        self._closed_channels[channel_address] = (self._block_number, -1, channel)
+
     def appeal_closed_channel(self, message_state: 'ChannelMessage'):
-        channel = self._closed_channels[message_state.channel_address][2]
-        if self._closed_channels[message_state.channel_address][0] + APPEAL_PERIOD > self._block_number and\
-                self._closed_channels[message_state.channel_address][1] < message_state.serial:
+        (block_number, serial, channel) = self._closed_channels[message_state.channel_address]
+        if block_number + APPEAL_PERIOD > self._block_number and serial < message_state.serial:
             other_balance = channel.total_wei - message_state.balance
             if message_state.owner_address == channel.owner1:
                 channel.owner1_balance = message_state.balance
@@ -107,7 +111,7 @@ class LightningNode:
         self._other_nodes_to_channels: Dict[str, ChannelState] = {}
         self._channels: Dict[str, ChannelState] = {}
         self._blockchain = blockchain
-        self._balance = 100
+        self._balance = 10
 
     def get_address(self):
         """
@@ -143,26 +147,27 @@ class LightningNode:
         self._other_nodes_to_channels[channel_data.owner1] = channel
         self._channels[channel_data.address] = channel
 
-    def send(self, amount_in_wei, other_node: 'LightningNode'):
+    def send(self, amount_in_wei, other_node: 'LightningNode', channel_address):
         """
         Sends money to the other address in the channel, and notifies the other node (calling its recieve()).
         :param contract_address: the channel address
         :param amount_in_wei: the amount to send to the other account
         :param other_node: the other account node
         """
-        other_node_address = other_node.get_address()
-        channel_state = self._other_nodes_to_channels[other_node_address]
+        channel_state = self._channels[channel_address]
+        channel_data = channel_state.channel_data
         last_message_state = channel_state.message_state
-        other_new_balance = amount_in_wei
+        other_new_balance = channel_data.owner2_balance if channel_data.owner1 == self._account_address else \
+                            channel_data.owner1_balance
+        other_new_balance += amount_in_wei
         serial = STARTING_SERIAL
         if last_message_state is not None:
             serial = last_message_state.serial + 1
-            other_new_balance = channel_state.channel_data.total_wei - (last_message_state.balance - amount_in_wei)
+            other_new_balance = channel_data.total_wei - last_message_state.balance + amount_in_wei
 
-        new_message_state = ChannelMessage(other_node_address, other_new_balance, serial,
-                                           channel_state.channel_data.address)
+        new_message_state = ChannelMessage(other_node.get_address(), other_new_balance, serial, channel_address)
         returned_message_state = other_node.receive(new_message_state, self._account_address)
-        self._other_nodes_to_channels[other_node_address].message_state = returned_message_state
+        channel_state.message_state = returned_message_state
 
     def receive(self, state_msg, other_node_address):
         """
@@ -173,7 +178,6 @@ class LightningNode:
         """
         channel_state = self._channels[state_msg.channel_address]
         other_balance = channel_state.channel_data.total_wei - state_msg.balance
-        # sign_hex = self._sign(other_balance, state_msg.serial, contract_address)
         new_message_state = ChannelMessage(other_node_address, other_balance, state_msg.serial, state_msg.channel_address)
         channel_state.message_state = state_msg
         return new_message_state
@@ -185,7 +189,10 @@ class LightningNode:
         :param channel_state: this is the latest state which is signed by the other node, or None,
         if the channel is to be closed using its current balance allocation.
         """
-        self._blockchain.close_channel(self._channels[channel_address].message_state)
+        if self._channels[channel_address].message_state:
+            self._blockchain.close_channel(self._channels[channel_address].message_state)
+        else:
+            self._blockchain.close_channel_default_split(channel_address)
 
     def appeal_closed_chan(self, channel_address):
         """
@@ -194,7 +201,7 @@ class LightningNode:
         :param contract_address: channel address
         :return:
         """
-        # TODO: implement?
+        self._blockchain.appeal_closed_channel(self._channels[channel_address].message_state)
 
     def withdraw_funds(self, channel_address):
         """
@@ -206,3 +213,5 @@ class LightningNode:
             self._balance += fund
             del self._channels[channel_address]
 
+    # TODO: add HTLC
+    # TODO: add HTLC
