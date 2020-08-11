@@ -15,6 +15,20 @@ def init_scenario():
 
     return alice, bob, channel, blockchain
 
+def init_complex_scenario():
+    print("Creating nodes")
+    blockchain = BlockChain()
+    alice = LightningNode(1, blockchain)
+    bob = LightningNode(2, blockchain)
+    charlie = LightningNode(3, blockchain)
+    channel_alice_to_bob = alice.establish_channel(bob.get_address(), 10)
+    bob.notify_of_channel(channel_alice_to_bob, 5)
+    channel_bob_to_charlie = bob.establish_channel(charlie.get_address(), 5)
+    charlie.notify_of_channel(channel_bob_to_charlie, 10)
+
+
+    return alice, bob, charlie, channel_alice_to_bob, channel_bob_to_charlie, blockchain
+
 def scenario1():
     print("\n\nScenario1")
     alice, bob, channel, blockchain = init_scenario()
@@ -38,77 +52,44 @@ def scenario1():
 
 
 
-# # sending money back and forth and then closing with latest state.
-# def scenario2():
-#     print("\n\nScenario2")
-#     alice_initial_balance = w3.eth.getBalance(w3.eth.accounts[0])
-#     bob_initial_balance = w3.eth.getBalance(w3.eth.accounts[1])
-#
-#     alice, bob, chan_address = init_scenario()
-#
-#     print("Alice sends money")
-#     alice.send(chan_address, 2 * 10**18, bob)
-#     print("Bob sends some money")
-#     bob.send(chan_address, 1 * 10**18, alice)
-#     print("Alice sends money twice!")
-#     alice.send(chan_address, 2 * 10**18, bob)
-#     alice.send(chan_address, 2 * 10**18, bob)
-#
-#     print("BOB CLOSING UNILATERALLY")
-#     bob.unilateral_close_channel(chan_address)
-#
-#     print("waiting")
-#     wait_k_blocks(APPEAL_PERIOD)
-#
-#     print("Bob Withdraws")
-#     bob.withdraw_funds(chan_address)
-#     print("Alice Withdraws")
-#     alice.withdraw_funds(chan_address)
-#
-#     alice_current_balance = w3.eth.getBalance(w3.eth.accounts[0])
-#     bob_current_balance = w3.eth.getBalance(w3.eth.accounts[1])
-#     assert bob_initial_balance + ((10 ** 18) * 4.6) <= bob_current_balance <= bob_initial_balance + ((10 ** 18) * 5)
-#     assert alice_initial_balance - ((10 ** 18) * 5.4) <= alice_current_balance <= alice_initial_balance + ((10 ** 18) * 5)
-#
-#
-# # sending money, alice tries to cheat, bob appeals.
-# def scenario3():
-#     print("\n\nScenario3")
-#     alice_initial_balance = w3.eth.getBalance(w3.eth.accounts[0])
-#     bob_initial_balance = w3.eth.getBalance(w3.eth.accounts[1])
-#     alice, bob, chan_address = init_scenario()
-#
-#     print("Alice sends money thrice")
-#
-#     alice.send(chan_address, 1 * 10**18, bob)
-#     old_state = alice.get_current_signed_channel_state(chan_address)
-#     alice.send(chan_address, 1 * 10**18, bob)
-#     alice.send(chan_address, 1 * 10**18, bob)
-#
-#     print("ALICE TRIES TO CHEAT")
-#     alice.unilateral_close_channel(chan_address, old_state)
-#
-#     print("Waiting one blocks")
-#     wait_k_blocks(1)
-#
-#     print("Bob checks if he needs to appeal, and appeals if he does")
-#     bob.appeal_closed_chan(chan_address)
-#
-#     print("waiting")
-#     wait_k_blocks(APPEAL_PERIOD)
-#
-#     print("Bob Withdraws")
-#     bob.withdraw_funds(chan_address)
-#     print("Alice Withdraws")
-#     alice.withdraw_funds(chan_address)
-#
-#     alice_current_balance = w3.eth.getBalance(w3.eth.accounts[0])
-#     bob_current_balance = w3.eth.getBalance(w3.eth.accounts[1])
-#
-#     assert bob_initial_balance + ((10 ** 18) * 2.6) <= bob_current_balance <= bob_initial_balance + ((10 ** 18) * 3)
-#     assert alice_initial_balance - ((10 ** 18) * 3.4) <= alice_current_balance <= alice_initial_balance + ((10 ** 18) * 3)
-#
-#
+# sending money back and forth and then closing with latest state.
+def scenario2():
+    print("\n\nScenario2")
+    alice, bob, channel, blockchain = init_scenario()
+    channel_address = channel.address
+
+    alice.start_htlc(5, bob, [])
+    blockchain.wait_k_blocks(5)
+    bob.close_channel_htlc(channel_address)
+    bob.close_channel(channel_address)
+    print("waiting")
+    blockchain.wait_k_blocks(APPEAL_PERIOD)
+    print("alice balance: {0}, bob balance: {1}".format(alice._balance, bob._balance))
+    bob.withdraw_funds(channel_address)
+    alice.withdraw_funds(channel_address)
+    print("alice balance: {0}, bob balance: {1}".format(alice._balance, bob._balance))
+
+
+# sending money, alice tries to cheat, bob appeals.
+def scenario3():
+    print("\n\nScenario3")
+    alice, bob, charlie, channel_alice_to_bob, channel_bob_to_charlie, blockchain = init_complex_scenario()
+
+    alice.start_htlc(5, charlie, [bob, charlie])
+    charlie.close_channel_htlc(channel_bob_to_charlie.address)
+    bob.find_secret_x(channel_bob_to_charlie.address)
+    bob.close_channel_htlc(channel_alice_to_bob.address)
+    blockchain.wait_k_blocks(APPEAL_PERIOD)
+    print("alice balance: {0}, bob balance: {1}, charlie balance: {2}".format(alice._balance, bob._balance,
+                                                                          charlie._balance))
+    bob.withdraw_funds(channel_bob_to_charlie.address)
+    charlie.withdraw_funds(channel_bob_to_charlie.address)
+    bob.withdraw_funds(channel_alice_to_bob.address)
+    alice.withdraw_funds(channel_alice_to_bob.address)
+    print("alice balance: {0}, bob balance: {1}, charlie balance: {2}".format(alice._balance, bob._balance,
+                                                                          charlie._balance))
+
+
 # # check that alice cannot send invalid amount of wei
 # def scenario4():
 #     print("\n\nScenario4")
@@ -300,8 +281,8 @@ def scenario1():
 
 
 scenario1()
-# scenario2()
-# scenario3()
+scenario2()
+scenario3()
 # scenario4()
 # scenario5()
 # scenario6()
