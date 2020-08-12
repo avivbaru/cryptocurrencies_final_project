@@ -69,23 +69,25 @@ class BlockChain:
             return fund
 
     def appeal_closed_channel_htlc(self, message_state: 'ChannelMessageHTLC', secret_x):
-        closed_channel = self._closed_channels[message_state.channel_address]
+        channel_address = message_state.channel_address
+        closed_channel = self._closed_channels[channel_address]
         if message_state.h_of_x == hash(secret_x) and message_state.time_in_days * BLOCK_IN_DAY + \
                 message_state.block_number > self._block_number and closed_channel.block_number + \
                 APPEAL_PERIOD > self._block_number and closed_channel.serial < message_state.serial:
             self.appeal_closed_channel(message_state)
-            self._closed_channels[message_state.channel_address].secret_x = secret_x
+            self._closed_channels[channel_address] = ClosedChannelHtlcData(self._closed_channels[channel_address], secret_x)
 
     def close_channel_htlc(self, message_state: 'ChannelMessageHTLC', secret_x):
+        channel_address = message_state.channel_address
         if message_state.h_of_x == hash(secret_x) and message_state.time_in_days * BLOCK_IN_DAY + \
                 message_state.block_number > self._block_number:
             self.close_channel(message_state)
-            self._closed_channels[message_state.channel_address].secret_x = secret_x
+            self._closed_channels[channel_address] = ClosedChannelHtlcData(self._closed_channels[channel_address], secret_x)
 
     def get_closed_channel_secret_x(self, channel_address):
         if channel_address in self._closed_channels:
+            # TODO: change?
             return self._closed_channels[channel_address].secret_x
-
 
 
 class ChannelData:
@@ -99,10 +101,15 @@ class ChannelData:
 
 
 class ClosedChannelData:
-    def __init__(self, channel: ChannelData, serial, block_number, secret_x=None):
+    def __init__(self, channel: ChannelData, serial, block_number):
         self.channel = channel
         self.serial = serial
         self.block_number = block_number
+
+
+class ClosedChannelHtlcData(ClosedChannelData):
+    def __init__(self, closed_channel: ClosedChannelData, secret_x):
+        super().__init__(closed_channel.channel, closed_channel.serial, closed_channel.block_number)
         self.secret_x = secret_x
 
 
@@ -223,9 +230,9 @@ class LightningNode:
         new_message_state = ChannelMessageHTLC(node_to_send.get_address(), other_new_balance,
                                                serial, channel_state.channel_data.address,
                                                h_of_x, self._blockchain._block_number, len(nodes_between) + 1)
-        node_to_send.receive_htlc(new_message_state, self._account_address, nodes_between[1:], amount_in_wei)
+        node_to_send.receive_htlc(new_message_state, nodes_between[1:], amount_in_wei)
 
-    def receive_htlc(self, state_msg: ChannelMessageHTLC, account_address, nodes_between: List[
+    def receive_htlc(self, state_msg: ChannelMessageHTLC, nodes_between: List[
         'LightningNode'], amount_in_wei):
         channel_state = self._channels[state_msg.channel_address]
         channel_state.message_htlc = state_msg
