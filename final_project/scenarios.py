@@ -43,12 +43,12 @@ def scenario1():
     bob.appeal_closed_chan(channel_address)
     print("waiting")
     blockchain.wait_k_blocks(APPEAL_PERIOD)
-    print("alice balance: {0}, bob balance: {1}".format(alice._balance, bob._balance))
+    print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
     print("Bob Withdraws")
     bob.withdraw_funds(channel_address)
     print("Alice Withdraws")
     alice.withdraw_funds(channel_address)
-    print("alice balance: {0}, bob balance: {1}".format(alice._balance, bob._balance))
+    print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
 
 
 
@@ -64,10 +64,10 @@ def scenario2():
     bob.close_channel(channel_address)
     print("waiting")
     blockchain.wait_k_blocks(APPEAL_PERIOD)
-    print("alice balance: {0}, bob balance: {1}".format(alice._balance, bob._balance))
+    print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
     bob.withdraw_funds(channel_address)
     alice.withdraw_funds(channel_address)
-    print("alice balance: {0}, bob balance: {1}".format(alice._balance, bob._balance))
+    print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
 
 
 # sending money, alice tries to cheat, bob appeals.

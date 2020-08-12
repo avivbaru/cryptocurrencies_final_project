@@ -170,6 +170,12 @@ class LightningNode:
         """
         return self._account_address
 
+    def get_balance(self):
+        """
+        Returns the address of this node on the blockchain (its ethereum wallet).
+        """
+        return self._balance
+
     def establish_channel(self, other_party_address, amount_in_wei):
         """
         Sets up a channel with another user at the given ethereum address.
