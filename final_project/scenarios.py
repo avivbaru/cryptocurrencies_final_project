@@ -1,54 +1,49 @@
 
-from final_project.LightningChannel import LightningNode, APPEAL_PERIOD, BlockChain
+from LightningChannel import LightningNode, APPEAL_PERIOD
+from Blockchain import BLOCKCHAIN_INSTANCE
 
 
 def init_scenario():
     print("Creating nodes")
-    blockchain = BlockChain()
-    alice = LightningNode(1, blockchain)
-    bob = LightningNode(2, blockchain)
+    alice = LightningNode(1)
+    bob = LightningNode(2)
     print("Creating channel")
-    channel = alice.establish_channel(bob.get_address(), 10)  # creates a channel between Alice
+    channel = alice.establish_channel(bob, 10)  # creates a channel between Alice
     # and Bob.
     print("Notifying bob of channel")
-    bob.notify_of_channel(channel, 10)
+    # bob.notify_of_channel(channel, 10)
 
-    return alice, bob, channel, blockchain
+    return alice, bob, channel
 
 def init_complex_scenario():
     print("Creating nodes")
-    blockchain = BlockChain()
-    alice = LightningNode(1, blockchain)
-    bob = LightningNode(2, blockchain)
-    charlie = LightningNode(3, blockchain)
-    channel_alice_to_bob = alice.establish_channel(bob.get_address(), 10)
-    bob.notify_of_channel(channel_alice_to_bob, 5)
-    channel_bob_to_charlie = bob.establish_channel(charlie.get_address(), 5)
-    charlie.notify_of_channel(channel_bob_to_charlie, 10)
+    alice = LightningNode(1)
+    bob = LightningNode(2)
+    charlie = LightningNode(3)
+    channel_alice_to_bob = alice.establish_channel(bob, 10)
+    channel_bob_to_charlie = bob.establish_channel(charlie, 5)
 
-
-    return alice, bob, charlie, channel_alice_to_bob, channel_bob_to_charlie, blockchain
+    return alice, bob, charlie, channel_alice_to_bob, channel_bob_to_charlie
 
 def scenario1():
     print("\n\nScenario1")
-    alice, bob, channel, blockchain = init_scenario()
-    channel_address = channel.address
+    alice, bob, channel = init_scenario()
 
-    alice.send(5, bob, channel_address)
-    alice.send(2, bob, channel_address)
-    bob.send(2, alice, channel_address)
-    bob.send(2, alice, channel_address)
-    print("ALICE CLOSING UNILATERALLY")
-    alice.close_channel(channel_address)
-    bob.appeal_closed_chan(channel_address)
-    print("waiting")
-    blockchain.wait_k_blocks(APPEAL_PERIOD)
-    print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
-    print("Bob Withdraws")
-    bob.withdraw_funds(channel_address)
-    print("Alice Withdraws")
-    alice.withdraw_funds(channel_address)
-    print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
+    alice.start_htlc(bob, 5, [])
+    # alice.send(2, bob, channel_address)
+    # bob.send(2, alice, channel_address)
+    # bob.send(2, alice, channel_address)
+    # print("ALICE CLOSING UNILATERALLY")
+    # alice.close_channel(channel_address)
+    # bob.appeal_closed_chan(channel_address)
+    # print("waiting")
+    # blockchain.wait_k_blocks(APPEAL_PERIOD)
+    # print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
+    # print("Bob Withdraws")
+    # bob.withdraw_funds(channel_address)
+    # print("Alice Withdraws")
+    # alice.withdraw_funds(channel_address)
+    # print("alice balance: {0}, bob balance: {1}".format(alice.get_balance(), bob.get_balance()))
 
 
 
@@ -58,7 +53,7 @@ def scenario2():
     alice, bob, channel, blockchain = init_scenario()
     channel_address = channel.address
 
-    alice.start_htlc(5, bob, [])
+    alice.start_htlc(5, bob, [bob])
     blockchain.wait_k_blocks(5)
     bob.close_channel_htlc(channel_address)
     bob.close_channel(channel_address)
@@ -73,21 +68,21 @@ def scenario2():
 # sending money, alice tries to cheat, bob appeals.
 def scenario3():
     print("\n\nScenario3")
-    alice, bob, charlie, channel_alice_to_bob, channel_bob_to_charlie, blockchain = init_complex_scenario()
+    alice, bob, charlie, channel_alice_to_bob, channel_bob_to_charlie = init_complex_scenario()
 
-    alice.start_htlc(5, charlie, [bob, charlie])
-    charlie.close_channel_htlc(channel_bob_to_charlie.address)
-    bob.find_secret_x(channel_bob_to_charlie.address)
-    bob.close_channel_htlc(channel_alice_to_bob.address)
-    blockchain.wait_k_blocks(APPEAL_PERIOD)
+    alice.start_htlc(charlie, 0.5, [bob, charlie])
+    # charlie.close_channel_htlc(channel_bob_to_charlie.address)
+    # bob.find_pre_image(channel_bob_to_charlie.address)
+    # bob.close_channel_htlc(channel_alice_to_bob.address)
+    # BLOCKCHAIN_INSTANCE.wait_k_blocks(APPEAL_PERIOD)
     print("alice balance: {0}, bob balance: {1}, charlie balance: {2}".format(alice._balance, bob._balance,
                                                                           charlie._balance))
-    bob.withdraw_funds(channel_bob_to_charlie.address)
-    charlie.withdraw_funds(channel_bob_to_charlie.address)
-    bob.withdraw_funds(channel_alice_to_bob.address)
-    alice.withdraw_funds(channel_alice_to_bob.address)
-    print("alice balance: {0}, bob balance: {1}, charlie balance: {2}".format(alice._balance, bob._balance,
-                                                                          charlie._balance))
+    # bob.withdraw_funds(channel_bob_to_charlie.address)
+    # charlie.withdraw_funds(channel_bob_to_charlie.address)
+    # bob.withdraw_funds(channel_alice_to_bob.address)
+    # alice.withdraw_funds(channel_alice_to_bob.address)
+    # print("alice balance: {0}, bob balance: {1}, charlie balance: {2}".format(alice._balance, bob._balance,
+    #                                                                       charlie._balance))
 
 
 # # check that alice cannot send invalid amount of wei
@@ -280,8 +275,8 @@ def scenario3():
 #         print("You can't cheat us Bob!")
 
 
-scenario1()
-scenario2()
+# scenario1()
+# scenario2()
 scenario3()
 # scenario4()
 # scenario5()
