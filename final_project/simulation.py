@@ -1,6 +1,6 @@
 import random
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Callable
 import time
 import fire
 import pprint
@@ -29,9 +29,9 @@ class Network:
         channel = to_node.establish_channel(from_node, 10)
         channel.owner2_add_funds(10)
 
-    def get_edges_with_enough_capacity(self, amount_in_wei):
+    def get_edges_with_enough_capacity(self, amount_in_wei, capacity_map):
         return {from_node: [to_node for to_node in nodes if
-                            has_enough_money(from_node, to_node, amount_in_wei)]
+                            capacity_map[(from_node, to_node)] > amount_in_wei]
                 for from_node, nodes in self.edges.items()}
 
 
@@ -61,6 +61,14 @@ class MetricsCollector:
         return {**self._metrics, **average_metrics}
 
 
+class FunctionCollector:
+    def __init__(self):
+        self._function_to_run: List[Callable[[], bool]] = []
+
+    def run(self):
+        self._function_to_run = [f for f in self._function_to_run if not f()]
+
+
 def generate_fee_map(edges, amount_in_wei):
     fees: Dict[Tuple[LightningChannel.LightningNode, LightningChannel.LightningNode], int] = {}
     for from_node in edges:
@@ -72,19 +80,19 @@ def generate_fee_map(edges, amount_in_wei):
 
 def generate_capacity_map(edges):
     capacity: Dict[Tuple[LightningChannel.LightningNode, LightningChannel.LightningNode], int] = {}
-    for from_node in edges:
-        for to_node in edges[from_node]:
-            # TODO: implement capacity_left
+    for from_node, to_nodes in edges.items():
+        for to_node in to_nodes:
             capacity[(from_node, to_node)] = from_node.get_capacity_left(to_node)
     return capacity
 
 
 def generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
-                                metrics_collector):
+                                metrics_collector, function_collector):
+    # connect 2 nodes if differ by 10 modulo 100 TODO: change!
     network = Network()
     prev = None
     for i in range(number_of_nodes):
-        node = LightningChannel.LightningNode(starting_balance, metrics_collector)
+        node = LightningChannel.LightningNode(starting_balance, metrics_collector, function_collector)
         if prev:
             network.add_edge(prev, node)
         prev = node
@@ -97,10 +105,10 @@ def generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
 
 
 def generate_network_randomly(number_of_nodes, connectivity, starting_balance,
-                              metrics_collector):
+                              metrics_collector, function_collector):
     network = Network()
     for i in range(number_of_nodes):
-        node = LightningChannel.LightningNode(starting_balance, metrics_collector)
+        node = LightningChannel.LightningNode(starting_balance, metrics_collector, function_collector)
         network.add_node(node)
     for node in network.nodes:
         nodes_to_connect = random.sample(network.nodes, connectivity)
@@ -146,12 +154,8 @@ def how_much_to_send(starting_balance, mu, sigma):
     return max(min(random.gauss(mu, sigma), MIN_TO_SEND), MAX_TO_SEND) * starting_balance
 
 
-def has_enough_money(from_node, to_node, amount_in_wei):
-    return from_node.get_capacity_left(to_node) > amount_in_wei
-
-
 def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
-                   sigma_percentage_of_capacity, metrics_collector, htlcs_per_block):
+                   sigma_percentage_of_capacity, metrics_collector, htlcs_per_block, function_collector):
     starting_time = time.time()
     htlc_counter = 0
     while BLOCKCHAIN_INSTANCE.block_number < number_of_blocks:
@@ -161,9 +165,9 @@ def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_
         if amount_in_wei == 0:
             continue
         # prepare data to find path from sender to any node
-        edges = network.get_edges_with_enough_capacity(amount_in_wei)
+        capacity_map = generate_capacity_map(network.edges)
+        edges = network.get_edges_with_enough_capacity(amount_in_wei, capacity_map)
         fee_map = generate_fee_map(edges, amount_in_wei)
-        capacity_map = generate_capacity_map(edges)
         visited_nodes_to_min_hops, path_map = find_shortest_path(set(network.nodes), edges, sender_node,
                                                                  fee_map, capacity_map, amount_in_wei)
         # find receiver node
@@ -189,6 +193,7 @@ def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_
         if htlc_counter == htlcs_per_block:
             htlc_counter = 0
             BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
+            function_collector.run()
 
     for node in network.nodes:
         for other_node in network.edges[node]:
@@ -209,11 +214,12 @@ def simulate_random_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_
           f"connectivity:{connectivity}, mean_percentage_of_capacity:{mean_percentage_of_capacity}, "
           f"sigma_percentage_of_capacity:{sigma_percentage_of_capacity}.")
     metrics_collector = MetricsCollector()
+    function_collector = FunctionCollector()
 
     network = generate_network_randomly(number_of_nodes, connectivity, starting_balance,
-                                        metrics_collector)
+                                        metrics_collector, function_collector)
     run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
-                   sigma_percentage_of_capacity, metrics_collector, htlcs_per_block)
+                   sigma_percentage_of_capacity, metrics_collector, htlcs_per_block, function_collector)
 
 
 def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20,
@@ -228,11 +234,12 @@ def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=15, htlcs_
           f"connectivity:{connectivity}, mean_percentage_of_capacity:{mean_percentage_of_capacity}, "
           f"sigma_percentage_of_capacity:{sigma_percentage_of_capacity}.")
     metrics_collector = MetricsCollector()
+    function_collector = FunctionCollector()
 
     network = generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
-                                          metrics_collector)
+                                          metrics_collector, function_collector)
     run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
-                   sigma_percentage_of_capacity, metrics_collector, htlcs_per_block)
+                   sigma_percentage_of_capacity, metrics_collector, htlcs_per_block, function_collector)
 
 
 def main():

@@ -25,7 +25,8 @@ def check_channel_address(func):
 
 
 class LightningNode:
-    def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector):
+    def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector,
+                 function_collector: simulation.FunctionCollector):
         # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
@@ -33,6 +34,7 @@ class LightningNode:
         self._channels: Dict[str, cm.ChannelManager] = {}
         self._balance = balance
         self._metrics_collector = metrics_collector
+        self._metrics_collector = function_collector
 
         Blockchain.BLOCKCHAIN_INSTANCE.add_node(self, balance)
         # TODO: check if we need all these dicts or just pass on the channel managers
