@@ -41,6 +41,12 @@ class LightningNode:
         """
         return self._address
 
+    def get_capacity_left(self, other_node):
+        if other_node.address in self._other_nodes_to_channels:
+            return self._other_nodes_to_channels[other_node.address].amount_owner1_can_transfer_to_owner2 if  \
+                self._other_nodes_to_channels[other_node.address].channel_state.channel_data.owner1.address == self.address else \
+            self._other_nodes_to_channels[other_node.address].amount_owner2_can_transfer_to_owner1
+
     def establish_channel(self, other_party: 'LightningNode', amount_in_wei: int) -> cm.ChannelManager:
         channel_data = cm.ChannelData(self, other_party)
         default_split = MessageState(amount_in_wei, 0)
@@ -53,7 +59,7 @@ class LightningNode:
 
     def notify_of_channel(self, channel_data: cm.ChannelData, default_split: MessageState) -> cm.ChannelManager:
         channel = cm.ChannelManager(channel_data, default_split)
-        self._other_nodes_to_channels[channel_data.owner1] = channel
+        self._other_nodes_to_channels[channel_data.owner1.address] = channel
         self._channels[channel_data.address] = channel
         return channel
 

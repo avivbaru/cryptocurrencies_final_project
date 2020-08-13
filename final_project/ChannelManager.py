@@ -77,7 +77,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def owner2_add_funds(self, owner2_amount_in_wei: int):
         self._state.channel_data._total_wei += owner2_amount_in_wei  # TODO: see how to get rid of this warning
-        self.owner2_add_funds.__code__ = (lambda: None).__code__  # so it can not be set again
+        # self.owner2_add_funds.__code__ = (lambda: None).__code__  # so it can not be set again
 
     def close_channel(self):
         BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
