@@ -129,7 +129,7 @@ def find_shortest_path(nodes, edges, initial, fee_map, capacity_map, amount_in_w
 
         for edge in edges[min_node]:
             weight = current_weight + fee_map[(min_node, edge)]
-            capacity_left = min(capacity_left_in_path[min_node], capacity_map[((min_node, edge))]) - weight
+            capacity_left = min(capacity_left_in_path[min_node], capacity_map[((min_node, edge))]) - fee_map[(min_node, edge)]
             if (edge not in visited or weight < visited[edge]) and capacity_left >= 0:
                 visited[edge] = weight
                 path[edge] = min_node
