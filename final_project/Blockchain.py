@@ -14,6 +14,9 @@ class BlockChain:
     def block_number(self):
         return self._block_number
 
+    def get_balance_for_node(self, node):
+        return self._nodes_addresses_to_balances.get(node.address)
+
     def wait_k_blocks(self, k):
         for i in range(k):
             self._block_number += 1
@@ -29,8 +32,8 @@ class BlockChain:
     def close_channel(self, message_state: 'MessageState', contract: 'Contract_HTLC' = None):
         channel: ChannelManager = self._open_channels[message_state.channel_address]
         owner2_balance = channel.channel_state.channel_data.total_wei - message_state.owner1_balance
-        self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1] = message_state.owner1_balance
-        self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner2] = owner2_balance
+        self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1.address] += message_state.owner1_balance
+        self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner2.address] += owner2_balance
         # TODO: subtract transactions fee
 
         del self._open_channels[message_state.channel_address]

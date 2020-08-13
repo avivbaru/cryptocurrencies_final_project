@@ -1,7 +1,8 @@
 import LightningChannel as ln
-from Blockchain import *
+import Blockchain as bc
 import random
 import string
+from typing import *
 import Contract_HTLC as cn
 
 
@@ -60,6 +61,9 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
     def amount_owner2_can_transfer_to_owner1(self):
         return (self.channel_state.channel_data.total_wei - self._state.message_state.owner1_balance) - self._owner2_htlc_locked
 
+    def is_owner1(self, node: 'LightningNode') -> bool:
+        return node.address == self.channel_state.channel_data.owner1.address
+
     def update_message(self, message_state: 'MessageState') -> None:
         self._check_new_message_state(message_state)
         self.channel_state.message_state = message_state
@@ -80,7 +84,9 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         # self.owner2_add_funds.__code__ = (lambda: None).__code__  # so it can not be set again
 
     def close_channel(self):
-        BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
+        if not self._open:
+            return
+        bc.BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
         self._open = False
 
     def add_htlc_contract(self, contract: 'Contract_HTLC') -> bool:

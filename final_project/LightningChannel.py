@@ -5,6 +5,7 @@ import string
 from Contract_HTLC import *
 import ChannelManager as cm
 import Blockchain
+import simulation
 
 BLOCK_IN_DAY = 5
 
@@ -24,13 +25,15 @@ def check_channel_address(func):
 
 
 class LightningNode:
-    def __init__(self, balance: int):
+    def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector):
         # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
         self._hash_image_to_preimage: Dict[int, str] = {}
         self._channels: Dict[str, cm.ChannelManager] = {}
         self._balance = balance
+        self._metrics_collector = metrics_collector
+
         Blockchain.BLOCKCHAIN_INSTANCE.add_node(self, balance)
         # TODO: check if we need all these dicts or just pass on the channel managers
 
@@ -66,7 +69,7 @@ class LightningNode:
     def add_money_to_channel(self, channel: cm.ChannelManager, amount_in_wei: int):
         channel.owner2_add_funds(amount_in_wei)
 
-    def start_htlc(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
+    def start_htlc(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']) -> bool:
         hash_image = final_node.generate_secret_x()  # TODO: make fina;_node = nodes_between[-1]?
         assert nodes_between
         node_to_send = nodes_between[0]
@@ -75,6 +78,21 @@ class LightningNode:
 
         if not self.send_htlc(node_to_send, amount_in_wei, hash_image, nodes_between[1:]):
             print("Transaction failed - WHAT TO DO NOW??? MY LIFE IS OVER")
+            return False
+        return True
+
+
+    def send_htlc(self, node_to_send, amount_in_wei, hash_image, nodes_between) -> bool:
+        # assert node_to_send
+        # TODO: add fee
+        channel = self._other_nodes_to_channels[node_to_send.address]
+        assert channel
+        delta_amount = self._get_delta_for_sending_money(amount_in_wei, channel)
+
+        htlc_contract = Contract_HTLC(delta_amount, hash_image,
+                                      Blockchain.BLOCKCHAIN_INSTANCE.block_number + len(nodes_between) + 2,
+                                      channel)  # TODO: see if this is a good time for htlc maybe pass time in argument
+        return node_to_send.receive_htlc(htlc_contract, amount_in_wei, nodes_between)
 
     def _get_delta_for_sending_money(self, amount_in_wei: int, channel: cm.ChannelManager) -> int:
         current_owner1_balance = channel.channel_state.message_state.owner1_balance
@@ -88,17 +106,6 @@ class LightningNode:
             assert(current_owner2_balance - amount_in_wei >= 0)
             return amount_in_wei
 
-    def send_htlc(self, node_to_send, amount_in_wei, hash_image, nodes_between) -> bool:
-        assert node_to_send
-        # TODO: add fee
-        channel = self._other_nodes_to_channels[node_to_send.address]
-        assert channel
-        delta_amount = self._get_delta_for_sending_money(amount_in_wei, channel)
-
-        htlc_contract = Contract_HTLC(delta_amount, hash_image, len(nodes_between) + 1,
-                                      channel)  # TODO: see if this is a good time for htlc maybe pass time in argument
-        return node_to_send.receive_htlc(htlc_contract, amount_in_wei, nodes_between)
-
     def receive_htlc(self, contract: Contract_HTLC, amount_in_wei: int, nodes_between: List['LightningNode']) -> bool:
         contract.attached_channel.add_htlc_contract(contract)
         if nodes_between:
@@ -106,20 +113,22 @@ class LightningNode:
             return self.send_htlc(node_to_send, amount_in_wei, contract.hash_image, nodes_between[1:])
         if contract.hash_image in self._hash_image_to_preimage:
             return contract.resolve_offchain(self._hash_image_to_preimage[contract.hash_image])
+        return False
 
     def generate_secret_x(self):
         x = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._hash_image_to_preimage[hash(x)] = x
         return hash(x)
 
-    def close_channel(self, channel_address):
-        if channel_address not in self._channels:
+    def close_channel(self, node):
+        if node.address not in self._other_nodes_to_channels:
             return
 
-        channel = self._channels[channel_address]
+        channel = self._other_nodes_to_channels[node.address]
         assert channel
         channel.close_channel()
         del self._channels[channel.channel_state.channel_data.address]
+        del self._other_nodes_to_channels[node.address]
 
     def close_channel_htlc(self, contract: Contract_HTLC):
         if contract.attached_channel not in self._channels or contract.pre_image not in self._hash_image_to_preimage:
@@ -127,6 +136,10 @@ class LightningNode:
 
         contract.resolve_onchain(self._hash_image_to_preimage[contract.pre_image])
         del self._channels[contract.attached_channel.channel_state.channel_data.address]
+        other_node = contract.attached_channel.channel_state.channel_data.owner2 if \
+            contract.attached_channel.is_owner1(self) else \
+            contract.attached_channel.channel_state.channel_data.owner1
+        del self._other_nodes_to_channels[other_node.address]
 
     def find_pre_image(self, channel_closed: cm.ChannelManager):
         pre_image = Blockchain.BLOCKCHAIN_INSTANCE.get_closed_channel_secret_x(channel_closed)

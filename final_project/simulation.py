@@ -4,8 +4,10 @@ from typing import Dict, List, Tuple
 import time
 import fire
 import pprint
-from LightningChannel import LightningNode
+import LightningChannel
 from Blockchain import BLOCKCHAIN_INSTANCE
+
+PATH_LENGTH_AVG = "path_length_avg"
 
 NO_PATH_FOUND = "no_path_found"
 SEND_FAILED = "send_failed"
@@ -15,8 +17,8 @@ MAX_TO_SEND = 0.9 # TODO: check!
 
 class Network:
     def __init__(self):
-        self.nodes: List[LightningNode] = list()
-        self.edges: defaultdict[List[LightningNode]] = defaultdict(list)
+        self.nodes: List[LightningChannel.LightningNode] = list()
+        self.edges: defaultdict[LightningChannel.LightningNode, List[LightningChannel.LightningNode]] = defaultdict(list)
 
     def add_node(self, value):
         self.nodes.append(value)
@@ -36,11 +38,12 @@ class Network:
 class MetricsCollector:
     def __init__(self):
         self._metrics = defaultdict(int)
-        self._average_metrics = defaultdict((lambda: (0, 0)))
+        self._average_metrics = defaultdict(int)
+        self._average_metrics_count = defaultdict(int)
 
     def average(self, key, value):
-        self._average_metrics[key][0] += value
-        self._average_metrics[key][1] += 1
+        self._average_metrics[key] += value
+        self._average_metrics_count[key] += 1
 
     # Assume all values > 0
     def max(self, key, value):
@@ -54,12 +57,12 @@ class MetricsCollector:
         self._metrics[key] += 1
 
     def get_metrics(self):
-        average_metrics = {metric: tup[0] / tup[1] for metric, tup in self._average_metrics.items()}
+        average_metrics = {metric: sum / self._average_metrics_count[metric] for metric, sum in self._average_metrics.items()}
         return {**self._metrics, **average_metrics}
 
 
 def generate_fee_map(edges, amount_in_wei):
-    fees: Dict[Tuple[LightningNode, LightningNode], int] = {}
+    fees: Dict[Tuple[LightningChannel.LightningNode, LightningChannel.LightningNode], int] = {}
     for from_node in edges:
         for to_node in edges[from_node]:
             # TODO: implement calculate_fee
@@ -68,7 +71,7 @@ def generate_fee_map(edges, amount_in_wei):
 
 
 def generate_capacity_map(edges):
-    capacity: Dict[Tuple[LightningNode, LightningNode], int] = {}
+    capacity: Dict[Tuple[LightningChannel.LightningNode, LightningChannel.LightningNode], int] = {}
     for from_node in edges:
         for to_node in edges[from_node]:
             # TODO: implement capacity_left
@@ -76,12 +79,12 @@ def generate_capacity_map(edges):
     return capacity
 
 
-def generate_redundancy_network(number_of_nodes, connectivity, blockchain, starting_balance,
+def generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
                                 metrics_collector):
     network = Network()
     prev = None
     for i in range(number_of_nodes):
-        node = LightningNode(starting_balance)
+        node = LightningChannel.LightningNode(starting_balance, metrics_collector)
         if prev:
             network.add_edge(prev, node)
         prev = node
@@ -93,11 +96,11 @@ def generate_redundancy_network(number_of_nodes, connectivity, blockchain, start
     return network
 
 
-def generate_network_randomly(number_of_nodes, connectivity, blockchain, starting_balance,
+def generate_network_randomly(number_of_nodes, connectivity, starting_balance,
                               metrics_collector):
     network = Network()
     for i in range(number_of_nodes):
-        node = LightningNode(starting_balance)
+        node = LightningChannel.LightningNode(starting_balance, metrics_collector)
         network.add_node(node)
     for node in network.nodes:
         nodes_to_connect = random.sample(network.nodes, connectivity)
@@ -144,15 +147,14 @@ def how_much_to_send(starting_balance, mu, sigma):
 
 
 def has_enough_money(from_node, to_node, amount_in_wei):
-    # TODO: change!
-    return True
+    return from_node.get_capacity_left(to_node) > amount_in_wei
 
 
-def run_simulation(blockchain, number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
+def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
                    sigma_percentage_of_capacity, metrics_collector, htlcs_per_block):
     starting_time = time.time()
     htlc_counter = 0
-    while blockchain.block_number < number_of_blocks:
+    while BLOCKCHAIN_INSTANCE.block_number < number_of_blocks:
         sender_node = random.choice(network.nodes)
         amount_in_wei = how_much_to_send(starting_balance, mean_percentage_of_capacity,
                                          sigma_percentage_of_capacity)
@@ -175,7 +177,7 @@ def run_simulation(blockchain, number_of_blocks, network, starting_balance, mean
             while curr != sender_node:
                 nodes_between.append(curr)
                 curr = path_map[curr]
-
+            metrics_collector.average(PATH_LENGTH_AVG, len(nodes_between))
             send_htlc_successfully = sender_node.start_htlc(receiver_node, amount_in_wei,
                                                             list(reversed(nodes_between)))
             if not send_htlc_successfully:
@@ -186,7 +188,13 @@ def run_simulation(blockchain, number_of_blocks, network, starting_balance, mean
         htlc_counter += 1
         if htlc_counter == htlcs_per_block:
             htlc_counter = 0
-            blockchain.wait_k_blocks(1)
+            BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
+
+    for node in network.nodes:
+        for other_node in network.edges[node]:
+            node.close_channel(other_node)
+
+        metrics_collector.average("node_balance_avg", BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
     time_took = time.time() - starting_time
     print(f"Finish the simulation in {int(time_took)}s.")
     metrics_str = '\n'.join([f'{k}:{v}' for k, v in metrics_collector.get_metrics().items()])
@@ -200,12 +208,11 @@ def simulate_random_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_
           f"number_of_blocks:{number_of_blocks}, htlcs_per_block:{htlcs_per_block}, "
           f"connectivity:{connectivity}, mean_percentage_of_capacity:{mean_percentage_of_capacity}, "
           f"sigma_percentage_of_capacity:{sigma_percentage_of_capacity}.")
-    blockchain = BLOCKCHAIN_INSTANCE
     metrics_collector = MetricsCollector()
 
-    network = generate_network_randomly(number_of_nodes, connectivity, blockchain, starting_balance,
+    network = generate_network_randomly(number_of_nodes, connectivity, starting_balance,
                                         metrics_collector)
-    run_simulation(blockchain, number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
+    run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
                    sigma_percentage_of_capacity, metrics_collector, htlcs_per_block)
 
 
@@ -220,12 +227,11 @@ def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=15, htlcs_
           f"number_of_blocks:{number_of_blocks}, htlcs_per_block:{htlcs_per_block}, "
           f"connectivity:{connectivity}, mean_percentage_of_capacity:{mean_percentage_of_capacity}, "
           f"sigma_percentage_of_capacity:{sigma_percentage_of_capacity}.")
-    blockchain = BLOCKCHAIN_INSTANCE
     metrics_collector = MetricsCollector()
 
-    network = generate_redundancy_network(number_of_nodes, connectivity, blockchain, starting_balance,
+    network = generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
                                           metrics_collector)
-    run_simulation(blockchain, number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
+    run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
                    sigma_percentage_of_capacity, metrics_collector, htlcs_per_block)
 
 
