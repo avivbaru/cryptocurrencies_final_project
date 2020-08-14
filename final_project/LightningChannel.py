@@ -26,7 +26,7 @@ def check_channel_address(func):
 
 class LightningNode:
     def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector,
-                 function_collector: simulation.FunctionCollector):
+                 function_collector: simulation.FunctionCollector, fee_constant: int = 1, fee_percentage: float = 0.1):
         # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
@@ -35,6 +35,8 @@ class LightningNode:
         self._balance = balance
         self._metrics_collector = metrics_collector
         self._metrics_collector = function_collector
+        self._fee_constant = fee_constant
+        self._fee_percentage = fee_percentage
 
         Blockchain.BLOCKCHAIN_INSTANCE.add_node(self, balance)
         # TODO: check if we need all these dicts or just pass on the channel managers
@@ -51,6 +53,9 @@ class LightningNode:
             return self._other_nodes_to_channels[other_node.address].amount_owner1_can_transfer_to_owner2 if  \
                 self._other_nodes_to_channels[other_node.address].channel_state.channel_data.owner1.address == self.address else \
             self._other_nodes_to_channels[other_node.address].amount_owner2_can_transfer_to_owner1
+
+    def get_fee_for_transfer_amount(self, amount_in_wei: int) -> int:
+        return int(max(self._fee_constant, int(self._fee_percentage * amount_in_wei)))
 
     def establish_channel(self, other_party: 'LightningNode', amount_in_wei: int) -> cm.ChannelManager:
         channel_data = cm.ChannelData(self, other_party)
@@ -72,21 +77,28 @@ class LightningNode:
         channel.owner2_add_funds(amount_in_wei)
 
     def start_htlc(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']) -> bool:
-        hash_image = final_node.generate_secret_x()  # TODO: make fina;_node = nodes_between[-1]?
+        hash_image = final_node.generate_secret_x()  # TODO: make final_node = nodes_between[-1]?
         assert nodes_between
         node_to_send = nodes_between[0]
         assert node_to_send
+        total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
         # TODO: add fee
 
-        if not self.send_htlc(node_to_send, amount_in_wei, hash_image, nodes_between[1:]):
+        if not self.send_htlc(node_to_send, amount_in_wei + total_fee, hash_image, nodes_between[1:]):
             print("Transaction failed - WHAT TO DO NOW??? MY LIFE IS OVER")
             return False
         return True
 
+    def _calculate_fee_for_route(self, path_nodes: List['LightningNode'], amount_in_wei: int) -> int:
+        transfer_amount = amount_in_wei
+        for node in reversed(path_nodes):
+            transfer_amount += node.get_fee_for_transfer_amount(transfer_amount)
+        return transfer_amount - amount_in_wei
 
-    def send_htlc(self, node_to_send, amount_in_wei, hash_image, nodes_between) -> bool:
-        # assert node_to_send
-        # TODO: add fee
+
+    def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
+                  nodes_between: List['LightningNode']) -> bool:
+        assert node_to_send
         channel = self._other_nodes_to_channels[node_to_send.address]
         assert channel
         delta_amount = self._get_delta_for_sending_money(amount_in_wei, channel)
@@ -112,7 +124,8 @@ class LightningNode:
         contract.attached_channel.add_htlc_contract(contract)
         if nodes_between:
             node_to_send = nodes_between[0]
-            return self.send_htlc(node_to_send, amount_in_wei, contract.hash_image, nodes_between[1:])
+            fee = self.get_fee_for_transfer_amount(amount_in_wei)
+            return self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:])
         if contract.hash_image in self._hash_image_to_preimage:
             return contract.resolve_offchain(self._hash_image_to_preimage[contract.hash_image])
         return False
