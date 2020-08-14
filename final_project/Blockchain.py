@@ -26,7 +26,7 @@ class BlockChain:
         # can have a subscribe method that calls all objects that called it with a new state (every time)
 
     def add_channel(self, channel: ChannelManager):
-        # TODO: maybe call add cahnnel in channel init
+        self.apply_transaction(channel.channel_state.channel_data.owner1, channel.channel_state.message_state.owner1_balance)
         self._open_channels[channel.channel_state.channel_data.address] = channel
 
     def close_channel(self, message_state: 'MessageState', contract: 'Contract_HTLC' = None):
@@ -60,6 +60,11 @@ class BlockChain:
         # TODO: one channel can have many htlcs
         if channel_address in self._channels_to_htlcs:
             return self._channels_to_htlcs[channel_address].pre_image
+
+    def apply_transaction(self, node: 'LightningNode', amount_in_wei: int):
+        # TODO: figure out how to make owner2 put in funds in a nice way
+        self._nodes_addresses_to_balances[node.address] -= amount_in_wei
+        assert self._nodes_addresses_to_balances[node.address] >= 0
 
 
 BLOCKCHAIN_INSTANCE = BlockChain()

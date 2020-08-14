@@ -64,7 +64,6 @@ class LightningNode:
         self._other_nodes_to_channels[other_party.address] = channel
         self._channels[channel_data.address] = channel
 
-        Blockchain.BLOCKCHAIN_INSTANCE.add_channel(channel)
         return channel
 
     def notify_of_channel(self, channel_data: cm.ChannelData, default_split: MessageState) -> cm.ChannelManager:
@@ -82,7 +81,6 @@ class LightningNode:
         node_to_send = nodes_between[0]
         assert node_to_send
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
-        # TODO: add fee
 
         if not self.send_htlc(node_to_send, amount_in_wei + total_fee, hash_image, nodes_between[1:]):
             print("Transaction failed - WHAT TO DO NOW??? MY LIFE IS OVER")

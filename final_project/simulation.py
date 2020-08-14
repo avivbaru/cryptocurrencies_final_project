@@ -225,7 +225,7 @@ def simulate_random_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_
 def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20,
                                 connectivity=10, mean_percentage_of_capacity=0.3,
                                 sigma_percentage_of_capacity=0.1, fee_percentage=0.1,
-                                min_fee=2, starting_balance=10, blockchain_fee=2):
+                                min_fee=2, starting_balance=200, blockchain_fee=2):
     # changeable parameters: number of block, channel per block, fee, starting balance, transaction amount,
     #                        blockchain fee.
 
