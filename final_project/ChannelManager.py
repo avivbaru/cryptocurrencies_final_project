@@ -63,7 +63,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
     def amount_owner2_can_transfer_to_owner1(self):
         return (self.channel_state.channel_data.total_wei - self._state.message_state.owner1_balance) - self._owner2_htlc_locked
 
-    def is_owner1(self, node: 'cn.LightningNode') -> bool:
+    def is_owner1(self, node: 'ln.LightningNode') -> bool:
         return node.address == self.channel_state.channel_data.owner1.address
 
     def update_message(self, message_state: 'cn.MessageState') -> None:
@@ -83,6 +83,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def owner2_add_funds(self, owner2_amount_in_wei: int):
         self._state.channel_data._total_wei += owner2_amount_in_wei  # TODO: see how to get rid of this warning
+        bc.BLOCKCHAIN_INSTANCE.apply_transaction(self.channel_state.channel_data.owner2, owner2_amount_in_wei)
         # self.owner2_add_funds.__code__ = (lambda: None).__code__  # so it can not be set again
 
     def close_channel(self):
