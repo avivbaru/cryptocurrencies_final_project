@@ -1,5 +1,6 @@
 import Blockchain
 import ChannelManager as cm
+import LightningChannel as ln
 from typing import Dict, List, Tuple, Set
 
 
@@ -16,12 +17,15 @@ class MessageState:
 # TODO: move MessageState out of here
 
 class Contract_HTLC:
-    def __init__(self, owner1_balance_delta, hash_image: int, expiration_block_number: int, attached_channel: cm.ChannelManager):
+    def __init__(self, owner1_balance_delta, hash_image: int, expiration_block_number: int, attached_channel: cm.ChannelManager,
+                 owner1: 'ln.LightningNode', owner2: 'ln.LightningNode'):
         self._owner1_balance_delta = owner1_balance_delta
         self._hash_image: int = hash_image
         self._expiration_block_number: int = expiration_block_number
         self._channel_to_notify: cm.ChannelManager = attached_channel
         self._pre_image = None
+        self._owner1 = owner1
+        self._owner2 = owner2
 
     @property
     def is_expired(self):
@@ -51,6 +55,14 @@ class Contract_HTLC:
     def pre_image(self):
         return self._pre_image
 
+    @property
+    def owner1(self):
+        return self._owner1
+
+    @property
+    def owner2(self):
+        return self._owner2
+
     def resolve_onchain(self, pre_image: str) -> bool:
         if not self._validate(pre_image):
             return False
@@ -75,9 +87,6 @@ class Contract_HTLC:
     def resolve_offchain(self, pre_image: str) -> bool:
         if not self._validate(pre_image):
             return False
-
-        self._channel_to_notify.channel_state.channel_data.owner1.notify_of_resolve_htlc_offchain(self)
-        self._channel_to_notify.channel_state.channel_data.owner2.notify_of_resolve_htlc_offchain(self)
 
 
 

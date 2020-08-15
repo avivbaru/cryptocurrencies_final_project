@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Tuple, Set, Optional
+from typing import Dict, List, Tuple, Callable, Optional
 import random
 import string
 from Contract_HTLC import *
@@ -107,8 +107,9 @@ class LightningNode:
 
         htlc_contract = Contract_HTLC(delta_amount, hash_image,
                                       Blockchain.BLOCKCHAIN_INSTANCE.block_number + len(nodes_between) + 2,
-                                      channel)  # TODO: see if this is a good time for htlc maybe pass time in argument
-        return node_to_send.receive_htlc(htlc_contract, amount_in_wei, nodes_between)
+                                      channel, self, node_to_send)  # TODO: see if this is a good time for htlc maybe pass
+        # time in argument
+        return node_to_send.receive_htlc(self, htlc_contract, amount_in_wei, nodes_between)
 
     def _get_delta_for_sending_money(self, amount_in_wei: int, channel: cm.ChannelManager) -> int:
         current_owner1_balance = channel.channel_state.message_state.owner1_balance
@@ -122,15 +123,21 @@ class LightningNode:
             assert(current_owner2_balance - amount_in_wei >= 0)
             return amount_in_wei
 
-    def receive_htlc(self, contract: Contract_HTLC, amount_in_wei: int, nodes_between: List['LightningNode']) -> bool:
+    def receive_htlc(self, sender: 'LightningNode', contract: Contract_HTLC, amount_in_wei: int,
+                     nodes_between: List['LightningNode']) -> bool:
         contract.attached_channel.add_htlc_contract(contract)
         if nodes_between:
             node_to_send = nodes_between[0]
             fee = self.get_fee_for_transfer_amount(amount_in_wei)
             return self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:])
         if contract.hash_image in self._hash_image_to_preimage:
-            return contract.resolve_offchain(self._hash_image_to_preimage[contract.hash_image])
+            self._start_resolving_contract_off_chain(sender, contract)
+            return True
         return False
+
+    def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: Contract_HTLC):
+        contract.resolve_offchain(self._hash_image_to_preimage[contract.hash_image])
+        sender.notify_of_resolve_htlc_offchain(contract)
 
     def generate_secret_x(self):
         x = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -164,7 +171,7 @@ class LightningNode:
         self._hash_image_to_preimage[hash(pre_image)] = pre_image
         return pre_image
 
-    def notify_of_resolve_htlc_onchain(self, contract: Contract_HTLC):
+    def notify_of_resolve_htlc_onchain(self, sender: 'LightningNode', contract: Contract_HTLC):
         if contract.attached_channel.channel_state.channel_data.address not in self._channels:
             return
 
@@ -194,8 +201,14 @@ class LightningNode:
         contract.attached_channel.resolve_htlc(contract)
         other_contract: Contract_HTLC = self._find_other_contract_with_same_pre_image(contract.hash_image,
                                                                                       contract.attached_channel)
+        # TODO: maybe have the owners inside the htlc_contracts so to not have this shit
         if other_contract is not None:
             other_contract.resolve_offchain(contract.pre_image)
+            other_node = other_contract.owner2 if other_contract.owner1.address == self.address else other_contract.owner1
+            self._notify_other_node_of_resolving_contract(other_node, other_contract)
+
+    def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: Contract_HTLC):
+        other_node.notify_of_resolve_htlc_offchain(contract)
 
 
 class LightningNodeGriefing(LightningNode):
@@ -203,9 +216,26 @@ class LightningNodeGriefing(LightningNode):
                  function_collector: simulation.FunctionCollector, fee_percentage: float = 0.1):
         super().__init__(balance, metrics_collector, function_collector, fee_percentage)
 
-    def receive_htlc(self, contract: Contract_HTLC, amount_in_wei: int, nodes_between: List['LightningNode']) -> bool:
-        expiration_block_number = contract.expiration_block_number
-        self._function_collector.append(lambda:  super().receive_htlc(
-            contract, amount_in_wei, nodes_between) if Blockchain.BLOCKCHAIN_INSTANCE.block_number + 1 >
-                                                 expiration_block_number else False)
-        return True
+    def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: Contract_HTLC):
+        target_block_number = contract.expiration_block_number - 1
+        self._function_collector.append(
+            self._collector_function_creator(target_block_number,
+                                             lambda: super(LightningNodeGriefing, self)
+                                             ._start_resolving_contract_off_chain(sender, contract)))
+
+    def _collector_function_creator(self, block_number: int, func: Callable[[], None]) -> Callable[[], bool]:
+        def check_block_and_use_function():
+            if Blockchain.BLOCKCHAIN_INSTANCE.block_number <= block_number:
+                return False
+
+            print("Griefined!")
+            func()
+            return True
+        return check_block_and_use_function
+
+    def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: Contract_HTLC):
+        target_block_number = contract.expiration_block_number - 1
+        self._function_collector.append(
+            self._collector_function_creator(target_block_number,
+                                             lambda: super(LightningNodeGriefing, self)
+                                             ._notify_other_node_of_resolving_contract(other_node, contract)))
