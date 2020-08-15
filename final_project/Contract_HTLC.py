@@ -28,6 +28,10 @@ class Contract_HTLC:
         return Blockchain.BLOCKCHAIN_INSTANCE.block_number >= self._expiration_block_number
 
     @property
+    def expiration_block_number(self):
+        return self._expiration_block_number
+
+    @property
     def owner1_balance_delta(self):
         return self._owner1_balance_delta
 
