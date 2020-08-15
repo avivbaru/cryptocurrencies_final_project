@@ -23,10 +23,14 @@ def check_channel_address(func):
 
     return wrapper
 
+# TODO: instead of having the time limit be the length of the path in blocks, we should make it: (length + 1) * (24*60 / 10)
+# == (length + 1) * 144
+
 
 class LightningNode:
     def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector,
-                 function_collector: simulation.FunctionCollector, fee_percentage: float = 0.1):
+                 function_collector: simulation.FunctionCollector, fee_percentage: float = 0.1,
+                 griefing_penalty_rate: float = 0.01):
         # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
@@ -36,9 +40,9 @@ class LightningNode:
         self._metrics_collector = metrics_collector
         self._function_collector = function_collector
         self._fee_percentage = fee_percentage
+        self._griefing_penalty_rate = griefing_penalty_rate  # TODO: maybe have this as an attribute of the blockchain
 
         Blockchain.BLOCKCHAIN_INSTANCE.add_node(self, balance)
-        # TODO: check if we need all these dicts or just pass on the channel managers
 
     @property
     def address(self):
@@ -87,7 +91,9 @@ class LightningNode:
         assert node_to_send
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
-        if not self.send_htlc(node_to_send, amount_in_wei + total_fee, hash_image, nodes_between[1:]):
+        if not self.send_htlc(node_to_send, amount_in_wei + total_fee, hash_image, nodes_between[1:],
+                              Blockchain.BLOCKCHAIN_INSTANCE.block_number + ((len(nodes_between) + 1) * 144)):  # TODO: see if
+            # this is a good time for htlc
             print("Transaction failed - WHAT TO DO NOW??? MY LIFE IS OVER")
             return False
         return True
@@ -98,17 +104,20 @@ class LightningNode:
             transfer_amount += node.get_fee_for_transfer_amount(transfer_amount)
         return transfer_amount - amount_in_wei
 
+    def _calculate_griefing_penalty(self, amount_in_wei: int, expiration_time):
+        return self._griefing_penalty_rate * amount_in_wei * expiration_time
+    # TODO: time = exp_time - current_block_numeber... though current block number may vary between nodes
+
     def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
-                  nodes_between: List['LightningNode']) -> bool:
+                  nodes_between: List['LightningNode'], expiration_time: int, griefing_penalty: int = 0) -> bool:
         assert node_to_send
         channel = self._other_nodes_to_channels[node_to_send.address]
         assert channel
         delta_amount = self._get_delta_for_sending_money(amount_in_wei, channel)
 
         htlc_contract = Contract_HTLC(delta_amount, hash_image,
-                                      Blockchain.BLOCKCHAIN_INSTANCE.block_number + len(nodes_between) + 2,
-                                      channel, self, node_to_send)  # TODO: see if this is a good time for htlc maybe pass
-        # time in argument
+                                      expiration_time, channel, self, node_to_send)
+        # TODO: maybe have a factory for creating HTLC vs HTLC-GP
         return node_to_send.receive_htlc(self, htlc_contract, amount_in_wei, nodes_between)
 
     def _get_delta_for_sending_money(self, amount_in_wei: int, channel: cm.ChannelManager) -> int:
@@ -124,12 +133,13 @@ class LightningNode:
             return amount_in_wei
 
     def receive_htlc(self, sender: 'LightningNode', contract: Contract_HTLC, amount_in_wei: int,
-                     nodes_between: List['LightningNode']) -> bool:
+                     nodes_between: List['LightningNode'], griefing_penalty: int = 0) -> bool:
         contract.attached_channel.add_htlc_contract(contract)
         if nodes_between:
             node_to_send = nodes_between[0]
             fee = self.get_fee_for_transfer_amount(amount_in_wei)
-            return self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:])
+            return self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:],
+                                  contract.expiration_block_number - 1)
         if contract.hash_image in self._hash_image_to_preimage:
             self._start_resolving_contract_off_chain(sender, contract)
             return True
@@ -171,7 +181,7 @@ class LightningNode:
         self._hash_image_to_preimage[hash(pre_image)] = pre_image
         return pre_image
 
-    def notify_of_resolve_htlc_onchain(self, sender: 'LightningNode', contract: Contract_HTLC):
+    def notify_of_resolve_htlc_onchain(self, contract: Contract_HTLC):
         if contract.attached_channel.channel_state.channel_data.address not in self._channels:
             return
 
