@@ -26,7 +26,7 @@ def check_channel_address(func):
 
 class LightningNode:
     def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector,
-                 function_collector: simulation.FunctionCollector, fee_constant: int = 1, fee_percentage: float = 0.1):
+                 function_collector: simulation.FunctionCollector, fee_percentage: float = 0.1):
         # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
@@ -35,7 +35,6 @@ class LightningNode:
         self._balance = balance
         self._metrics_collector = metrics_collector
         self._metrics_collector = function_collector
-        self._fee_constant = fee_constant
         self._fee_percentage = fee_percentage
 
         Blockchain.BLOCKCHAIN_INSTANCE.add_node(self, balance)
@@ -48,6 +47,10 @@ class LightningNode:
         """
         return self._address
 
+    @property
+    def fee_percentage(self):
+        return self._fee_percentage
+
     def get_capacity_left(self, other_node):
         if other_node.address in self._other_nodes_to_channels:
             return self._other_nodes_to_channels[other_node.address].amount_owner1_can_transfer_to_owner2 if  \
@@ -55,7 +58,7 @@ class LightningNode:
             self._other_nodes_to_channels[other_node.address].amount_owner2_can_transfer_to_owner1
 
     def get_fee_for_transfer_amount(self, amount_in_wei: int) -> int:
-        return int(max(self._fee_constant, int(self._fee_percentage * amount_in_wei)))
+        return int(self._fee_percentage * amount_in_wei)
 
     def establish_channel(self, other_party: 'LightningNode', amount_in_wei: int) -> cm.ChannelManager:
         channel_data = cm.ChannelData(self, other_party)
@@ -92,7 +95,6 @@ class LightningNode:
         for node in reversed(path_nodes):
             transfer_amount += node.get_fee_for_transfer_amount(transfer_amount)
         return transfer_amount - amount_in_wei
-
 
     def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
                   nodes_between: List['LightningNode']) -> bool:
