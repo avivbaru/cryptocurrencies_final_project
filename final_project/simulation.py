@@ -7,6 +7,8 @@ import pprint
 import LightningChannel
 from Blockchain import BLOCKCHAIN_INSTANCE
 
+SEND_SUCCESSFULLY = "send_successfully"
+
 PATH_LENGTH_AVG = "path_length_avg"
 
 NO_PATH_FOUND = "no_path_found"
@@ -27,7 +29,7 @@ class Network:
         self.edges[from_node].append(to_node)
         self.edges[to_node].append(from_node)
         channel = to_node.establish_channel(from_node, 10)
-        channel.owner2_add_funds(10)
+        from_node.add_money_to_channel(channel, 10)
 
     def get_edges_with_enough_capacity(self, amount_in_wei, capacity_map):
         return {from_node: [to_node for to_node in nodes if
@@ -68,13 +70,15 @@ class FunctionCollector:
     def run(self):
         self._function_to_run = [f for f in self._function_to_run if not f()]
 
+    def append(self, f: Callable[[], bool]):
+        self._function_to_run.append(f)
+
 
 def generate_fee_map(edges, amount_in_wei):
     fees: Dict[Tuple[LightningChannel.LightningNode, LightningChannel.LightningNode], int] = {}
     for from_node in edges:
         for to_node in edges[from_node]:
-            # TODO: implement calculate_fee
-            fees[(from_node, to_node)] = amount_in_wei * 0.1#to_node.calculate_fee(amount_in_wei)
+            fees[(from_node, to_node)] = amount_in_wei * to_node.fee_percentage
     return fees
 
 
@@ -151,7 +155,7 @@ def find_shortest_path(nodes, edges, initial, fee_map, capacity_map, amount_in_w
 
 def how_much_to_send(starting_balance, mu, sigma):
     # TODO: change?
-    return max(min(random.gauss(mu, sigma), MIN_TO_SEND), MAX_TO_SEND) * starting_balance
+    return max(min(random.gauss(mu, sigma), MIN_TO_SEND), MAX_TO_SEND) * 10
 
 
 def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
@@ -162,8 +166,6 @@ def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_
         sender_node = random.choice(network.nodes)
         amount_in_wei = how_much_to_send(starting_balance, mean_percentage_of_capacity,
                                          sigma_percentage_of_capacity)
-        if amount_in_wei == 0:
-            continue
         # prepare data to find path from sender to any node
         capacity_map = generate_capacity_map(network.edges)
         edges = network.get_edges_with_enough_capacity(amount_in_wei, capacity_map)
@@ -184,7 +186,9 @@ def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_
             metrics_collector.average(PATH_LENGTH_AVG, len(nodes_between))
             send_htlc_successfully = sender_node.start_htlc(receiver_node, amount_in_wei,
                                                             list(reversed(nodes_between)))
-            if not send_htlc_successfully:
+            if send_htlc_successfully:
+                metrics_collector.count(SEND_SUCCESSFULLY)
+            else:
                 metrics_collector.count(SEND_FAILED)
         else:
             metrics_collector.count(NO_PATH_FOUND)

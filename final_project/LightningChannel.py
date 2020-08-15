@@ -34,7 +34,7 @@ class LightningNode:
         self._channels: Dict[str, cm.ChannelManager] = {}
         self._balance = balance
         self._metrics_collector = metrics_collector
-        self._metrics_collector = function_collector
+        self._function_collector = function_collector
         self._fee_percentage = fee_percentage
 
         Blockchain.BLOCKCHAIN_INSTANCE.add_node(self, balance)
@@ -66,6 +66,7 @@ class LightningNode:
         channel = other_party.notify_of_channel(channel_data, default_split)
         self._other_nodes_to_channels[other_party.address] = channel
         self._channels[channel_data.address] = channel
+        self._balance -= amount_in_wei
 
         return channel
 
@@ -77,6 +78,7 @@ class LightningNode:
 
     def add_money_to_channel(self, channel: cm.ChannelManager, amount_in_wei: int):
         channel.owner2_add_funds(amount_in_wei)
+        self._balance -= amount_in_wei
 
     def start_htlc(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']) -> bool:
         hash_image = final_node.generate_secret_x()  # TODO: make final_node = nodes_between[-1]?
@@ -142,6 +144,7 @@ class LightningNode:
         channel = self._other_nodes_to_channels[node.address]
         assert channel
         channel.close_channel()
+        self._balance += channel.owner1_balance if channel.is_owner1(self) else channel.owner2_balance
         del self._channels[channel.channel_state.channel_data.address]
         del self._other_nodes_to_channels[node.address]
 
@@ -194,3 +197,15 @@ class LightningNode:
         if other_contract is not None:
             other_contract.resolve_offchain(contract.pre_image)
 
+
+class LightningNodeGriefing(LightningNode):
+    def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector,
+                 function_collector: simulation.FunctionCollector, fee_percentage: float = 0.1):
+        super().__init__(balance, metrics_collector, function_collector, fee_percentage)
+
+    def receive_htlc(self, contract: Contract_HTLC, amount_in_wei: int, nodes_between: List['LightningNode']) -> bool:
+        expiration_block_number = contract.expiration_block_number
+        self._function_collector.append(lambda:  super().receive_htlc(
+            contract, amount_in_wei, nodes_between) if Blockchain.BLOCKCHAIN_INSTANCE.block_number + 1 >
+                                                 expiration_block_number else False)
+        return True
