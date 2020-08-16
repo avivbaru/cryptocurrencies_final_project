@@ -88,8 +88,7 @@ def generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
     network = Network()
     prev = None
     for i in range(number_of_nodes):
-        node = LightningChannel.LightningNode(starting_balance, METRICS_COLLECTOR_INSTANCE,
-                                              FUNCTION_COLLECTOR_INSTANCE, fee_percentage, griefing_penalty_rate)
+        node = LightningChannel.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate)
         if prev:
             network.add_edge(prev, node, channel_starting_balance)
         prev = node

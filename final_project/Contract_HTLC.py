@@ -1,6 +1,6 @@
-import Blockchain
 import ChannelManager as cm
 import LightningChannel as ln
+from singletons import *
 from typing import Dict, List, Tuple, Set
 
 
@@ -29,7 +29,7 @@ class Contract_HTLC:
 
     @property
     def is_expired(self):
-        return Blockchain.BLOCKCHAIN_INSTANCE.block_number >= self._expiration_block_number
+        return BLOCKCHAIN_INSTANCE.block_number >= self._expiration_block_number
 
     @property
     def expiration_block_number(self):
@@ -63,11 +63,18 @@ class Contract_HTLC:
     def owner2(self):
         return self._owner2
 
+    def check_expiration(self, block_number: int) -> bool:
+        if self.is_expired:
+            self.owner1.notify_of_expired_contract(self)
+            return True
+        return False
+
+
     def resolve_onchain(self, pre_image: str) -> bool:
         if not self._validate(pre_image):
             return False
 
-        Blockchain.BLOCKCHAIN_INSTANCE.resolve_htlc_contract(self)
+        BLOCKCHAIN_INSTANCE.resolve_htlc_contract(self)
 
         self._channel_to_notify.channel_state.channel_data.owner1.notify_of_resolve_htlc_onchain(self)
         self._channel_to_notify.channel_state.channel_data.owner2.notify_of_resolve_htlc_onchain(self)
