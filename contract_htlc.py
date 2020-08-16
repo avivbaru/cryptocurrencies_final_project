@@ -26,7 +26,8 @@ class Contract_HTLC:
         self._owner1 = owner1
         self._owner2 = owner2
 
-        FUNCTION_COLLECTOR_INSTANCE.append(self.check_expiration)
+        FUNCTION_COLLECTOR_INSTANCE.append(lambda: self.owner1.notify_of_griefed_contract(self),
+                                           self._expiration_block_number)
 
     @property
     def is_expired(self):
@@ -67,11 +68,11 @@ class Contract_HTLC:
     def additional_delta_for_locked_funds(self, owner: 'ln.LightningNode') -> int:
         return 0
 
-    def check_expiration(self) -> bool:
-        if self.is_expired:
-            self.owner1.notify_of_griefed_contract(self)
-            return True
-        return False
+    # def check_expiration(self) -> bool:
+    #     if self.is_expired:
+    #         self.owner1.notify_of_griefed_contract(self)
+    #         return True
+    #     return False
 
     def resolve_onchain(self, pre_image: str) -> bool:
         if not self._validate(pre_image):

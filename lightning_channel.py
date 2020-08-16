@@ -231,29 +231,29 @@ class LightningNodeGriefing(LightningNode):
 
     def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
         return # this waits for expiration, classic griefing. below is "soft griefing"
-        target_block_number = contract.expiration_block_number - 1
-        FUNCTION_COLLECTOR_INSTANCE.append(
-            self._collector_function_creator(target_block_number,
-                                             lambda: super(LightningNodeGriefing, self)
-                                             ._start_resolving_contract_off_chain(sender, contract)))
+        # target_block_number = contract.expiration_block_number - 1
+        # FUNCTION_COLLECTOR_INSTANCE.append(
+        #     self._collector_function_creator(target_block_number,
+        #                                      lambda: super(LightningNodeGriefing, self)
+        #                                      ._start_resolving_contract_off_chain(sender, contract)))
 
-    def _collector_function_creator(self, block_number: int, func: Callable[[], None]) -> Callable[[], bool]:
-        def check_block_and_use_function():
-            if BLOCKCHAIN_INSTANCE.block_number <= block_number:
-                return False
-
-            print("Griefined!")
-            func()
-            return True
-        return check_block_and_use_function
+    # def _collector_function_creator(self, block_number: int, func: Callable[[], None]) -> Callable[[], bool]:
+    #     def check_block_and_use_function():
+    #         if BLOCKCHAIN_INSTANCE.block_number <= block_number:
+    #             return False
+    #
+    #         print("Griefined!")
+    #         func()
+    #         return True
+    #     return check_block_and_use_function
 
     def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
         return
-        target_block_number = contract.expiration_block_number - 1
-        FUNCTION_COLLECTOR_INSTANCE.append(
-            self._collector_function_creator(target_block_number,
-                                             lambda: super(LightningNodeGriefing, self)
-                                             ._notify_other_node_of_resolving_contract(other_node, contract)))
+        # target_block_number = contract.expiration_block_number - 1
+        # FUNCTION_COLLECTOR_INSTANCE.append(
+        #     self._collector_function_creator(target_block_number,
+        #                                      lambda: super(LightningNodeGriefing, self)
+        #                                      ._notify_other_node_of_resolving_contract(other_node, contract)))
 
 
 class LightningNodeSoftGriefing(LightningNode):
@@ -263,23 +263,16 @@ class LightningNodeSoftGriefing(LightningNode):
     def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
         target_block_number = contract.expiration_block_number - 1
         FUNCTION_COLLECTOR_INSTANCE.append(
-            self._collector_function_creator(target_block_number,
-                                             lambda: super(LightningNodeSoftGriefing, self)
-                                             ._start_resolving_contract_off_chain(sender, contract)))
+            lambda: super(LightningNodeSoftGriefing, self).
+                _start_resolving_contract_off_chain(sender, contract), target_block_number)
 
-    def _collector_function_creator(self, block_number: int, func: Callable[[], None]) -> Callable[[], bool]:
+    def _collector_function_creator(self, func: Callable[[], None]) -> Callable[[], None]:
         def check_block_and_use_function():
-            if BLOCKCHAIN_INSTANCE.block_number <= block_number:
-                return False
-
-            print("Griefined!")
             func()
-            return True
         return check_block_and_use_function
 
     def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
         target_block_number = contract.expiration_block_number - 1
-        FUNCTION_COLLECTOR_INSTANCE.append(
-            self._collector_function_creator(target_block_number,
-                                             lambda: super(LightningNodeSoftGriefing, self)
-                                             ._notify_other_node_of_resolving_contract(other_node, contract)))
+        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
+                                           ._notify_other_node_of_resolving_contract(other_node, contract),
+                                           target_block_number)

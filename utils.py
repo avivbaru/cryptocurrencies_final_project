@@ -1,9 +1,13 @@
 from collections import defaultdict
-from typing import List, Callable
+from typing import List, Callable, Tuple
+import singletons
 
 
 class MetricsCollector:
     def __init__(self):
+        self.init()
+
+    def init(self):
         self._metrics = defaultdict(int)
         self._average_metrics = defaultdict(int)
         self._average_metrics_count = defaultdict(int)
@@ -31,10 +35,21 @@ class MetricsCollector:
 
 class FunctionCollector:
     def __init__(self):
-        self._function_to_run: List[Callable[[], bool]] = []
+        self.init()
+
+    def init(self):
+        self._function_to_run: List[Tuple[Callable[[], None], int]] = []
 
     def run(self):
-        self._function_to_run = [f for f in self._function_to_run if not f()]
+        temp_function_to_run = [f for (f, k) in self._function_to_run
+                                if k <= singletons.BLOCKCHAIN_INSTANCE.block_number]
+        for f in temp_function_to_run:
+            f()
+        self._function_to_run = [(f, k) for (f, k) in self._function_to_run
+                                if f not in temp_function_to_run]
 
-    def append(self, f: Callable[[], bool]):
-        self._function_to_run.append(f)
+    def append(self, f: Callable[[], None], k: int):
+        self._function_to_run.append((f, k))
+
+    def get_max_k(self):
+        return max([k for (f, k) in self._function_to_run])

@@ -6,6 +6,9 @@ from typing import Dict
 
 class BlockChain:
     def __init__(self):
+        self.init()
+
+    def init(self):
         self._block_number = 0
         self._open_channels: Dict[str, 'cm.ChannelManager'] = {}
         self._channels_to_htlcs: Dict[str, 'cn.Contract_HTLC'] = {}

@@ -2,11 +2,15 @@ import random
 import time
 import math
 import fire
+import json
 import inspect
 import lightning_channel
 from network import Network
+import blockchain
+import utils
 from singletons import METRICS_COLLECTOR_INSTANCE, FUNCTION_COLLECTOR_INSTANCE, BLOCKCHAIN_INSTANCE
 
+# metrics names
 HONEST_NODE_BALANCE_AVG = "honest_node_balance"
 GRIEFING_NODE_BALANCE_AVG = "griefing_node_balance"
 GRIEFING_SOFT_NODE_BALANCE_AVG = "soft_griefing_node_balance"
@@ -15,8 +19,9 @@ SEND_SUCCESSFULLY = "send_successfully"
 PATH_LENGTH_AVG = "path_length"
 NO_PATH_FOUND = "no_path_found"
 SEND_FAILED = "send_failed"
-MIN_TO_SEND = 0.0001 # TODO: check!
-MAX_TO_SEND = 0.9 # TODO: check!
+
+MIN_TO_SEND = 0.0001                    # TODO: check!
+MAX_TO_SEND = 0.9                       # TODO: check!
 PERCENTAGE_BUCKETS = [0.05, 0.2, 0.3]
 SIGMA = 0.1
 
@@ -37,7 +42,8 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
             receiver_node = random.choice(network.nodes)
 
         amount_in_wei = how_much_to_send(channel_starting_balance)
-        visited_nodes_to_min_hops, path_map = network.find_shortest_path(sender_node, amount_in_wei, griefing_penalty)
+        visited_nodes_to_min_hops, path_map = network.find_shortest_path(sender_node, amount_in_wei,
+                                                                         griefing_penalty)
         if receiver_node in visited_nodes_to_min_hops:
             # find list of node between sender and receiver and edges to update their capacity
             nodes_between = []
@@ -71,8 +77,19 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
             print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
             FUNCTION_COLLECTOR_INSTANCE.run()
 
-    BLOCKCHAIN_INSTANCE.wait_k_blocks(5000) # TODO: Change!!
+    max_block = FUNCTION_COLLECTOR_INSTANCE.get_max_k()
+    if BLOCKCHAIN_INSTANCE.block_number < max_block:
+        BLOCKCHAIN_INSTANCE.wait_k_blocks(max_block - BLOCKCHAIN_INSTANCE.block_number)
     FUNCTION_COLLECTOR_INSTANCE.run()
+    close_channel_and_log_metrics(network)
+    metrics = METRICS_COLLECTOR_INSTANCE.get_metrics()
+    metrics_str = '\n'.join([f'\t{k}: {v}' for k, v in metrics.items()])
+    print(f"Metrics of this run: \n{metrics_str}")
+    print(f"Json Metrics: {json.dumps(metrics)}")
+    return metrics
+
+
+def close_channel_and_log_metrics(network):
     for node in network.nodes:
         for other_node in network.edges[node]:
             node.close_channel(other_node)
@@ -86,8 +103,6 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
         if type(node) is lightning_channel.LightningNodeSoftGriefing:
             METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG,
                                                BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-    metrics_str = '\n'.join([f'\t{k}: {v}' for k, v in METRICS_COLLECTOR_INSTANCE.get_metrics().items()])
-    print(f"Metrics of this run: \n{metrics_str}")
 
 
 def simulation_details(func):
@@ -118,7 +133,8 @@ def create_network(number_of_nodes, griefing_percentage, soft_griefing_percentag
         node = lightning_channel.LightningNodeGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
         network.add_node(node)
     for _ in range(number_of_soft_griefing_nodes):
-        node = lightning_channel.LightningNodeSoftGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
+        node = lightning_channel.LightningNodeSoftGriefing(starting_balance, fee_percentage,
+                                                           griefing_penalty_rate)
         network.add_node(node)
     return network
 
@@ -143,7 +159,7 @@ def generate_redundancy_network(number_of_nodes, griefing_percentage, soft_grief
 
 
 @simulation_details
-def simulate_redundancy_network(number_of_nodes=500, griefing_percentage=0.05,
+def simulate_redundancy_network(number_of_nodes=1000, griefing_percentage=0.05,
                                 soft_griefing_percentage=0.05, number_of_blocks=15,
                                 htlcs_per_block=20, channel_starting_balance=100000, starting_balance=2000000,
                                 fee_percentage=0.05, griefing_penalty_rate=0.0001,
@@ -151,7 +167,8 @@ def simulate_redundancy_network(number_of_nodes=500, griefing_percentage=0.05,
     network = generate_redundancy_network(number_of_nodes, griefing_percentage, soft_griefing_percentage,
                                           starting_balance, channel_starting_balance, fee_percentage,
                                           griefing_penalty_rate)
-    run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance, griefing_penalty_rate)
+    return run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance,
+                          griefing_penalty_rate)
 
 
 # Randomly network functions
@@ -176,11 +193,50 @@ def simulate_random_network(number_of_nodes=100, griefing_percentage=0.05, soft_
     network = generate_network_randomly(number_of_nodes, griefing_percentage, soft_griefing_percentage,
                                         channel_per_node, starting_balance, channel_starting_balance,
                                         fee_percentage, griefing_penalty_rate)
-    run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance, griefing_penalty_rate)
+    return run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance,
+                          griefing_penalty_rate)
+
+
+def run_multiply_simulation():
+    number_of_nodes = 1000
+    number_of_blocks = 15
+    htlcs_per_block = 20
+    channel_starting_balance = 100000
+    starting_balance = 2000000
+    griefing_nodes_percentages = [0.01, 0.05, 0.1, 0.15]
+    soft_griefing_percentages = [0.01, 0.05, 0.1, 0.15]
+    fee_percentages = [0.01, 0.05, 0.1, 0.2]
+    blockchain_fees = [1000, 5000, 10000, 50000]
+    griefing_penalty_rates = [0.0001, 0.001, 0.01, 0.1]
+    simulation_metrics = []
+
+    for griefing_nodes_percentage in griefing_nodes_percentages:
+        for soft_griefing_percentage in soft_griefing_percentages:
+            for fee_percentage in fee_percentages:
+                for blockchain_fee in blockchain_fees:
+                    for griefing_penalty_rate in griefing_penalty_rates:
+                        parameters = {"number_of_nodes": number_of_nodes,
+                                      "griefing_percentage": griefing_nodes_percentage,
+                                      "soft_griefing_percentage": soft_griefing_percentage,
+                                      "number_of_blocks": number_of_blocks,
+                                      "htlcs_per_block": htlcs_per_block,
+                                      "channel_starting_balance": channel_starting_balance,
+                                      "starting_balance": starting_balance,
+                                      "fee_percentage": fee_percentage,
+                                      "griefing_penalty_rate": griefing_penalty_rate,
+                                      "blockchain_fee": blockchain_fee}
+                        metrics = simulate_redundancy_network(**parameters)
+                        simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
+                        # TODO: check maybe better solution
+                        BLOCKCHAIN_INSTANCE.init()
+                        METRICS_COLLECTOR_INSTANCE.init()
+                        FUNCTION_COLLECTOR_INSTANCE.init()
+    print(json.dumps(simulation_metrics))
 
 
 def main():
-    fire.Fire({'random': simulate_random_network, 'redundancy': simulate_redundancy_network})
+    fire.Fire({'random': simulate_random_network, 'redundancy': simulate_redundancy_network,
+               'run_all': run_multiply_simulation})
 
 
 if __name__ == '__main__':
