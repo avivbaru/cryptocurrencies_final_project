@@ -228,9 +228,10 @@ def run_multiply_simulation():
                         metrics = simulate_redundancy_network(**parameters)
                         simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
                         # TODO: check maybe better solution
-                        BLOCKCHAIN_INSTANCE.init()
-                        METRICS_COLLECTOR_INSTANCE.init()
-                        FUNCTION_COLLECTOR_INSTANCE.init()
+                        BLOCKCHAIN_INSTANCE.init_parameters()
+                        METRICS_COLLECTOR_INSTANCE.init_parameters()
+                        FUNCTION_COLLECTOR_INSTANCE.init_parameters()
+    # TODO: also write to file with different format (csv?)
     print(json.dumps(simulation_metrics))
 
 

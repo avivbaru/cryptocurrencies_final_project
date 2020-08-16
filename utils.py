@@ -5,9 +5,9 @@ import singletons
 
 class MetricsCollector:
     def __init__(self):
-        self.init()
+        self.init_parameters()
 
-    def init(self):
+    def init_parameters(self):
         self._metrics = defaultdict(int)
         self._average_metrics = defaultdict(int)
         self._average_metrics_count = defaultdict(int)
@@ -35,9 +35,9 @@ class MetricsCollector:
 
 class FunctionCollector:
     def __init__(self):
-        self.init()
+        self.init_parameters()
 
-    def init(self):
+    def init_parameters(self):
         self._function_to_run: List[Tuple[Callable[[], None], int]] = []
 
     def run(self):
