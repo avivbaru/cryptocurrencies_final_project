@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple, Set, NewType
 import LightningChannel 
 
 
-LightningNode = NewType('LightningNode', LightningChannel.LightningNode)
+LightningNode = LightningChannel.LightningNode
 
 
 class Network:

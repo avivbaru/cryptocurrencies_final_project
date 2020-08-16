@@ -36,7 +36,7 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
         amount_in_wei = how_much_to_send(channel_starting_balance)
         visited_nodes_to_min_hops, path_map = network.find_shortest_path(sender_node, amount_in_wei)
         if receiver_node in visited_nodes_to_min_hops:
-            # find list of node between sender and receiver
+            # find list of node between sender and receiver and edges to update their capacity
             nodes_between = []
             edge_to_update = []
             curr = receiver_node
@@ -61,6 +61,7 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
         if htlc_counter == htlcs_per_block:
             htlc_counter = 0
             BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
+            print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
             FUNCTION_COLLECTOR_INSTANCE.run()
 
     for node in network.nodes:
@@ -87,48 +88,47 @@ def simulation_details(func):
     return wrapper
 
 
+def create_network(number_of_nodes, starting_balance, fee_percentage, griefing_penalty_rate):
+    network = Network()
+    for i in range(number_of_nodes):
+        node = LightningChannel.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate)
+        network.add_node(node)
+    return network
+
+
 # Redundancy network functions
-def generate_redundancy_network(number_of_nodes, connectivity, starting_balance, channel_starting_balance,
+def generate_redundancy_network(number_of_nodes, starting_balance, channel_starting_balance,
                                 fee_percentage, griefing_penalty_rate):
     # connect 2 nodes if differ by 10 modulo 100 TODO: change!
-    network = Network()
-    prev = None
-    for i in range(number_of_nodes):
-        node = LightningChannel.LightningNodeGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
-        if prev:
-            network.add_edge(prev, node, channel_starting_balance)
-        prev = node
-        network.add_node(node)
+    network = create_network(number_of_nodes, starting_balance, fee_percentage, griefing_penalty_rate)
     n = int(math.log(number_of_nodes, 10))
-    jump_indexes = [10 ** i for i in range(1, n+1)]
+    jump_indexes = [10 ** i for i in range(n+1)]
     for i in range(number_of_nodes):
         for index_to_jump in jump_indexes:
             next_index = i + index_to_jump
             if next_index >= number_of_nodes:
                 next_index -= number_of_nodes
-            network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
+            if next_index != i:
+                network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
     return network
 
 
 @simulation_details
-def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=1500, htlcs_per_block=20,
-                                connectivity=10, channel_starting_balance=10000,
-                                starting_balance=200000, fee_percentage=0.05, griefing_penalty_rate=0.01,
+def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20,
+                                channel_starting_balance=10000, starting_balance=200000,
+                                fee_percentage=0.05, griefing_penalty_rate=0.01,
                                 blockchain_fee=2):
-    network = generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
+    network = generate_redundancy_network(number_of_nodes, starting_balance,
                                           channel_starting_balance, fee_percentage, griefing_penalty_rate)
     run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance)
 
 
 # Randomly network functions
-def generate_network_randomly(number_of_nodes, connectivity, starting_balance, channel_starting_balance,
+def generate_network_randomly(number_of_nodes, channel_per_node, starting_balance, channel_starting_balance,
                               fee_percentage, griefing_penalty_rate):
-    network = Network()
-    for i in range(number_of_nodes):
-        node = LightningChannel.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate)
-        network.add_node(node)
+    network = create_network(number_of_nodes, starting_balance, fee_percentage, griefing_penalty_rate)
     for node in network.nodes:
-        nodes_to_connect = random.sample(network.nodes, connectivity)
+        nodes_to_connect = random.sample(network.nodes, channel_per_node)
         nodes_to_connect.remove(node)
         for node_to_connect in nodes_to_connect:
             network.add_edge(node, node_to_connect, channel_starting_balance)
@@ -136,10 +136,10 @@ def generate_network_randomly(number_of_nodes, connectivity, starting_balance, c
 
 
 @simulation_details
-def simulate_random_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20, connectivity=10,
+def simulate_random_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20, channel_per_node=10,
                             channel_starting_balance=10, starting_balance=200, fee_percentage=0.1,
                             griefing_penalty_rate=0.01, blockchain_fee=2):
-    network = generate_network_randomly(number_of_nodes, connectivity, starting_balance,
+    network = generate_network_randomly(number_of_nodes, channel_per_node, starting_balance,
                                         channel_starting_balance, fee_percentage, griefing_penalty_rate)
     run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance)
 
