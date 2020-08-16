@@ -1,53 +1,52 @@
 from collections import defaultdict
-from typing import Dict, List, Tuple, Set
+from typing import Dict, List, Tuple, Set, NewType
 import LightningChannel 
+
+
+LightningNode = NewType('LightningNode', LightningChannel.LightningNode)
 
 
 class Network:
     def __init__(self, nodes=None, edges=None):
-        self.nodes: List['LightningChannel.LightningNode'] = nodes if nodes else []
-        self.edges: defaultdict['LightningChannel.LightningNode', List['LightningChannel.LightningNode']] = \
-            edges if edges else defaultdict(list)
+        self.nodes: List[LightningNode] = nodes if nodes else []
+        self.edges: defaultdict[LightningNode, List[LightningNode]] = edges if edges else defaultdict(list)
+        self.fees_rate_map: Dict[Tuple[LightningNode, LightningNode], float] = {}
+        self.capacity: Dict[Tuple[LightningNode, LightningNode], int] = {}
 
     def add_node(self, value):
         self.nodes.append(value)
 
-    def add_edge(self, from_node: 'LightningChannel.LightningNode', to_node: 'LightningChannel.LightningNode', channel_starting_balance: int):
+    def add_edge(self, from_node: LightningNode, to_node: LightningNode, channel_starting_balance: int):
         self.edges[from_node].append(to_node)
         self.edges[to_node].append(from_node)
         channel = to_node.establish_channel(from_node, channel_starting_balance)
         from_node.add_money_to_channel(channel, channel_starting_balance)
 
-    def get_network_with_enough_capacity(self, amount_in_wei: float):
-        capacity_map = self.get_capacity_map()
-        edges_with_enough_capacity = {from_node: [to_node for to_node in nodes if
-                                                  capacity_map[(from_node, to_node)] > amount_in_wei]
-                                      for from_node, nodes in self.edges.items()}
-        return Network(self.nodes, edges_with_enough_capacity)
+    def get_capacity_map(self) -> Dict[Tuple[LightningNode, LightningNode], int]:
+        if not self.capacity:
+            for from_node, to_nodes in self.edges.items():
+                for to_node in to_nodes:
+                    self.capacity[(from_node, to_node)] = from_node.get_capacity_left(to_node)
+        return self.capacity
 
-    def get_capacity_map(self) -> Dict[Tuple['LightningChannel.LightningNode', 'LightningChannel.LightningNode'], int]:
-        capacity: Dict[Tuple['LightningChannel.LightningNode', 'LightningChannel.LightningNode'], int] = {}
-        for from_node, to_nodes in self.edges.items():
-            for to_node in to_nodes:
-                capacity[(from_node, to_node)] = from_node.get_capacity_left(to_node)
-        return capacity
+    def update_capacity_map(self, edges_to_update: List[Tuple[LightningNode, LightningNode]]):
+        for edge in edges_to_update:
+            self.capacity[edge] = edge[0].get_capacity_left(edge[1])
 
-    def get_fee_map(self, amount_in_wei: float) -> Dict[Tuple['LightningChannel.LightningNode', 'LightningChannel.LightningNode'], float]:
-        fees: Dict[Tuple['LightningChannel.LightningNode', 'LightningChannel.LightningNode'], float] = {}
-        for from_node in self.edges:
-            for to_node in self.edges[from_node]:
-                fees[(from_node, to_node)] = amount_in_wei * to_node.fee_percentage
-        return fees
+    def get_fees_map(self) -> Dict[Tuple[LightningNode, LightningNode], float]:
+        if not self.fees_rate_map:
+            for from_node in self.edges:
+                for to_node in self.edges[from_node]:
+                    self.fees_rate_map[(from_node, to_node)] = to_node.fee_percentage
+        return self.fees_rate_map
 
-    def find_shortest_path(self, initial: 'LightningChannel.LightningNode', amount_in_wei: int):
-        fee_map: Dict[Tuple['LightningChannel.LightningNode', 'LightningChannel.LightningNode'],
-                      float] = self.get_fee_map(amount_in_wei)
-        capacity_map: Dict[Tuple['LightningChannel.LightningNode', 'LightningChannel.LightningNode'],
-                           int] = self.get_capacity_map()
-        nodes: Set['LightningChannel.LightningNode'] = set(self.nodes)
-        visited: Dict['LightningChannel.LightningNode', int] = {initial: amount_in_wei}
-        path: Dict['LightningChannel.LightningNode', 'LightningChannel.LightningNode'] = {}
-        capacity_left_in_path: Dict['LightningChannel.LightningNode', int] = {initial: float('inf')}
+    def find_shortest_path(self, initial: LightningNode, amount_in_wei: int):
+        fee_map: Dict[Tuple[LightningNode, LightningNode], float] = self.get_fees_map()
+        capacity_map: Dict[Tuple[LightningNode, LightningNode], int] = self.get_capacity_map()
+        nodes: Set[LightningNode] = set(self.nodes)
+        visited: Dict[LightningNode, int] = {initial: amount_in_wei}
+        path: Dict[LightningNode, LightningNode] = {}
+        capacity_left_in_path: Dict[LightningNode, int] = {initial: float('inf')}
 
         while nodes:
             min_node = None
@@ -65,13 +64,16 @@ class Network:
             current_weight = visited[min_node]
 
             for edge in self.edges[min_node]:
-                weight = current_weight + fee_map[(min_node, edge)]
-                capacity_left = min(capacity_left_in_path[min_node], capacity_map[(min_node, edge)]) - \
-                                fee_map[(min_node, edge)]
-                if (edge not in visited or weight < visited[edge]) and capacity_left >= 0:
-                    visited[edge] = weight
-                    path[edge] = min_node
-                    capacity_left_in_path[edge] = capacity_left
+                capacity_between = capacity_map[(min_node, edge)]
+                if capacity_between >= amount_in_wei:
+                    fee_between = int(fee_map[(min_node, edge)] * current_weight)
+                    weight = current_weight + fee_between
+                    capacity_left = min(capacity_left_in_path[min_node], capacity_between - amount_in_wei) - \
+                                    fee_between
+                    if (edge not in visited or weight < visited[edge]) and capacity_left >= 0:
+                        visited[edge] = weight
+                        path[edge] = min_node
+                        capacity_left_in_path[edge] = capacity_left
 
         return visited, path
 
