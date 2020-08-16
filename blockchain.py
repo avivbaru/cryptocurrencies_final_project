@@ -1,6 +1,6 @@
-import Contract_HTLC as cn
-import LightningChannel as lc
-import ChannelManager as cm
+import contract_htlc as cn
+import lightning_channel as lc
+import channel_manager as cm
 from typing import Dict
 
 

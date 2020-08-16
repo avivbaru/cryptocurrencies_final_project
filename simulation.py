@@ -3,9 +3,8 @@ import time
 import math
 import fire
 import inspect
-import LightningChannel
+import lightning_channel
 from network import Network
-from typing import List
 from singletons import METRICS_COLLECTOR_INSTANCE, FUNCTION_COLLECTOR_INSTANCE, BLOCKCHAIN_INSTANCE
 
 HONEST_NODE_BALANCE_AVG = "honest_node_balance"
@@ -72,19 +71,22 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
             print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
             FUNCTION_COLLECTOR_INSTANCE.run()
 
-    BLOCKCHAIN_INSTANCE.wait_k_blocks(5000)
+    BLOCKCHAIN_INSTANCE.wait_k_blocks(5000) # TODO: Change!!
     FUNCTION_COLLECTOR_INSTANCE.run()
     for node in network.nodes:
         for other_node in network.edges[node]:
             node.close_channel(other_node)
 
-        if type(node) is LightningChannel.LightningNode:
-            METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        if type(node) is LightningChannel.LightningNodeGriefing:
-            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        if type(node) is LightningChannel.LightningNodeSoftGriefing:
-            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-    metrics_str = '\n'.join([f'{k}:{v}' for k, v in METRICS_COLLECTOR_INSTANCE.get_metrics().items()])
+        if type(node) is lightning_channel.LightningNode:
+            METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG,
+                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        if type(node) is lightning_channel.LightningNodeGriefing:
+            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG,
+                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        if type(node) is lightning_channel.LightningNodeSoftGriefing:
+            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG,
+                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+    metrics_str = '\n'.join([f'\t{k}: {v}' for k, v in METRICS_COLLECTOR_INSTANCE.get_metrics().items()])
     print(f"Metrics of this run: \n{metrics_str}")
 
 
@@ -110,13 +112,13 @@ def create_network(number_of_nodes, griefing_percentage, soft_griefing_percentag
     number_of_griefing_nodes = int(griefing_percentage * number_of_nodes)
     number_of_soft_griefing_nodes = int(soft_griefing_percentage * number_of_nodes)
     for _ in range(number_of_nodes - number_of_griefing_nodes - number_of_soft_griefing_nodes):
-        node = LightningChannel.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate)
+        node = lightning_channel.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate)
         network.add_node(node)
     for _ in range(number_of_griefing_nodes):
-        node = LightningChannel.LightningNodeGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
+        node = lightning_channel.LightningNodeGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
         network.add_node(node)
     for _ in range(number_of_soft_griefing_nodes):
-        node = LightningChannel.LightningNodeSoftGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
+        node = lightning_channel.LightningNodeSoftGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
         network.add_node(node)
     return network
 

@@ -1,9 +1,9 @@
 from collections import defaultdict
 from typing import Dict, List, Tuple, Set
-import LightningChannel 
+import lightning_channel
 
 
-LightningNode = LightningChannel.LightningNode
+LightningNode = lightning_channel.LightningNode
 
 
 class Network:
@@ -40,8 +40,8 @@ class Network:
                     self.fees_rate_map[(from_node, to_node)] = to_node.fee_percentage
         return self.fees_rate_map
 
-    def find_shortest_path_with_griefing_penalty(self, initial: LightningNode, amount_in_wei: int,
-                                                 griefing_penalty_rate: float):
+    def find_shortest_path(self, initial: LightningNode, amount_in_wei: int,
+                           griefing_penalty_rate: float):
         fee_map: Dict[Tuple[LightningNode, LightningNode], float] = self.get_fees_map()
         capacity_map: Dict[Tuple[LightningNode, LightningNode], int] = self.get_capacity_map()
         nodes: Set[LightningNode] = set(self.nodes)

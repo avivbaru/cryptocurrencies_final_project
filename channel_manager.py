@@ -1,8 +1,8 @@
-import LightningChannel as ln
+import lightning_channel as ln
 import random
 import string
 from typing import *
-import Contract_HTLC as cn
+import contract_htlc as cn
 from singletons import *
 
 

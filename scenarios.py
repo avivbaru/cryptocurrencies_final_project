@@ -1,6 +1,6 @@
 
-from LightningChannel import LightningNode, APPEAL_PERIOD
-from Blockchain import BLOCKCHAIN_INSTANCE
+from lightning_channel import LightningNode, APPEAL_PERIOD
+from blockchain import BLOCKCHAIN_INSTANCE
 
 
 def init_scenario():

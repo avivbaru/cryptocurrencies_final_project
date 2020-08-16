@@ -1,9 +1,9 @@
 from typing import Dict, List, Tuple, Callable, Optional
 import random
 import string
-import Contract_HTLC as cn
-import Contract_HTLC_GP as cn_gp
-import ChannelManager as cm
+import contract_htlc as cn
+import contract_htlc_gp as cn_gp
+import channel_manager as cm
 from singletons import *
 
 

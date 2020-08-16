@@ -1,5 +1,5 @@
-import ChannelManager as cm
-import LightningChannel as ln
+import channel_manager as cm
+import lightning_channel as ln
 from singletons import *
 
 

@@ -1,5 +1,6 @@
-from Contract_HTLC import *
-import LightningChannel as lc
+from contract_htlc import *
+import lightning_channel as lc
+
 
 class Contract_HTLC_GP(Contract_HTLC):
     def __init__(self, owner1_balance_delta: int, hash_image: int, expiration_block_number: int,
