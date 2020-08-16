@@ -1,9 +1,9 @@
 import LightningChannel as ln
-import Blockchain as bc
 import random
 import string
 from typing import *
 import Contract_HTLC as cn
+from singletons import *
 
 
 class ChannelData:
@@ -37,7 +37,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         self._owner1_htlc_locked = 0
         self._owner2_htlc_locked = 0
 
-        bc.BLOCKCHAIN_INSTANCE.add_channel(self)
+        BLOCKCHAIN_INSTANCE.add_channel(self)
 
     @property
     def channel_state(self) -> ChannelState:
@@ -83,13 +83,13 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def owner2_add_funds(self, owner2_amount_in_wei: int):
         self._state.channel_data._total_wei += owner2_amount_in_wei  # TODO: see how to get rid of this warning
-        bc.BLOCKCHAIN_INSTANCE.apply_transaction(self.channel_state.channel_data.owner2, owner2_amount_in_wei)
+        BLOCKCHAIN_INSTANCE.apply_transaction(self.channel_state.channel_data.owner2, owner2_amount_in_wei)
         # self.owner2_add_funds.__code__ = (lambda: None).__code__  # so it can not be set again
 
     def close_channel(self):
         if not self._open:
             return
-        bc.BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
+        BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
         self._open = False
 
     def add_htlc_contract(self, contract: 'cn.Contract_HTLC') -> bool:

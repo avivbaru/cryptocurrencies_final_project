@@ -47,7 +47,7 @@ class Network:
         nodes: Set['LightningChannel.LightningNode'] = set(self.nodes)
         visited: Dict['LightningChannel.LightningNode', int] = {initial: amount_in_wei}
         path: Dict['LightningChannel.LightningNode', 'LightningChannel.LightningNode'] = {}
-        capacity_left_in_path: Dict['LightningChannel.LightningNode', int] = {initial: int('inf')}
+        capacity_left_in_path: Dict['LightningChannel.LightningNode', int] = {initial: float('inf')}
 
         while nodes:
             min_node = None
