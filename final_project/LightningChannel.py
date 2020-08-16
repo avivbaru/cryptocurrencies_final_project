@@ -52,9 +52,9 @@ class LightningNode:
 
     def get_capacity_left(self, other_node):
         if other_node.address in self._other_nodes_to_channels:
-            return self._other_nodes_to_channels[other_node.address].amount_owner1_can_transfer_to_owner2 if  \
-                self._other_nodes_to_channels[other_node.address].channel_state.channel_data.owner1.address == self.address else \
-            self._other_nodes_to_channels[other_node.address].amount_owner2_can_transfer_to_owner1
+            channel = self._other_nodes_to_channels[other_node.address]
+            return channel.amount_owner1_can_transfer_to_owner2 if channel.is_owner1(self) else \
+                channel.amount_owner2_can_transfer_to_owner1
 
     def get_fee_for_transfer_amount(self, amount_in_wei: int) -> int:
         return int(self._fee_percentage * amount_in_wei)
