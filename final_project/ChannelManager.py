@@ -29,15 +29,33 @@ class ChannelState:
 
 class ChannelManager(object):  # TODO: maybe change name to just channel
     def __init__(self, data: ChannelData, default_split: 'cn.MessageState'):
+        self._owner1_htlc_locked = 0
+        self._owner2_htlc_locked = 0
         self._state: ChannelState = ChannelState(data)
         self._state.channel_data._total_wei = default_split.owner1_balance
         default_split.channel_address = data.address  # TODO: not so pretty...
         self.update_message(default_split)
         self._open = True
-        self._owner1_htlc_locked = 0
-        self._owner2_htlc_locked = 0
+        self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance
+        self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_wei -
+                                                      self._state.message_state.owner1_balance)
 
         BLOCKCHAIN_INSTANCE.add_channel(self)
+
+    def owner1_htlc_locked_setter(self, owner1_htlc_locked: int):
+        self._owner1_htlc_locked = owner1_htlc_locked
+        self._compute_amount_owner1_can_transfer_to_owner2()
+
+    def _compute_amount_owner1_can_transfer_to_owner2(self):
+        self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance - self._owner1_htlc_locked
+
+    def owner2_htlc_locked_setter(self, owner2_htlc_locked: int):
+        self._owner2_htlc_locked = owner2_htlc_locked
+        self._compute_amount_owner2_can_transfer_to_owner1()
+
+    def _compute_amount_owner2_can_transfer_to_owner1(self):
+        self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_wei -
+                                                      self._state.message_state.owner1_balance) - self._owner2_htlc_locked
 
     @property
     def channel_state(self) -> ChannelState:
@@ -57,11 +75,11 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     @property
     def amount_owner1_can_transfer_to_owner2(self):
-        return self._state.message_state.owner1_balance - self._owner1_htlc_locked
+        return self._amount_owner1_can_transfer_to_owner2
 
     @property
     def amount_owner2_can_transfer_to_owner1(self):
-        return (self.channel_state.channel_data.total_wei - self._state.message_state.owner1_balance) - self._owner2_htlc_locked
+        return self._amount_owner2_can_transfer_to_owner1
 
     def is_owner1(self, node: 'ln.LightningNode') -> bool:
         return node.address == self.channel_state.channel_data.owner1.address
@@ -69,6 +87,8 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
     def update_message(self, message_state: 'cn.MessageState') -> None:
         self._check_new_message_state(message_state)
         self.channel_state.message_state = message_state
+        self._compute_amount_owner1_can_transfer_to_owner2()
+        self._compute_amount_owner2_can_transfer_to_owner1()
 
     def _check_new_message_state(self, message_state: 'cn.MessageState') -> None:
         if message_state.serial_number < 0 or \
@@ -100,9 +120,9 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
                 > self._state.channel_data.total_wei - self._state.message_state.owner1_balance:
             return False
         if contract.owner1_balance_delta <= 0:
-            self._owner1_htlc_locked -= contract.owner1_balance_delta
+            self.owner1_htlc_locked_setter(self._owner1_htlc_locked - contract.owner1_balance_delta)
         else:
-            self._owner2_htlc_locked += contract.owner1_balance_delta
+            self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.owner1_balance_delta)
         # subscribe to contract
         self._state.htlc_contracts.append(contract)
 
@@ -115,9 +135,9 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def _unlock_funds_from_contract(self, contract: 'cn.Contract_HTLC'):
         if contract.owner1_balance_delta <= 0:
-            self._owner1_htlc_locked += contract.owner1_balance_delta
+            self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.owner1_balance_delta)
         else:
-            self._owner2_htlc_locked -= contract.owner1_balance_delta
+            self.owner2_htlc_locked_setter(self._owner2_htlc_locked - contract.owner1_balance_delta)
 
         current_message_state = self._state.message_state
         message_state = cn.MessageState(current_message_state.owner1_balance + contract.owner1_balance_delta,

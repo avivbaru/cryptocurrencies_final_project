@@ -1,7 +1,6 @@
 import ChannelManager as cm
 import LightningChannel as ln
 from singletons import *
-from typing import Dict, List, Tuple, Set
 
 
 class MessageState:
@@ -63,12 +62,11 @@ class Contract_HTLC:
     def owner2(self):
         return self._owner2
 
-    def check_expiration(self, block_number: int) -> bool:
+    def check_expiration(self) -> bool:
         if self.is_expired:
             self.owner1.notify_of_expired_contract(self)
             return True
         return False
-
 
     def resolve_onchain(self, pre_image: str) -> bool:
         if not self._validate(pre_image):
@@ -94,7 +92,5 @@ class Contract_HTLC:
     def resolve_offchain(self, pre_image: str) -> bool:
         if not self._validate(pre_image):
             return False
-
-
 
         return True
