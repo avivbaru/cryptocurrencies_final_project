@@ -220,6 +220,9 @@ class LightningNode:
     def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: Contract_HTLC):
         other_node.notify_of_resolve_htlc_offchain(contract)
 
+    def notify_of_expired_contract(self, contract: Contract_HTLC):
+        return
+
 
 class LightningNodeGriefing(LightningNode):
     def __init__(self, balance: int, metrics_collector: simulation.MetricsCollector,

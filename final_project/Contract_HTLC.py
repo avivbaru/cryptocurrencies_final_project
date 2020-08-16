@@ -63,6 +63,13 @@ class Contract_HTLC:
     def owner2(self):
         return self._owner2
 
+    def check_expiration(self, block_number: int) -> bool:
+        if self.is_expired:
+            self.owner1.notify_of_expired_contract(self)
+            return True
+        return False
+
+
     def resolve_onchain(self, pre_image: str) -> bool:
         if not self._validate(pre_image):
             return False
