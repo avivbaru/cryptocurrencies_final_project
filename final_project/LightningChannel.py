@@ -13,17 +13,6 @@ APPEAL_PERIOD = 3  # the appeal period in blocks.
 STARTING_SERIAL = 0  # first serial number
 
 
-def check_channel_address(func):
-    """
-    Decorator for Node method. Check if the Node know the channel address argument.
-    """
-    def wrapper(self, address, *args):
-        if address in self._channels:
-            return func(self, address, *args)
-
-    return wrapper
-
-
 class LightningNode:
     def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
         # TODO: check if has balance when creating channels
@@ -31,6 +20,7 @@ class LightningNode:
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
         self._hash_image_to_preimage: Dict[int, str] = {}
         self._channels: Dict[str, cm.ChannelManager] = {}
+        self._locked_funds: int = 0
         self._balance = balance
         self._fee_percentage = fee_percentage
         self._griefing_penalty_rate = griefing_penalty_rate  # TODO: maybe have this as an attribute of the blockchain
@@ -43,6 +33,13 @@ class LightningNode:
         Returns the address of this node.
         """
         return self._address
+
+    @property
+    def locked_funds(self):
+        """
+        Returns the address of this node.
+        """
+        return self._locked_funds
 
     @property
     def fee_percentage(self):
@@ -98,7 +95,7 @@ class LightningNode:
         return transfer_amount - amount_in_wei
 
     def _calculate_griefing_penalty(self, amount_in_wei: int, waiting_time):
-        return self._griefing_penalty_rate * amount_in_wei * waiting_time
+        return self._griefing_penalty_rate * amount_in_wei * waiting_time * 10
     # TODO: time = exp_time - current_block_numeber... though current block number may vary between nodes
 
     def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
@@ -224,6 +221,9 @@ class LightningNode:
             assert self.address == other_contract.owner2.address
             other_node.notify_of_griefed_contract(other_contract)
 
+    def notify_of_change_in_locked_funds(self, locked_fund):
+        self._locked_funds += locked_fund
+
 
 class LightningNodeGriefing(LightningNode):
     def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
@@ -253,4 +253,33 @@ class LightningNodeGriefing(LightningNode):
         FUNCTION_COLLECTOR_INSTANCE.append(
             self._collector_function_creator(target_block_number,
                                              lambda: super(LightningNodeGriefing, self)
+                                             ._notify_other_node_of_resolving_contract(other_node, contract)))
+
+
+class LightningNodeSoftGriefing(LightningNode):
+    def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
+        super().__init__(balance, fee_percentage, griefing_penalty_rate)
+
+    def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
+        target_block_number = contract.expiration_block_number - 1
+        FUNCTION_COLLECTOR_INSTANCE.append(
+            self._collector_function_creator(target_block_number,
+                                             lambda: super(LightningNodeSoftGriefing, self)
+                                             ._start_resolving_contract_off_chain(sender, contract)))
+
+    def _collector_function_creator(self, block_number: int, func: Callable[[], None]) -> Callable[[], bool]:
+        def check_block_and_use_function():
+            if BLOCKCHAIN_INSTANCE.block_number <= block_number:
+                return False
+
+            print("Griefined!")
+            func()
+            return True
+        return check_block_and_use_function
+
+    def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
+        target_block_number = contract.expiration_block_number - 1
+        FUNCTION_COLLECTOR_INSTANCE.append(
+            self._collector_function_creator(target_block_number,
+                                             lambda: super(LightningNodeSoftGriefing, self)
                                              ._notify_other_node_of_resolving_contract(other_node, contract)))

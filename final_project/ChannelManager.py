@@ -42,16 +42,18 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
         BLOCKCHAIN_INSTANCE.add_channel(self)
 
-    def owner1_htlc_locked_setter(self, owner1_htlc_locked: int, contract: 'cn.Contract_HTLC'):
-        self._owner1_htlc_locked = owner1_htlc_locked - contract.additional_delta_for_locked_funds
+    def owner1_htlc_locked_setter(self, owner1_htlc_locked: int):
+        old_htlc_locked = self._owner1_htlc_locked
+        self._owner1_htlc_locked = owner1_htlc_locked
         self._compute_amount_owner1_can_transfer_to_owner2()
+        self._state.channel_data.owner1.notify_of_change_in_locked_funds(self._owner1_htlc_locked - old_htlc_locked)
         assert self._owner1_htlc_locked >= 0
 
     def _compute_amount_owner1_can_transfer_to_owner2(self):
         self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance - self._owner1_htlc_locked
 
-    def owner2_htlc_locked_setter(self, owner2_htlc_locked: int, contract: 'cn.Contract_HTLC'):
-        self._owner2_htlc_locked = owner2_htlc_locked + contract.additional_delta_for_locked_funds
+    def owner2_htlc_locked_setter(self, owner2_htlc_locked: int):
+        self._owner2_htlc_locked = owner2_htlc_locked
         self._compute_amount_owner2_can_transfer_to_owner1()
         assert self._owner2_htlc_locked >= 0
 
@@ -105,6 +107,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def owner2_add_funds(self, owner2_amount_in_wei: int):
         self._state.channel_data._total_wei += owner2_amount_in_wei  # TODO: see how to get rid of this warning
+        self._compute_amount_owner2_can_transfer_to_owner1()
         BLOCKCHAIN_INSTANCE.apply_transaction(self.channel_state.channel_data.owner2, owner2_amount_in_wei)
         # self.owner2_add_funds.__code__ = (lambda: None).__code__  # so it can not be set again
 
@@ -112,6 +115,8 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         if not self._open:
             return
         BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
+        self.owner1_htlc_locked_setter(0)
+        self.owner2_htlc_locked_setter(0)
         self._open = False
 
     def add_htlc_contract(self, contract: 'cn.Contract_HTLC') -> bool:
@@ -122,9 +127,11 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
                 > self._state.channel_data.total_wei - self._state.message_state.owner1_balance:
             return False
         if contract.owner1_balance_delta <= 0:
-            self.owner1_htlc_locked_setter(self._owner1_htlc_locked - contract.owner1_balance_delta, contract)
+            self.owner1_htlc_locked_setter(self._owner1_htlc_locked - contract.owner1_balance_delta +
+                                           contract.additional_delta_for_locked_funds(self._state.channel_data.owner1))
         else:
-            self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.owner1_balance_delta, contract)
+            self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.owner1_balance_delta +
+                                           contract.additional_delta_for_locked_funds(self._state.channel_data.owner1))
         # subscribe to contract
         self._state.htlc_contracts.append(contract)
 
@@ -138,9 +145,11 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def _unlock_funds_from_contract(self, contract: 'cn.Contract_HTLC'):
         if contract.owner1_balance_delta <= 0:
-            self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.owner1_balance_delta, contract)
+            self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.owner1_balance_delta +
+                                           contract.additional_delta_for_locked_funds(self._state.channel_data.owner1))
         else:
-            self.owner2_htlc_locked_setter(self._owner2_htlc_locked - contract.owner1_balance_delta, contract)
+            self.owner2_htlc_locked_setter(self._owner2_htlc_locked - contract.owner1_balance_delta +
+                                           contract.additional_delta_for_locked_funds(self._state.channel_data.owner1))
 
     def _update_message_state_with_contract(self, contract: 'cn.Contract_HTLC'):
         current_message_state = self._state.message_state

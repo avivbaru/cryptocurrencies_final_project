@@ -64,8 +64,7 @@ class Contract_HTLC:
     def owner2(self):
         return self._owner2
 
-    @property
-    def additional_delta_for_locked_funds(self) -> int:
+    def additional_delta_for_locked_funds(self, owner: 'ln.LightningNode') -> int:
         return 0
 
     def check_expiration(self) -> bool:
