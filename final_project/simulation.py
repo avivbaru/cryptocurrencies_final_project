@@ -4,8 +4,7 @@ import fire
 import inspect
 import LightningChannel
 from network import Network
-from Blockchain import BLOCKCHAIN_INSTANCE
-from utils import FunctionCollector, MetricsCollector
+from singletons import METRICS_COLLECTOR_INSTANCE, FUNCTION_COLLECTOR_INSTANCE, BLOCKCHAIN_INSTANCE
 
 SEND_SUCCESSFULLY = "send_successfully"
 PATH_LENGTH_AVG = "path_length_avg"
@@ -13,24 +12,21 @@ NO_PATH_FOUND = "no_path_found"
 SEND_FAILED = "send_failed"
 MIN_TO_SEND = 0.0001 # TODO: check!
 MAX_TO_SEND = 0.9 # TODO: check!
-
-METRICS_COLLECTOR_INSTANCE = MetricsCollector()
-FUNCTION_COLLECTOR_INSTANCE = FunctionCollector()
-
-
-def how_much_to_send(starting_balance, mu, sigma):
-    # TODO: change?
-    return max(min(random.gauss(mu, sigma), MIN_TO_SEND), MAX_TO_SEND) * 10
+PERCENTAGE_BUCKETS = [0.05, 0.2, 0.3]
+SIGMA = 0.1
 
 
-def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
-                   sigma_percentage_of_capacity, htlcs_per_block):
+def how_much_to_send(channel_starting_balance):
+    mu = random.choice(PERCENTAGE_BUCKETS)
+    return max(min(random.gauss(mu, SIGMA), MIN_TO_SEND), MAX_TO_SEND) * channel_starting_balance
+
+
+def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance):
 
     htlc_counter = 0
     while BLOCKCHAIN_INSTANCE.block_number < number_of_blocks:
         sender_node = random.choice(network.nodes)
-        amount_in_wei = how_much_to_send(starting_balance, mean_percentage_of_capacity,
-                                         sigma_percentage_of_capacity)
+        amount_in_wei = how_much_to_send(channel_starting_balance)
         # prepare data to find path from sender to any node
         net_network = network.get_network_with_enough_capacity(amount_in_wei)
         visited_nodes_to_min_hops, path_map = net_network.find_shortest_path(sender_node, amount_in_wei)
@@ -86,58 +82,60 @@ def simulation_details(func):
 
 
 # Redundancy network functions
-def generate_redundancy_network(number_of_nodes, connectivity, starting_balance):
+def generate_redundancy_network(number_of_nodes, connectivity, starting_balance, channel_starting_balance,
+                                fee_percentage, griefing_penalty_rate):
     # connect 2 nodes if differ by 10 modulo 100 TODO: change!
     network = Network()
     prev = None
     for i in range(number_of_nodes):
-        node = LightningChannel.LightningNode(starting_balance, METRICS_COLLECTOR_INSTANCE, FUNCTION_COLLECTOR_INSTANCE)
+        node = LightningChannel.LightningNode(starting_balance, METRICS_COLLECTOR_INSTANCE,
+                                              FUNCTION_COLLECTOR_INSTANCE, fee_percentage, griefing_penalty_rate)
         if prev:
-            network.add_edge(prev, node)
+            network.add_edge(prev, node, channel_starting_balance)
         prev = node
         network.add_node(node)
     for i in range(number_of_nodes):
-        for j in range(i + connectivity, number_of_nodes, connectivity):
-            network.add_edge(network.nodes[i], network.nodes[j])
-    network.add_edge(network.nodes[0], network.nodes[-1])
+        next_index = i + connectivity
+        if next_index >= number_of_nodes:
+            next_index -= number_of_nodes
+        network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
     return network
 
 
 @simulation_details
 def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20,
-                                connectivity=10, mean_percentage_of_capacity=0.3,
-                                sigma_percentage_of_capacity=0.1, fee_percentage=0.1,
-                                min_fee=2, starting_balance=200, blockchain_fee=2):
-    # changeable parameters: number of block, channel per block, fee, starting balance, transaction amount,
-    #                        blockchain fee.
-
-    network = generate_redundancy_network(number_of_nodes, connectivity, starting_balance)
-    run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
-                   sigma_percentage_of_capacity, htlcs_per_block)
+                                connectivity=10, channel_starting_balance=10,
+                                starting_balance=200, fee_percentage=0.1, griefing_penalty_rate=0.01,
+                                blockchain_fee=2):
+    network = generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
+                                          channel_starting_balance, fee_percentage, griefing_penalty_rate)
+    run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance)
 
 
 # Randomly network functions
-def generate_network_randomly(number_of_nodes, connectivity, starting_balance):
+def generate_network_randomly(number_of_nodes, connectivity, starting_balance, channel_starting_balance,
+                              fee_percentage, griefing_penalty_rate):
     network = Network()
     for i in range(number_of_nodes):
-        node = LightningChannel.LightningNode(starting_balance, METRICS_COLLECTOR_INSTANCE, FUNCTION_COLLECTOR_INSTANCE)
+        node = LightningChannel.LightningNode(starting_balance, METRICS_COLLECTOR_INSTANCE,
+                                              FUNCTION_COLLECTOR_INSTANCE, fee_percentage,
+                                              griefing_penalty_rate)
         network.add_node(node)
     for node in network.nodes:
         nodes_to_connect = random.sample(network.nodes, connectivity)
         nodes_to_connect.remove(node)
         for node_to_connect in nodes_to_connect:
-            network.add_edge(node, node_to_connect)
+            network.add_edge(node, node_to_connect, channel_starting_balance)
     return network
 
 
 @simulation_details
 def simulate_random_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20, connectivity=10,
-                            mean_percentage_of_capacity=0.3, sigma_percentage_of_capacity=0.1,
-                            fee_percentage=0.1, min_fee=2, starting_balance=10, blockchain_fee=2):
-
-    network = generate_network_randomly(number_of_nodes, connectivity, starting_balance)
-    run_simulation(number_of_blocks, network, starting_balance, mean_percentage_of_capacity,
-                   sigma_percentage_of_capacity, htlcs_per_block)
+                            channel_starting_balance=10, starting_balance=200, fee_percentage=0.1,
+                            griefing_penalty_rate=0.01, blockchain_fee=2):
+    network = generate_network_randomly(number_of_nodes, connectivity, starting_balance,
+                                        channel_starting_balance, fee_percentage, griefing_penalty_rate)
+    run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_balance)
 
 
 def main():
