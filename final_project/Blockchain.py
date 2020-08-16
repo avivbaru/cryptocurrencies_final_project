@@ -22,6 +22,7 @@ class BlockChain:
     @property
     def fee(self):
         return self._fee
+    # TODO: maybe use and check before making a transaction
 
     def wait_k_blocks(self, k):
         for i in range(k):
