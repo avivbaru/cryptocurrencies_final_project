@@ -139,7 +139,7 @@ def simulate_random_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_
 
 
 def main():
-    fire.Fire()
+    fire.Fire({'simulate_random_network': 'random', 'simulate_redundancy_network': 'redundancy'})
 
 
 if __name__ == '__main__':
