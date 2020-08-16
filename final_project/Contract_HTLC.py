@@ -16,15 +16,17 @@ class MessageState:
 # TODO: move MessageState out of here
 
 class Contract_HTLC:
-    def __init__(self, owner1_balance_delta, hash_image: int, expiration_block_number: int, attached_channel: cm.ChannelManager,
-                 owner1: 'ln.LightningNode', owner2: 'ln.LightningNode'):
-        self._owner1_balance_delta = owner1_balance_delta
+    def __init__(self, owner1_balance_delta: int, hash_image: int, expiration_block_number: int, attached_channel:
+                 cm.ChannelManager, owner1: 'ln.LightningNode', owner2: 'ln.LightningNode'):
+        self._owner1_balance_delta: int = int(owner1_balance_delta)
         self._hash_image: int = hash_image
         self._expiration_block_number: int = expiration_block_number
         self._channel_to_notify: cm.ChannelManager = attached_channel
         self._pre_image = None
         self._owner1 = owner1
         self._owner2 = owner2
+
+        FUNCTION_COLLECTOR_INSTANCE.append(self.check_expiration)
 
     @property
     def is_expired(self):
@@ -35,7 +37,7 @@ class Contract_HTLC:
         return self._expiration_block_number
 
     @property
-    def owner1_balance_delta(self):
+    def owner1_balance_delta(self) -> int:
         return self._owner1_balance_delta
 
     @property
@@ -62,9 +64,13 @@ class Contract_HTLC:
     def owner2(self):
         return self._owner2
 
+    @property
+    def additional_delta_for_locked_funds(self) -> int:
+        return 0
+
     def check_expiration(self) -> bool:
         if self.is_expired:
-            self.owner1.notify_of_expired_contract(self)
+            self.owner1.notify_of_griefed_contract(self)
             return True
         return False
 
@@ -72,12 +78,14 @@ class Contract_HTLC:
         if not self._validate(pre_image):
             return False
 
-        BLOCKCHAIN_INSTANCE.resolve_htlc_contract(self)
+        self._resolve_onchain()
+        return True
+
+    def _resolve_onchain(self):
+        # BLOCKCHAIN_INSTANCE.resolve_htlc_contract(self)
 
         self._channel_to_notify.channel_state.channel_data.owner1.notify_of_resolve_htlc_onchain(self)
         self._channel_to_notify.channel_state.channel_data.owner2.notify_of_resolve_htlc_onchain(self)
-
-        return True
 
     def _validate(self, pre_image: str) -> bool:
         if self.is_expired:
@@ -94,3 +102,6 @@ class Contract_HTLC:
             return False
 
         return True
+
+    def resolve_griefed_contract(self):
+        self._resolve_onchain()
