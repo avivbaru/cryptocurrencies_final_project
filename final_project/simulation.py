@@ -3,7 +3,7 @@ import time
 import fire
 import inspect
 import LightningChannel
-from network import Network, find_shortest_path, generate_capacity_map, generate_fee_map
+from network import Network
 from Blockchain import BLOCKCHAIN_INSTANCE
 from utils import FunctionCollector, MetricsCollector
 
@@ -32,11 +32,8 @@ def run_simulation(number_of_blocks, network, starting_balance, mean_percentage_
         amount_in_wei = how_much_to_send(starting_balance, mean_percentage_of_capacity,
                                          sigma_percentage_of_capacity)
         # prepare data to find path from sender to any node
-        capacity_map = generate_capacity_map(network.edges)
-        edges = network.get_edges_with_enough_capacity(amount_in_wei, capacity_map)
-        fee_map = generate_fee_map(edges, amount_in_wei)
-        visited_nodes_to_min_hops, path_map = find_shortest_path(set(network.nodes), edges, sender_node,
-                                                                 fee_map, capacity_map, amount_in_wei)
+        net_network = network.get_network_with_enough_capacity(amount_in_wei)
+        visited_nodes_to_min_hops, path_map = net_network.find_shortest_path(sender_node, amount_in_wei)
         # find receiver node
         receiver_node = sender_node
         while receiver_node == sender_node:
