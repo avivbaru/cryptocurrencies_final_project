@@ -88,7 +88,7 @@ def generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
     network = Network()
     prev = None
     for i in range(number_of_nodes):
-        node = LightningChannel.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate)
+        node = LightningChannel.LightningNodeGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
         if prev:
             network.add_edge(prev, node, channel_starting_balance)
         prev = node
@@ -102,7 +102,7 @@ def generate_redundancy_network(number_of_nodes, connectivity, starting_balance,
 
 
 @simulation_details
-def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=15, htlcs_per_block=20,
+def simulate_redundancy_network(number_of_nodes=100, number_of_blocks=1500, htlcs_per_block=20,
                                 connectivity=10, channel_starting_balance=10,
                                 starting_balance=200, fee_percentage=0.1, griefing_penalty_rate=0.01,
                                 blockchain_fee=2):

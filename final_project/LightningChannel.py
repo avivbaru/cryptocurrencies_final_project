@@ -2,8 +2,10 @@ from typing import Dict, List, Tuple, Callable, Optional
 import random
 import string
 import Contract_HTLC as cn
+import Contract_HTLC_GP as cn_gp
 import ChannelManager as cm
 from singletons import *
+
 
 BLOCK_IN_DAY = 5
 
@@ -21,13 +23,9 @@ def check_channel_address(func):
 
     return wrapper
 
-# TODO: instead of having the time limit be the length of the path in blocks, we should make it: (length + 1) * (24*60 / 10)
-# == (length + 1) * 144
-
 
 class LightningNode:
-    def __init__(self, balance: int, fee_percentage: float = 0.1,
-                 griefing_penalty_rate: float = 0.01):
+    def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
         # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
@@ -99,19 +97,22 @@ class LightningNode:
             transfer_amount += node.get_fee_for_transfer_amount(transfer_amount)
         return transfer_amount - amount_in_wei
 
-    def _calculate_griefing_penalty(self, amount_in_wei: int, expiration_time):
-        return self._griefing_penalty_rate * amount_in_wei * expiration_time
+    def _calculate_griefing_penalty(self, amount_in_wei: int, waiting_time):
+        return self._griefing_penalty_rate * amount_in_wei * waiting_time
     # TODO: time = exp_time - current_block_numeber... though current block number may vary between nodes
 
     def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
-                  nodes_between: List['LightningNode'], expiration_time: int, griefing_penalty: int = 0) -> bool:
+                  nodes_between: List['LightningNode'], expiration_time: int, cumulative_griefing_penalty: int = 0) -> bool:
         assert node_to_send
         channel = self._other_nodes_to_channels[node_to_send.address]
         assert channel
         delta_amount = self._get_delta_for_sending_money(amount_in_wei, channel)
 
-        htlc_contract = cn.Contract_HTLC(delta_amount, hash_image,
-                                      expiration_time, channel, self, node_to_send)
+        htlc_contract = cn_gp.Contract_HTLC_GP(delta_amount, hash_image,
+                                               expiration_time, channel, self, node_to_send,
+                                               cumulative_griefing_penalty +
+                                               self._calculate_griefing_penalty(amount_in_wei, expiration_time -
+                                                                                BLOCKCHAIN_INSTANCE.block_number))
         # TODO: maybe have a factory for creating HTLC vs HTLC-GP
         return node_to_send.receive_htlc(self, htlc_contract, amount_in_wei, nodes_between)
 
@@ -128,13 +129,13 @@ class LightningNode:
             return amount_in_wei
 
     def receive_htlc(self, sender: 'LightningNode', contract: cn.Contract_HTLC, amount_in_wei: int,
-                     nodes_between: List['LightningNode'], griefing_penalty: int = 0) -> bool:
+                     nodes_between: List['LightningNode'], cumulative_griefing_penalty: int = 0) -> bool:
         contract.attached_channel.add_htlc_contract(contract)
         if nodes_between:
             node_to_send = nodes_between[0]
             fee = self.get_fee_for_transfer_amount(amount_in_wei)
             return self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:],
-                                  contract.expiration_block_number - 1)
+                                  contract.expiration_block_number - 1, cumulative_griefing_penalty)
         if contract.hash_image in self._hash_image_to_preimage:
             self._start_resolving_contract_off_chain(sender, contract)
             return True
@@ -185,7 +186,7 @@ class LightningNode:
         contract.attached_channel.close_channel()  # TODO: what else should do here?
         del self._channels[contract.attached_channel.channel_state.channel_data.address]
         other_contract: cn.Contract_HTLC = self._find_other_contract_with_same_pre_image(contract.hash_image,
-                                                                                      contract.attached_channel)
+                                                                                         contract.attached_channel)
         if other_contract is not None:
             other_contract.resolve_onchain(contract.pre_image)
 
@@ -205,7 +206,7 @@ class LightningNode:
 
         contract.attached_channel.resolve_htlc(contract)
         other_contract: cn.Contract_HTLC = self._find_other_contract_with_same_pre_image(contract.hash_image,
-                                                                                      contract.attached_channel)
+                                                                                         contract.attached_channel)
         # TODO: maybe have the owners inside the htlc_contracts so to not have this shit
         if other_contract is not None:
             other_contract.resolve_offchain(contract.pre_image)
@@ -215,15 +216,21 @@ class LightningNode:
     def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
         other_node.notify_of_resolve_htlc_offchain(contract)
 
-    def notify_of_expired_contract(self, contract: cn.Contract_HTLC):
-        return
+    def notify_of_griefed_contract(self, contract: cn.Contract_HTLC):
+        other_contract: cn.Contract_HTLC = self._find_other_contract_with_same_pre_image(contract.hash_image,
+                                                                                         contract.attached_channel)
+        if other_contract is not None:
+            other_node = other_contract.owner1
+            assert self.address == other_contract.owner2.address
+            other_node.notify_of_griefed_contract(other_contract)
 
 
 class LightningNodeGriefing(LightningNode):
-    def __init__(self, balance: int, fee_percentage: float = 0.1):
-        super().__init__(balance, fee_percentage)
+    def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
+        super().__init__(balance, fee_percentage, griefing_penalty_rate)
 
     def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
+        return # this waits for expiration, classic griefing. below is "soft griefing"
         target_block_number = contract.expiration_block_number - 1
         FUNCTION_COLLECTOR_INSTANCE.append(
             self._collector_function_creator(target_block_number,
@@ -241,6 +248,7 @@ class LightningNodeGriefing(LightningNode):
         return check_block_and_use_function
 
     def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
+        return
         target_block_number = contract.expiration_block_number - 1
         FUNCTION_COLLECTOR_INSTANCE.append(
             self._collector_function_creator(target_block_number,

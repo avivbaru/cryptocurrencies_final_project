@@ -10,3 +10,11 @@ class Contract_HTLC_GP(Contract_HTLC):
     @property
     def penalty(self):
         return self._penalty
+
+    @property
+    def additional_delta_for_locked_funds(self) -> int:
+        return -self._penalty
+
+    def resolve_griefed_contract(self):
+        super()._owner1_balance_delta += self._penalty
+        super().resolve_griefed_contract()
