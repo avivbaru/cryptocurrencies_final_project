@@ -1,9 +1,9 @@
 from collections import defaultdict
 from typing import Dict, List, Tuple, Set
-import lightning_channel
+import lightning_node
 
 
-LightningNode = lightning_channel.LightningNode
+LightningNode = lightning_node.LightningNode
 
 
 class Network:

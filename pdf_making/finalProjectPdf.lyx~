@@ -1901,6 +1901,76 @@ Node
 \noun default
 \color inherit
 ישר ובכך גורמת לו להפסיד כסף.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted3.png
+	scale 50
+	rotateOrigin center
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בדוגמה זו מתבצעת העברה העוברת בתת המסלול 
+\begin_inset Formula $A\rightarrow B\rightarrow C\rightarrow D\rightarrow E\rightarrow F$
+\end_inset
+
+ כאשר 
+\begin_inset Formula $F$
+\end_inset
+
+ ו-
+\begin_inset Formula $D$
+\end_inset
+
+ תוקפים את 
+\begin_inset Formula $E$
+\end_inset
+
+: כל החוזים בין 
+\begin_inset Formula $A$
+\end_inset
+
+ל-
+\begin_inset Formula $E$
+\end_inset
+
+ כבר אותחלו, כאשר כעת 
+\begin_inset Formula $E$
+\end_inset
+
+ מנסה לאתחל חוזה עם 
+\begin_inset Formula $F$
+\end_inset
+
+ ו-
+\begin_inset Formula $F$
+\end_inset
+
+ לא מגיב.
+ כעת, 
+\begin_inset Formula $E$
+\end_inset
+
+ מבקש לבטל את החוזה עם 
+\begin_inset Formula $D$
+\end_inset
+
+ אך האחרון מתעלם מהבקשה ומחכה שהחוזה שלו עם 
+\begin_inset Formula $E$
+\end_inset
+
+ ייפקע ו-
+\begin_inset Formula $E$
+\end_inset
+
+ יצטרך לשלם קנס על לא עוול בכפו.
+ כותבי המאמר מציעים דרך למגר את התופעה שנדון על מהי ויעילותה בהמשך.
 \end_layout
 
 \begin_layout Standard
@@ -2030,7 +2100,7 @@ Nodes
 \noun default
 \color inherit
 מפקידים לתוכו כסף, כאשר פרוטוקול זה מחייב זאת )אחרת בהעברה הראשונה לא נוכל
- לנעול את הכספים לעונש(.
+ לנעול את הכספים עבור העונש(.
 \begin_inset Newline newline
 \end_inset
 

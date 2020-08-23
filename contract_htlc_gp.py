@@ -1,5 +1,5 @@
 from contract_htlc import *
-import lightning_channel as lc
+import lightning_node as lc
 
 
 class Contract_HTLC_GP(Contract_HTLC):

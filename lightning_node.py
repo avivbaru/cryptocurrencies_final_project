@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Callable, Optional
+from typing import Dict, List, Tuple, Callable, Optional, Set
 import random
 import string
 import contract_htlc as cn
@@ -24,6 +24,7 @@ class LightningNode:
         self._balance = balance
         self._fee_percentage = fee_percentage
         self._griefing_penalty_rate = griefing_penalty_rate  # TODO: maybe have this as an attribute of the blockchain
+        self._pending_contracts: Set = set()
 
         BLOCKCHAIN_INSTANCE.add_node(self, balance)
 
@@ -74,19 +75,18 @@ class LightningNode:
         channel.owner2_add_funds(amount_in_wei)
         self._balance -= amount_in_wei
 
-    def start_htlc(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']) -> bool:
+    def start_htlc(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
         hash_image = final_node.generate_secret_x()  # TODO: make final_node = nodes_between[-1]?
         assert nodes_between
         node_to_send = nodes_between[0]
         assert node_to_send
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
-        if not self.send_htlc(node_to_send, amount_in_wei + total_fee, hash_image, nodes_between[1:],
-                              BLOCKCHAIN_INSTANCE.block_number + ((len(nodes_between) + 1) * 144)):  # TODO: see if
-            # this is a good time for htlc
-            print("Transaction failed - WHAT TO DO NOW??? MY LIFE IS OVER")
-            return False
-        return True
+        self.send_htlc(node_to_send, amount_in_wei + total_fee, hash_image, nodes_between[1:], BLOCKCHAIN_INSTANCE.block_number
+                       + ((len(nodes_between) + 1) * 144))  # TODO: returning true here has no meaning - should call simulation
+        # with success
+            # print("Transaction failed - WHAT TO DO NOW??? MY LIFE IS OVER")
+            # return False
 
     def _calculate_fee_for_route(self, path_nodes: List['LightningNode'], amount_in_wei: int) -> int:
         transfer_amount = amount_in_wei
@@ -96,10 +96,10 @@ class LightningNode:
 
     def _calculate_griefing_penalty(self, amount_in_wei: int, waiting_time):
         return self._griefing_penalty_rate * amount_in_wei * waiting_time * 10
-    # TODO: time = exp_time - current_block_numeber... though current block number may vary between nodes
+    # TODO: time = exp_time - current_block_number... though current block number may vary between nodes
 
     def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
-                  nodes_between: List['LightningNode'], expiration_time: int, cumulative_griefing_penalty: int = 0) -> bool:
+                  nodes_between: List['LightningNode'], expiration_time: int, cumulative_griefing_penalty: int = 0):
         assert node_to_send
         channel = self._other_nodes_to_channels[node_to_send.address]
         assert channel
@@ -111,7 +111,9 @@ class LightningNode:
                                                self._calculate_griefing_penalty(amount_in_wei, expiration_time -
                                                                                 BLOCKCHAIN_INSTANCE.block_number))
         # TODO: maybe have a factory for creating HTLC vs HTLC-GP
-        return node_to_send.receive_htlc(self, htlc_contract, amount_in_wei, nodes_between)
+        # TODO: maybe have the htlc not active till second owner calls a specific function
+        self._pending_contracts.add(htlc_contract)
+        node_to_send.receive_htlc(self, htlc_contract, amount_in_wei, nodes_between)
 
     def _get_delta_for_sending_money(self, amount_in_wei: int, channel: cm.ChannelManager) -> int:
         current_owner1_balance = channel.channel_state.message_state.owner1_balance
@@ -126,19 +128,35 @@ class LightningNode:
             return amount_in_wei
 
     def receive_htlc(self, sender: 'LightningNode', contract: cn.Contract_HTLC, amount_in_wei: int,
-                     nodes_between: List['LightningNode'], cumulative_griefing_penalty: int = 0) -> bool:
+                     nodes_between: List['LightningNode'], cumulative_griefing_penalty: int = 0):
         contract.attached_channel.add_htlc_contract(contract)
+        sender.accept_contract(contract)
         if nodes_between:
             node_to_send = nodes_between[0]
             fee = self.get_fee_for_transfer_amount(amount_in_wei)
-            return self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:],
-                                  contract.expiration_block_number - 1, cumulative_griefing_penalty)
-        if contract.hash_image in self._hash_image_to_preimage:
+            self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:],
+                           contract.expiration_block_number - 1, cumulative_griefing_penalty)
+        elif contract.hash_image in self._hash_image_to_preimage:
             self._start_resolving_contract_off_chain(sender, contract)
-            return True
-        return False
+        assert False
+
+    def accept_contract(self, contract: cn.Contract_HTLC):
+        assert contract in self._pending_contracts
+        self._pending_contracts.remove(contract)
+        contract.accept(self)
+
+    def decline_contract(self, contract: cn.Contract_HTLC):
+        assert contract in self._pending_contracts
+        self._pending_contracts.remove(contract)
+        other_contract = self._find_other_contract_with_same_pre_image(contract.hash_image, contract.attached_channel)
+        other_contract.owner1.terminate_contract(other_contract)
+
+    def terminate_contract(self, contract: cn.Contract_HTLC):
+        other_contract = self._find_other_contract_with_same_pre_image(contract.hash_image, contract.attached_channel)
+        other_contract.owner1.terminate_contract(other_contract)  # TODO: finish this function, also add terminate in contract
 
     def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
+        assert contract not in self._pending_contracts
         contract.resolve_offchain(self._hash_image_to_preimage[contract.hash_image])
         sender.notify_of_resolve_htlc_offchain(contract)
 

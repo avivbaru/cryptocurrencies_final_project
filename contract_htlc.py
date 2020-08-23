@@ -1,5 +1,5 @@
 import channel_manager as cm
-import lightning_channel as ln
+import lightning_node as ln
 from singletons import *
 
 
@@ -25,6 +25,7 @@ class Contract_HTLC:
         self._pre_image = None
         self._owner1 = owner1
         self._owner2 = owner2
+        self._is_accepted = False
 
         FUNCTION_COLLECTOR_INSTANCE.append(lambda: self.owner1.notify_of_griefed_contract(self),
                                            self._expiration_block_number)
@@ -64,6 +65,14 @@ class Contract_HTLC:
     @property
     def owner2(self):
         return self._owner2
+
+    @property
+    def is_accepted(self):
+        return self._is_accepted
+
+    def accept(self, sender: 'ln.LightningNode'):
+        if sender == self._owner1:
+            self._is_accepted = True
 
     def additional_delta_for_locked_funds(self, owner: 'ln.LightningNode') -> int:
         return 0

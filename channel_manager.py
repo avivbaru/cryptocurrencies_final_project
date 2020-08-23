@@ -1,4 +1,4 @@
-import lightning_channel as ln
+import lightning_node as ln
 import random
 import string
 from typing import *

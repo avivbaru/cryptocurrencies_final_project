@@ -1,5 +1,5 @@
 import contract_htlc as cn
-import lightning_channel as lc
+import lightning_node as lc
 import channel_manager as cm
 from typing import Dict
 

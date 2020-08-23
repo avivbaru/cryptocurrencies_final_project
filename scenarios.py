@@ -1,5 +1,5 @@
 
-from lightning_channel import LightningNode, APPEAL_PERIOD
+from lightning_node import LightningNode, APPEAL_PERIOD
 from blockchain import BLOCKCHAIN_INSTANCE
 
 
