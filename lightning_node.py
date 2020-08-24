@@ -294,3 +294,69 @@ class LightningNodeSoftGriefing(LightningNode):
         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
                                            ._notify_other_node_of_resolving_contract(other_node, contract),
                                            target_block_number)
+
+
+class LightningNodeReverseGriefing(LightningNode):
+    def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
+        super().__init__(balance, fee_percentage, griefing_penalty_rate)
+        self._peers: List['LightningNodeReverseGriefing'] = []
+        self._hash_to_peer: Dict[int, 'LightningNodeReverseGriefing'] = {}
+        self._hash_to_grief: List[int] = []
+        self._hash_to_not_accept_disable: List[int] = []
+
+    @property
+    def peers(self):
+        return self._peers
+
+    def _notify_of_peer(self, peer: 'LightningNodeReverseGriefing'):
+        self._add_peers_from_new_peer(peer)
+        peer._add_peers_from_new_peer(self)
+
+    def _add_peers_from_new_peer(self, peer: 'LightningNodeReverseGriefing'):
+        self._peers.append(peer)
+        self._peers.extend(peer.peers)
+        self._peers.remove(self)
+
+    def _notify_peer_of_hash(self, hash: int):
+        for peer in self._peers:
+            peer._receive_contract_from_peer(hash, peer)
+
+    def _notify_peer_of_hash_not_accept_disable(self, hash: int):
+        self._hash_to_not_accept_disable.append(hash)
+
+    def _receive_contract_from_peer(self, hash: int, peer: 'LightningNodeReverseGriefing'):
+        self._hash_to_peer[hash] = peer
+
+    def receive_htlc(self, sender: 'LightningNode', contract: cn.Contract_HTLC, amount_in_wei: int,
+                     nodes_between: List['LightningNode'], cumulative_griefing_penalty: int = 0):
+        if contract.hash_image in self._hash_to_peer:
+            # Griefing!!!!!!
+            # what happend if there is more then 2?????
+            self._hash_to_peer[contract.hash_image]._notify_peer_of_hash_not_accept_disable(contract.hash_image)
+            return
+        self._notify_peer_of_hash(contract.hash_image)
+        super().receive_htlc(sender, contract, amount_in_wei, nodes_between, cumulative_griefing_penalty)
+
+    # TODO: complete!
+    def decline_contract(self, contract: cn.Contract_HTLC):
+        if contract.hash_image in self._hash_to_not_accept_disable:
+            # getting money!!!!!
+            return
+        super().decline_contract(contract)
+
+    # def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
+    #     target_block_number = contract.expiration_block_number - 1
+    #     FUNCTION_COLLECTOR_INSTANCE.append(
+    #         lambda: super(LightningNodeSoftGriefing, self).
+    #             _start_resolving_contract_off_chain(sender, contract), target_block_number)
+    #
+    # def _collector_function_creator(self, func: Callable[[], None]) -> Callable[[], None]:
+    #     def check_block_and_use_function():
+    #         func()
+    #     return check_block_and_use_function
+    #
+    # def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
+    #     target_block_number = contract.expiration_block_number - 1
+    #     FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
+    #                                        ._notify_other_node_of_resolving_contract(other_node, contract),
+    #                                        target_block_number)
