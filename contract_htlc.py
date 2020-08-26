@@ -16,19 +16,28 @@ class MessageState:
 # TODO: move MessageState out of here
 
 class Contract_HTLC:
-    def __init__(self, owner1_balance_delta: int, hash_image: int, expiration_block_number: int, attached_channel:
-                 cm.ChannelManager, owner1: 'ln.LightningNode', owner2: 'ln.LightningNode'):
-        self._owner1_balance_delta: int = int(owner1_balance_delta)
-        self._hash_image: int = hash_image
+    def __init__(self, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
+                 attached_channel: cm.ChannelManager, sender: 'ln.LightningNode', receiver: 'ln.LightningNode'):
+        assert amount_in_wei > 0
+
+        self._amount_in_wei: int = amount_in_wei
+        self._hash_x: int = hash_x
+        self._hash_r: int = hash_r
         self._expiration_block_number: int = expiration_block_number
         self._channel_to_notify: cm.ChannelManager = attached_channel
-        self._pre_image = None
-        self._owner1 = owner1
-        self._owner2 = owner2
+        self._pre_image_x = None
+        self._pre_image_r = None
+        self._sender = sender
+        self._receiver = receiver
         self._is_accepted = False
+        self._money_to_transfer_to_sender = 0
+        self._money_to_transfer_to_receiver = 0
 
-        FUNCTION_COLLECTOR_INSTANCE.append(lambda: self.owner1.notify_of_griefed_contract(self),
-                                           self._expiration_block_number)
+        FUNCTION_COLLECTOR_INSTANCE.append(self._on_expired, expiration_block_number)
+
+    def _on_expired(self):
+        assert self.is_expired
+        self._channel_to_notify.notify_of_end_of_contract(self)
 
     @property
     def is_expired(self):
@@ -39,78 +48,146 @@ class Contract_HTLC:
         return self._expiration_block_number
 
     @property
-    def owner1_balance_delta(self) -> int:
-        return self._owner1_balance_delta
+    def amount_in_wei(self) -> int:
+        return self._amount_in_wei
 
     @property
-    def hash_image(self):
-        return self._hash_image
+    def hash_x(self):
+        return self._hash_x
+
+    @property
+    def hash_r(self):
+        return self._hash_r
 
     @property
     def attached_channel(self):
         return self._channel_to_notify
 
     @property
-    def is_valid(self):
-        return self._pre_image is not None
+    def pre_image_x(self):
+        return self._pre_image_x
 
     @property
-    def pre_image(self):
-        return self._pre_image
+    def pre_image_r(self):
+        return self._pre_image_r
 
     @property
-    def owner1(self):
-        return self._owner1
+    def sender(self):
+        return self._sender
 
     @property
-    def owner2(self):
-        return self._owner2
+    def receiver(self):
+        return self._receiver
+
+    @property
+    def transfer_amount_to_sender(self):
+        return self._money_to_transfer_to_sender
+
+    @property
+    def transfer_amount_to_receiver(self):
+        return self._money_to_transfer_to_receiver
 
     @property
     def is_accepted(self):
         return self._is_accepted
 
-    def accept(self, sender: 'ln.LightningNode'):
-        if sender == self._owner1:
-            self._is_accepted = True
+    # def accept(self, sender: 'ln.LightningNode'):
+    #     if sender == self._sender:
+    #         self._is_accepted = True TODO: do we need this now?
 
-    def additional_delta_for_locked_funds(self, owner: 'ln.LightningNode') -> int:
-        return 0
+    def report_x(self, x: int):
+        assert not self.is_expired
+        assert self._pre_image_x is None and self._pre_image_r is None
+        assert hash(x) == self.hash_x
+        self._pre_image_x = x
 
-    # def check_expiration(self) -> bool:
+    def report_r(self, r: int):
+        assert not self.is_expired
+        assert self._pre_image_x is None and self._pre_image_r is None
+        assert hash(r) == self.hash_r
+        self._pre_image_r = r
+
+
+class ContractForward(Contract_HTLC):
+    def __init__(self, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
+                 attached_channel: cm.ChannelManager, sender: 'ln.LightningNode', receiver: 'ln.LightningNode'):
+        super().__init__(amount_in_wei, hash_x, hash_r, expiration_block_number, attached_channel, sender, receiver)
+
+        # when expired or revealed r - money goes to owner 1. if revealed x - to owner 2 TODO: communicate with channel and not
+        #  owner
+
+    def _on_expired(self):
+        super()._on_expired()
+        self._money_to_transfer_to_owner1 = self.amount_in_wei
+        self._money_to_transfer_to_owner2 = 0
+
+    def report_x(self, x: int):
+        super().report_x(x)
+        self.attached_channel.notify_of_end_of_contract(self)
+        self._money_to_transfer_to_owner1 = 0
+        self._money_to_transfer_to_owner2 = self.amount_in_wei
+
+    def report_r(self, r: int):
+        super().report_r(r)
+        self.attached_channel.notify_of_end_of_contract(self)
+        self._money_to_transfer_to_owner1 = self.amount_in_wei
+        self._money_to_transfer_to_owner2 = 0
+
+    # def resolve_onchain(self, pre_image: str) -> bool:
+    #     if not self._validate(pre_image):
+    #         return False
+    #
+    #     self._resolve_onchain()
+    #     return True
+    #
+    # def _resolve_onchain(self):
+    #     # BLOCKCHAIN_INSTANCE.resolve_htlc_contract(self)
+    #
+    #     self._channel_to_notify.channel_state.channel_data.owner1.notify_of_resolve_htlc_onchain(self)
+    #     self._channel_to_notify.channel_state.channel_data.owner2.notify_of_resolve_htlc_onchain(self)
+
+    # def _validate(self, pre_image: str) -> bool:
     #     if self.is_expired:
-    #         self.owner1.notify_of_griefed_contract(self)
+    #         return False
+    #
+    #     if hash(pre_image) == self._hash_image:
+    #         self._pre_image = pre_image
     #         return True
+    #
     #     return False
+    #
+    # def resolve_offchain(self, pre_image: str) -> bool:
+    #     if not self._validate(pre_image):
+    #         return False
+    #
+    #     return True
 
-    def resolve_onchain(self, pre_image: str) -> bool:
-        if not self._validate(pre_image):
-            return False
+    # def resolve_griefed_contract(self):
+    #     self._resolve_onchain()
 
-        self._resolve_onchain()
-        return True
 
-    def _resolve_onchain(self):
-        # BLOCKCHAIN_INSTANCE.resolve_htlc_contract(self)
+class ContractCancellation(Contract_HTLC):
+    def __init__(self, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
+                 attached_channel: cm.ChannelManager, sender: 'ln.LightningNode', receiver: 'ln.LightningNode'):
+        super().__init__(amount_in_wei, hash_x, hash_r, expiration_block_number, attached_channel, sender, receiver)
 
-        self._channel_to_notify.channel_state.channel_data.owner1.notify_of_resolve_htlc_onchain(self)
-        self._channel_to_notify.channel_state.channel_data.owner2.notify_of_resolve_htlc_onchain(self)
+        # when expired - money goes to owner 2. if revealed - to owner 1 TODO: communicate with channel and not owner
 
-    def _validate(self, pre_image: str) -> bool:
-        if self.is_expired:
-            return False
+        # TODO: maybe hold the other contract in the path?
 
-        if hash(pre_image) == self._hash_image:
-            self._pre_image = pre_image
-            return True
+    def _on_expired(self):
+        super()._on_expired()
+        self._money_to_transfer_to_sender = 0
+        self._money_to_transfer_to_receiver = self.amount_in_wei
 
-        return False
+    def report_x(self, x: int):
+        super().report_x(x)
+        self.attached_channel.notify_of_end_of_contract(self)
+        self._money_to_transfer_to_sender = self.amount_in_wei
+        self._money_to_transfer_to_receiver = 0
 
-    def resolve_offchain(self, pre_image: str) -> bool:
-        if not self._validate(pre_image):
-            return False
-
-        return True
-
-    def resolve_griefed_contract(self):
-        self._resolve_onchain()
+    def report_r(self, r: int):
+        super().report_r(r)
+        self.attached_channel.notify_of_end_of_contract(self)
+        self._money_to_transfer_to_sender = self.amount_in_wei
+        self._money_to_transfer_to_receiver = 0

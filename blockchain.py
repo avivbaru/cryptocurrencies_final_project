@@ -39,8 +39,9 @@ class BlockChain:
         self.apply_transaction(channel.channel_state.channel_data.owner1, channel.channel_state.message_state.owner1_balance)
         self._open_channels[channel.channel_state.channel_data.address] = channel
 
-    def close_channel(self, message_state: 'cn.MessageState', contract: 'cn.Contract_HTLC' = None):
+    def close_channel(self, message_state: 'cn.MessageState'):
         channel: cm.ChannelManager = self._open_channels[message_state.channel_address]
+        assert channel
         owner2_balance = channel.channel_state.channel_data.total_wei - message_state.owner1_balance
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1.address] += \
             message_state.owner1_balance * (1 - self._fee)
@@ -48,8 +49,8 @@ class BlockChain:
         # TODO: subtract transactions fee
 
         del self._open_channels[message_state.channel_address]
-        if contract:
-            self._channels_to_htlcs[message_state.channel_address] = contract
+        # if contract:
+        #     self._channels_to_htlcs[message_state.channel_address] = contract
 
     def add_node(self, node: 'lc.LightningNode', balance: int):
         if node.address in self._nodes_addresses_to_balances:
@@ -64,13 +65,13 @@ class BlockChain:
     #
     #     self._nodes_addresses_to_balances[owner1] += balance_delta
     #     self._nodes_addresses_to_balances[owner2] -= balance_delta
-    #
-    #     self._channels_to_htlcs[contract.attached_channel.channel_state.channel_data.address] = contract
 
-    def get_closed_channel_secret_x(self, channel_address):
-        # TODO: one channel can have many htlcs
-        if channel_address in self._channels_to_htlcs:
-            return self._channels_to_htlcs[channel_address].pre_image
+        # self._channels_to_htlcs[contract.attached_channel.channel_state.channel_data.address] = contract
+
+    # def get_closed_channel_secret_x(self, channel_address):
+    #     # TODO: one channel can have many htlcs
+    #     if channel_address in self._channels_to_htlcs:
+    #         return self._channels_to_htlcs[channel_address].pre_image
 
     def apply_transaction(self, node: 'lc.LightningNode', amount_in_wei: int):
         # TODO: figure out how to make owner2 put in funds in a nice way
