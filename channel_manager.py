@@ -120,9 +120,9 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def add_contract(self, contract: 'cn.Contract_HTLC'):
         if self.is_owner1(contract.sender):
-            self.owner1_htlc_locked_setter(self._owner1_htlc_locked - contract.amount_in_wei)
+            self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_wei)
         else:
-            self.owner2_htlc_locked_setter(self._owner2_htlc_locked - contract.amount_in_wei)
+            self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_wei)
         # TODO: subscribe to contract?
         self._state.htlc_contracts.append(contract)
 

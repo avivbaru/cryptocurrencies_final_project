@@ -18,6 +18,7 @@ class MessageState:
 class Contract_HTLC:
     def __init__(self, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
                  attached_channel: cm.ChannelManager, sender: 'ln.LightningNode', receiver: 'ln.LightningNode'):
+        # TODO: remove what does not belong to regular htlc
         assert amount_in_wei > 0
 
         self._amount_in_wei: int = amount_in_wei
@@ -28,7 +29,7 @@ class Contract_HTLC:
         self._pre_image_x = None
         self._pre_image_r = None
         self._sender = sender
-        self._receiver = receiver
+        self._receiver = receiver  # TODO: change to payer and payee
         self._is_accepted = False
         self._money_to_transfer_to_sender = 0
         self._money_to_transfer_to_receiver = 0
@@ -37,7 +38,6 @@ class Contract_HTLC:
 
     def _on_expired(self):
         assert self.is_expired
-        self._channel_to_notify.notify_of_end_of_contract(self)
 
     @property
     def is_expired(self):
@@ -95,13 +95,13 @@ class Contract_HTLC:
     #     if sender == self._sender:
     #         self._is_accepted = True TODO: do we need this now?
 
-    def report_x(self, x: int):
+    def report_x(self, x: str):
         assert not self.is_expired
         assert self._pre_image_x is None and self._pre_image_r is None
         assert hash(x) == self.hash_x
         self._pre_image_x = x
 
-    def report_r(self, r: int):
+    def report_r(self, r: str):
         assert not self.is_expired
         assert self._pre_image_x is None and self._pre_image_r is None
         assert hash(r) == self.hash_r
@@ -118,20 +118,24 @@ class ContractForward(Contract_HTLC):
 
     def _on_expired(self):
         super()._on_expired()
-        self._money_to_transfer_to_owner1 = self.amount_in_wei
-        self._money_to_transfer_to_owner2 = 0
+        if self._pre_image_r or self._pre_image_x:
+            return
 
-    def report_x(self, x: int):
+        self._money_to_transfer_to_sender = self.amount_in_wei
+        self._money_to_transfer_to_receiver = 0
+        self._channel_to_notify.notify_of_end_of_contract(self)
+
+    def report_x(self, x: str):
         super().report_x(x)
         self.attached_channel.notify_of_end_of_contract(self)
-        self._money_to_transfer_to_owner1 = 0
-        self._money_to_transfer_to_owner2 = self.amount_in_wei
+        self._money_to_transfer_to_sender = 0
+        self._money_to_transfer_to_receiver = self.amount_in_wei
 
-    def report_r(self, r: int):
+    def report_r(self, r: str):
         super().report_r(r)
         self.attached_channel.notify_of_end_of_contract(self)
-        self._money_to_transfer_to_owner1 = self.amount_in_wei
-        self._money_to_transfer_to_owner2 = 0
+        self._money_to_transfer_to_sender = self.amount_in_wei
+        self._money_to_transfer_to_receiver = 0
 
     # def resolve_onchain(self, pre_image: str) -> bool:
     #     if not self._validate(pre_image):
@@ -177,17 +181,21 @@ class ContractCancellation(Contract_HTLC):
 
     def _on_expired(self):
         super()._on_expired()
+        if self._pre_image_r or self._pre_image_x:
+            return
+
         self._money_to_transfer_to_sender = 0
         self._money_to_transfer_to_receiver = self.amount_in_wei
+        self._channel_to_notify.notify_of_end_of_contract(self)
 
-    def report_x(self, x: int):
+    def report_x(self, x: str):
         super().report_x(x)
-        self.attached_channel.notify_of_end_of_contract(self)
         self._money_to_transfer_to_sender = self.amount_in_wei
         self._money_to_transfer_to_receiver = 0
+        self.attached_channel.notify_of_end_of_contract(self)
 
-    def report_r(self, r: int):
+    def report_r(self, r: str):
         super().report_r(r)
-        self.attached_channel.notify_of_end_of_contract(self)
         self._money_to_transfer_to_sender = self.amount_in_wei
         self._money_to_transfer_to_receiver = 0
+        self.attached_channel.notify_of_end_of_contract(self)

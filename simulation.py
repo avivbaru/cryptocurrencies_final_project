@@ -57,7 +57,7 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
 
             METRICS_COLLECTOR_INSTANCE.average(PATH_LENGTH_AVG, len(nodes_between))
             nodes_between.reverse()
-            send_htlc_successfully = sender_node.start_htlc(receiver_node, amount_in_wei, nodes_between)
+            send_htlc_successfully = sender_node.start_transaction(receiver_node, amount_in_wei, nodes_between)
             network.update_capacity_map(edge_to_update)
             if send_htlc_successfully:
                 METRICS_COLLECTOR_INSTANCE.count(SEND_SUCCESSFULLY)
@@ -97,12 +97,12 @@ def close_channel_and_log_metrics(network):
         if type(node) is lightning_node.LightningNode:
             METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG,
                                                BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        if type(node) is lightning_node.LightningNodeGriefing:
-            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG,
-                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        if type(node) is lightning_node.LightningNodeSoftGriefing:
-            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG,
-                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        # if type(node) is lightning_node.LightningNodeGriefing:
+        #     METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG,
+        #                                        BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        # if type(node) is lightning_node.LightningNodeSoftGriefing:
+        #     METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG,
+        #                                        BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
 
 
 def simulation_details(func):
@@ -130,10 +130,10 @@ def create_network(number_of_nodes, griefing_percentage, soft_griefing_percentag
         node = lightning_node.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate)
         network.add_node(node)
     for _ in range(number_of_griefing_nodes):
-        node = lightning_node.LightningNodeGriefing(starting_balance, fee_percentage, griefing_penalty_rate)
+        node = lightning_node.LightningNode(starting_balance, fee_percentage, griefing_penalty_rate) # was grief
         network.add_node(node)
     for _ in range(number_of_soft_griefing_nodes):
-        node = lightning_node.LightningNodeSoftGriefing(starting_balance, fee_percentage,
+        node = lightning_node.LightningNode(starting_balance, fee_percentage, # was soft
                                                         griefing_penalty_rate)
         network.add_node(node)
     return network
