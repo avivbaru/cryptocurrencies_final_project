@@ -18,10 +18,6 @@
     p[itemtype=text] {
         margin-bottom: 1%;
         margin-top: 3%;
-        /*padding-bottom: 12px;*/
-        /*box-sizing: border-box;*/
-        /*margin-top: 6px;*/
-        /*border-radius: 4px;*/
     }
 
     input[type=submit] {
@@ -34,10 +30,6 @@
     }
 
     div[itemtype=slider] {
-        /*border: 4px;*/
-        /*border-radius: 4px;*/
-        /*margin-top: 7px;*/
-        /*cursor: pointer;*/
         max-width: 80%;
     }
 
@@ -46,11 +38,6 @@
         margin-top: 1%;
         cursor: pointer;
     }
-
-    /*div[itemtype=box] {*/
-    /*    border: 60px;*/
-    /*    border-radius: 4px;*/
-    /*}*/
 
     input[type=submit]:hover {
         background-color: #45a049;
@@ -150,20 +137,12 @@
                 <div itemtype="value" id="slider4-span"></div>
             </div>
         </div>
-<!--        <p itemtype="text">text</p>-->
-<!--        <div itemtype="slider" id="slider3"></div>-->
-<!--        <div itemtype="value" id="slider3-span"></div>-->
-<!--        <p itemtype="text">text</p>-->
-<!--        <div itemtype="slider" id="slider4"></div>-->
-<!--        <div itemtype="value" id="slider4-span"></div>-->
-
         <a class="button4" style="background-color:#f14e4e" onclick="changeGraph()">Get data</a>
 
         <p itemtype="text" id="value1"></p>
         <p itemtype="text" id="value2"></p>
         <p itemtype="text" id="value3"></p>
         <p itemtype="text" id="value4"></p>
-<!--        <input type="file" id="jsonFile" name="jsonFile" />-->
 
     </form>
 </div>
@@ -182,7 +161,6 @@ var slider2Value = document.getElementById('slider2-span');
 var slider3Value = document.getElementById('slider3-span');
 var slider4Value = document.getElementById('slider4-span');
 
-var submit = document.getElementById('submit');
 function readJsonFile(jsonFile) {
     var request = new XMLHttpRequest();
     request.open("GET", jsonFile, false);
@@ -191,6 +169,7 @@ function readJsonFile(jsonFile) {
 }
 
 var all_data = readJsonFile("fake_data.json")
+
 function changeGraph() {
     const key = Math.ceil(slider1Value.innerText) + "_" + Math.ceil(slider2Value.innerText) + "_" +
         Math.ceil(slider3Value.innerText) + "_" + Math.ceil(slider4Value.innerText);
