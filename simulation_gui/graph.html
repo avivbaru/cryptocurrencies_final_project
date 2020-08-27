@@ -113,7 +113,6 @@
 
 </script>
 <script>
-    var submit = document.getElementById('submit');
     function readJsonFile(jsonFile) {
         var request = new XMLHttpRequest();
         request.open("GET", jsonFile, false);
@@ -124,6 +123,7 @@
     const all_data = readJsonFile("graph_fake_data.json");
 
     function changeGraph() {
+        d3.select("svg").remove();
         document.getElementById("my_dataviz").hidden = false;
         let y = document.getElementById("y").value;
         let x = document.getElementById("x").value;
@@ -136,28 +136,29 @@
         height = 400 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
-    var svg = d3.select("#my_dataviz")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")");
 
 
 
 
     function setGraphData(x_name,y_name) {
+        // create graph
+        var svg = d3.select("#my_dataviz")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
         const k = x_name + "_" + y_name;
-        console.log(k);
-        let data3 = []
+
+        let data_to_present = []
         for (i = 0; i < all_data["graph"][k][0].length; i++) {
             // let temp_arr = [];
             for (j = 0; j < all_data["graph"][k].length; j++) {
                 // temp_arr.push(all_data["graph"][k][j][i]);
-                data3.push({
-                    "x_val": all_data["parameters_data"][x_name][i],
-                    "data": all_data["graph"][k][j][i],
+                data_to_present.push({
+                    "x": all_data["parameters_data"][x_name][i],
+                    "y": all_data["graph"][k][j][i],
                 })
             }
 
@@ -165,17 +166,17 @@
 
         // Compute quartiles, median, inter quantile range min and max --> these info are then used to draw the box.
         var sumstat = d3.nest() // nest function allows to group the calculation per level of a factor
-            .key(function(d) { return d.x_val;})
+            .key(function(d) { return d.x;})
             .rollup(function(d) {
-                q1 = d3.quantile(d.map(function(g) { return g.data;}).sort(d3.ascending),.25)
-                median = d3.quantile(d.map(function(g) { return g.data;}).sort(d3.ascending),.5)
-                q3 = d3.quantile(d.map(function(g) { return g.data;}).sort(d3.ascending),.75)
+                q1 = d3.quantile(d.map(function(g) { return g.y;}).sort(d3.ascending),.25)
+                median = d3.quantile(d.map(function(g) { return g.y;}).sort(d3.ascending),.5)
+                q3 = d3.quantile(d.map(function(g) { return g.y;}).sort(d3.ascending),.75)
                 interQuantileRange = q3 - q1
                 min = q1 - 1.5 * interQuantileRange
                 max = q3 + 1.5 * interQuantileRange
                 return({q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max})
             })
-            .entries(data3)
+            .entries(data_to_present)
 
 
         var chosen = all_data["parameters_min"][k];
@@ -235,18 +236,12 @@
             .attr("y2", function(d){return(y(d.value.median))})
             .attr("stroke", "black")
             .style("width", 80)
-        let data2 = []
-        for (i = 0; i < all_data["parameters_data"][x_name].length; i++) {
-            for (j = 0; j < all_data["graph"][k].length; j++) {
-                data2.push({"x": all_data["parameters_data"][x_name][i], "y": all_data["graph"][k][j][i]})
-            }
-        }
-        console.log(data2);
-// Add individual points with jitter
+
+        // Add individual points with jitter
         var jitterWidth = 50
         svg
             .selectAll("indPoints")
-            .data(data2)
+            .data(data_to_present)
             .enter()
             .append("circle")
             .attr("cx", function(d){
