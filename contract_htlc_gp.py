@@ -20,6 +20,6 @@ class Contract_HTLC_GP(Contract_HTLC):
             return self._penalty
         return 0
 
-    def resolve_griefed_contract(self):
-        super()._owner1_balance_delta = self._penalty
-        super().resolve_griefed_contract()
+    # def resolve_griefed_contract(self):
+    #     super()._owner1_balance_delta = self._penalty
+    #     super().resolve_griefed_contract()

@@ -41,7 +41,6 @@ class BlockChain:
 
     def close_channel(self, message_state: 'cn.MessageState'):
         channel: cm.ChannelManager = self._open_channels[message_state.channel_address]
-        assert channel
         owner2_balance = channel.channel_state.channel_data.total_wei - message_state.owner1_balance
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1.address] += \
             message_state.owner1_balance * (1 - self._fee)

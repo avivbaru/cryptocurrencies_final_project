@@ -13,6 +13,16 @@ APPEAL_PERIOD = 3  # the appeal period in blocks.
 STARTING_SERIAL = 0  # first serial number
 
 
+def random_delay_node(f):
+    def wrapper(self, *args):
+        if random.uniform(0, 1) <= self._probability:
+            FUNCTION_COLLECTOR_INSTANCE.append(lambda: f(self, *args), BLOCKCHAIN_INSTANCE.block_number + 1)
+        else:
+            return f(self, *args)
+    return wrapper
+
+
+
 class TransactionInfo:
     def __init__(self, transaction_id: int, amount_in_wei: int, penalty: int, hash_x: int, hash_r: int,
                  expiration_block_number: int, previous_node: 'LightningNode' = None, next_node: 'LightningNode' = None,
@@ -85,6 +95,7 @@ class LightningNode:
         self._transaction_id_to_forward_contracts: Dict[int, 'cn.ContractForward'] = {}
         self._transaction_id_to_cancellation_contracts: Dict[int, 'cn.ContractCancellation'] = {}
         self._transaction_id_to_htlc_contracts: Dict[int, 'cn.Contract_HTLC'] = {}
+        self._probability = 1
 
         BLOCKCHAIN_INSTANCE.add_node(self, balance)
 
@@ -139,7 +150,7 @@ class LightningNode:
         hash_x, hash_r = final_node.generate_secret_x_hash(), final_node.generate_secret_r_hash()
         assert nodes_between
         node_to_send = nodes_between[0]
-        assert node_to_send
+
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
         id = TransactionInfo.generate_id()
@@ -157,10 +168,10 @@ class LightningNode:
         transfer_amount = amount_in_wei
         for node in reversed(path_nodes):
             transfer_amount += node.get_fee_for_transfer_amount(transfer_amount)
-        return transfer_amount - amount_in_wei
+        return int(transfer_amount) - amount_in_wei
 
     def _calculate_griefing_penalty(self, amount_in_wei: int, waiting_time):
-        return self._griefing_penalty_rate * amount_in_wei * waiting_time * 10
+        return int(self._griefing_penalty_rate * amount_in_wei * waiting_time * 10)
     # TODO: time = exp_time - current_block_number... though current block number may vary between nodes
 
     def send_transaction_information(self, node_to_send: 'LightningNode', transaction_info: TransactionInfo,
@@ -227,10 +238,11 @@ class LightningNode:
         if info.next_node is not None:
             self.send_forward_contract(transaction_id)
         else:
-            print("Transaction forward contracts construction successful!")
+            # print("Transaction forward contracts construction successful!")
             x = self._hash_image_x_to_preimage[info.hash_x]
             self.resolve_transaction(transaction_id, x)
 
+    @random_delay_node
     def resolve_transaction(self, transaction_id: int, x: str):
         info = self._transaction_id_to_transaction_info[transaction_id]
 
@@ -239,7 +251,7 @@ class LightningNode:
             forward_contract.report_x(x)
 
         if info.previous_node is None:
-            print("Transaction ended!")
+            # print("Transaction ended!")
             return
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
@@ -255,7 +267,7 @@ class LightningNode:
             forward_contract.report_r(r)
 
         if info.previous_node is None:
-            print("Transaction ended (terminated)!")
+            # print("Transaction ended (terminated)!")
             return
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
@@ -295,10 +307,11 @@ class LightningNode:
         if nodes_between:
             self.send_regular_htlc(new_info, nodes_between[1:])
         else:
-            print("Transaction regular htlc contracts construction successful!")
+            # print("Transaction regular htlc contracts construction successful!")
             x = self._hash_image_x_to_preimage[new_info.hash_x]
             self.resolve_htlc_transaction(new_info.id, x)
 
+    @random_delay_node
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
         info = self._transaction_id_to_transaction_info[transaction_id]
 
@@ -306,7 +319,7 @@ class LightningNode:
             contract = self._transaction_id_to_htlc_contracts[transaction_id]
             contract.report_x(x)
         else:
-            print("Transaction (regular htlc) ended!")
+            # print("Transaction (regular htlc) ended!")
             return
 
         info.previous_node.resolve_htlc_transaction(transaction_id, x)
@@ -384,17 +397,17 @@ class LightningNode:
         self._hash_image_r_to_preimage[hash(r)] = r
         return hash(r)
 
-    # def close_channel(self, node):
-    #     if node.address not in self._other_nodes_to_channels:
-    #         return
-    #
-    #     channel = self._other_nodes_to_channels[node.address]
-    #     assert channel
-    #     channel.close_channel()
-    #     self._balance += channel.owner1_balance if channel.is_owner1(self) else channel.owner2_balance
-    #     del self._channels[channel.channel_state.channel_data.address]
-    #     del self._other_nodes_to_channels[node.address]
-    #
+    def close_channel(self, node):
+        if node.address not in self._other_nodes_to_channels:
+            return
+
+        channel = self._other_nodes_to_channels[node.address]
+        assert channel
+        channel.close_channel()
+        self._balance += channel.owner1_balance if channel.is_owner1(self) else channel.owner2_balance
+        del self._channels[channel.channel_state.channel_data.address]
+        del self._other_nodes_to_channels[node.address]
+
     # def close_channel_htlc(self, contract: cn.Contract_HTLC):
     #     if contract.attached_channel not in self._channels or contract.pre_image not in self._hash_image_to_preimage:
     #         return
@@ -579,3 +592,4 @@ class LightningNode:
     #     FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
     #                                        ._notify_other_node_of_resolving_contract(other_node, contract),
     #                                        target_block_number)
+

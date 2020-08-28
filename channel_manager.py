@@ -42,19 +42,21 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         BLOCKCHAIN_INSTANCE.add_channel(self)
 
     def owner1_htlc_locked_setter(self, owner1_htlc_locked: int):
+        assert owner1_htlc_locked >= 0
         old_htlc_locked = self._owner1_htlc_locked
         self._owner1_htlc_locked = owner1_htlc_locked
         self._compute_amount_owner1_can_transfer_to_owner2()
         self._state.channel_data.owner1.notify_of_change_in_locked_funds(self._owner1_htlc_locked - old_htlc_locked)
-        assert self._owner1_htlc_locked >= 0
 
     def _compute_amount_owner1_can_transfer_to_owner2(self):
         self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance - self._owner1_htlc_locked
 
     def owner2_htlc_locked_setter(self, owner2_htlc_locked: int):
+        assert owner2_htlc_locked >= 0
+        old_htlc_locked = self._owner2_htlc_locked
         self._owner2_htlc_locked = owner2_htlc_locked
         self._compute_amount_owner2_can_transfer_to_owner1()
-        assert self._owner2_htlc_locked >= 0
+        self._state.channel_data.owner2.notify_of_change_in_locked_funds(self._owner2_htlc_locked - old_htlc_locked)
 
     def _compute_amount_owner2_can_transfer_to_owner1(self):
         self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_wei -
@@ -159,8 +161,8 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
             transfer_to_owner1 = contract.transfer_amount_to_receiver
             transfer_to_owner2 = contract.transfer_amount_to_sender
 
-        self.owner1_htlc_locked_setter(self._owner1_htlc_locked - transfer_to_owner1)
-        self.owner2_htlc_locked_setter(self._owner2_htlc_locked - transfer_to_owner2)
+        self.owner1_htlc_locked_setter(int(self._owner1_htlc_locked - transfer_to_owner1))
+        self.owner2_htlc_locked_setter(int(self._owner2_htlc_locked - transfer_to_owner2))
 
         new_owner1_balance = self._state.message_state.owner1_balance + transfer_to_owner1 - transfer_to_owner2
         self._update_message_state(new_owner1_balance)
