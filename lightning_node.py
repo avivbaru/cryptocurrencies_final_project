@@ -5,7 +5,6 @@ import contract_htlc as cn
 import contract_htlc_gp as cn_gp
 import channel_manager as cm
 from singletons import *
-import copy
 
 
 BLOCK_IN_DAY = 5
@@ -74,7 +73,8 @@ class LightningNode:
         # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
-        self._hash_image_to_preimage: Dict[int, str] = {}
+        self._hash_image_x_to_preimage: Dict[int, str] = {}
+        self._hash_image_r_to_preimage: Dict[int, str] = {}
         self._channels: Dict[str, cm.ChannelManager] = {}
         self._locked_funds: int = 0
         self._balance = balance
@@ -136,7 +136,7 @@ class LightningNode:
         self._balance -= amount_in_wei
 
     def start_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
-        hash_x, hash_r = final_node.generate_secret_x_and_r()  # TODO: make final_node = nodes_between[-1]?
+        hash_x, hash_r = final_node.generate_secret_x_hash(), final_node.generate_secret_r_hash()
         assert nodes_between
         node_to_send = nodes_between[0]
         assert node_to_send
@@ -152,10 +152,6 @@ class LightningNode:
         # 1. propogate transatcion info
         # 2. start cancael contracts
         # 3. start pay contracts
-
-        # with success
-            # print("Transaction failed - WHAT TO DO NOW??? MY LIFE IS OVER")
-            # return False
 
     def _calculate_fee_for_route(self, path_nodes: List['LightningNode'], amount_in_wei: int) -> int:
         transfer_amount = amount_in_wei
@@ -232,7 +228,7 @@ class LightningNode:
             self.send_forward_contract(transaction_id)
         else:
             print("Transaction forward contracts construction successful!")
-            x = self._hash_image_to_preimage[info.hash_x]
+            x = self._hash_image_x_to_preimage[info.hash_x]
             self.resolve_transaction(transaction_id, x)
 
     def resolve_transaction(self, transaction_id: int, x: str):
@@ -265,35 +261,55 @@ class LightningNode:
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
         cancellation_contract.report_r(r)
 
-    def start_regular_htlc_transaction(self):
-        return
+    def start_regular_htlc_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
+        hash_x = final_node.generate_secret_x_hash()
+        assert nodes_between
+        node_to_send = nodes_between[0]
+        total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
+
+        id = TransactionInfo.generate_id()
+        waiting_time = BLOCKCHAIN_INSTANCE.block_number + ((len(nodes_between) + 1) * 144)
+        info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, 0, waiting_time, next_node=node_to_send)
+        self._transaction_id_to_transaction_info[id] = info
+        self.send_regular_htlc(info, nodes_between[1:])
 
     def send_regular_htlc(self, transaction_info: TransactionInfo, nodes_between: List['LightningNode']):
         channel = self._other_nodes_to_channels[transaction_info.next_node.address]
 
         contract = cn.Contract_HTLC(transaction_info.amount_in_wei, transaction_info.hash_x, 0,
                                     transaction_info.expiration_block_number, channel, self, transaction_info.next_node)
-        self._transaction_id_to_htlc_contracts[transaction_info.id] = contract
-        transaction_info.next_node.receive_regular_htlc(transaction_info, contract, nodes_between)
+        transaction_info.next_node.receive_regular_htlc(self, transaction_info, contract, nodes_between)
 
-    def receive_regular_htlc(self, previous_transaction_info: TransactionInfo, contract: 'cn.Contract_HTLC',
-                             nodes_between: List['LightningNode']):
+    def receive_regular_htlc(self, sender: 'LightningNode', previous_transaction_info: TransactionInfo,
+                             contract: 'cn.Contract_HTLC', nodes_between: List['LightningNode']):
+        node_to_send = nodes_between[0] if nodes_between else None
         fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
-        new_info = TransactionInfo(previous_transaction_info.amount_in_wei - fee, )
-        self._transaction_id_to_transaction_info[transaction_id] = new_info
+        amount_in_wei = previous_transaction_info.amount_in_wei - fee
+        new_info = TransactionInfo(previous_transaction_info.id, amount_in_wei, 0, previous_transaction_info.hash_x, 0,
+                                   previous_transaction_info.expiration_block_number - 1, sender, node_to_send)
 
+        self._transaction_id_to_transaction_info[new_info.id] = new_info
+        self._transaction_id_to_htlc_contracts[new_info.id] = contract
         contract.attached_channel.add_contract(contract)
 
-        if info.next_node is not None:
-            self.send_regular_htlc(transaction_id)
+        if nodes_between:
+            self.send_regular_htlc(new_info, nodes_between[1:])
         else:
-            #  TODO: check x here and call a function that resolves the contracts
             print("Transaction regular htlc contracts construction successful!")
-            x = self._hash_image_to_preimage[info.hash_x]
-            self.resolve_htlc_transaction(transaction_id, x)
+            x = self._hash_image_x_to_preimage[new_info.hash_x]
+            self.resolve_htlc_transaction(new_info.id, x)
 
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
-        return
+        info = self._transaction_id_to_transaction_info[transaction_id]
+
+        if info.previous_node is not None:
+            contract = self._transaction_id_to_htlc_contracts[transaction_id]
+            contract.report_x(x)
+        else:
+            print("Transaction (regular htlc) ended!")
+            return
+
+        info.previous_node.resolve_htlc_transaction(transaction_id, x)
 
 
     # def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
@@ -358,12 +374,15 @@ class LightningNode:
     #     sender.notify_of_resolve_htlc_offchain(contract)
     #
 
-    def generate_secret_x_and_r(self) -> (int, int):
+    def generate_secret_x_hash(self) -> (int, int):
         x = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        self._hash_image_to_preimage[hash(x)] = x  # TODO: hold it differently
+        self._hash_image_x_to_preimage[hash(x)] = x
+        return hash(x)
+
+    def generate_secret_r_hash(self) -> int:
         r = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        self._hash_image_to_preimage[hash(r)] = r
-        return hash(x), hash(r)
+        self._hash_image_r_to_preimage[hash(r)] = r
+        return hash(r)
 
     # def close_channel(self, node):
     #     if node.address not in self._other_nodes_to_channels:
