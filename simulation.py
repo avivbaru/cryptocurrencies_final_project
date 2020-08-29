@@ -37,7 +37,7 @@ FEE_RATE = [0, 1, 2, 3, 5, 9, 10, 15, 19, 20, 25, 30, 40, 42, 45, 50, 56, 70, 80
 FEE_RATE_PROB = [0.066, 0.597, 0.007, 0.002, 0.006, 0.002, 0.046, 0.002, 0.004, 0.002, 0.002, 0.002, 0.002,
                  0.005, 0.001, 0.005, 0.007, 0.001, 0.001, 0.004, 0.029, 0.005, 0.003, 0.054, 0.003, 0.020,
                  0.002, 0.001, 0.012, 0.003, 0.041, 0.003, 0.022, 0.002, 0.005, 0.021, 0.002, 0.007, 0.002]
-STARTING_BALANCE = 17000000 * 100  # so the node have enough balance to create all channels
+STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to create all channels
 GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 20
 SIGMA = 0.1
@@ -49,9 +49,9 @@ def how_much_to_send():
 
 
 def create_node(is_soft_griefing=False):
-    fee_percentage = random.choices(FEE_RATE, weights=FEE_RATE_PROB, k=1)
     # divide by million to get the rate per msat
-    base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1) / 1000000 # todo:use this
+    fee_percentage = random.choices(FEE_RATE, weights=FEE_RATE_PROB, k=1)[0] / 1000000
+    base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]  # todo:use this
     if is_soft_griefing:
         # TODO: change to soft
         return lightning_node.LightningNode(STARTING_BALANCE, fee_percentage, GRIEFING_PENALTY_RATE)
@@ -129,13 +129,12 @@ def simulation_details(func):
         func_args_str = ", ".join("{} = {!r}".format(*item) for item in func_args.arguments.items())
         print(f"Start to run {func.__qualname__} with arguments: ( {func_args_str} )")
         starting_time = time.time()
-        res = None
         try:
             res = func(*args, **kwargs)
         except Exception as e:
-            print(e)
-        time_took = time.time() - starting_time
-        print(f"Finish the run in {int(time_took)}s.")
+            time_took = time.time() - starting_time
+            print(f"Finish the run in {int(time_took)}s.")
+            raise e
         return res
 
     return wrapper
@@ -194,7 +193,7 @@ def generate_redundancy_network(number_of_nodes, soft_griefing_percentage):
                 next_index -= number_of_nodes
             if next_index != i:
                 channel_starting_balance = random.choices(MSAT_CHANNEL_CAPACITY,
-                                                          weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)
+                                                          weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)[0]
                 network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
     return network
 
@@ -213,7 +212,7 @@ def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel
         nodes_to_connect.remove(node)
         for node_to_connect in nodes_to_connect:
             channel_starting_balance = random.choices(MSAT_CHANNEL_CAPACITY,
-                                                      weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)
+                                                      weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)[0]
             network.add_edge(node, node_to_connect, channel_starting_balance)
     return network
 
@@ -242,7 +241,7 @@ def run_multiply_simulation():
         FUNCTION_COLLECTOR_INSTANCE.init_parameters()
     print(simulation_metrics)
     timestamp = datetime.timestamp(datetime.now())
-    with open(f"simulation_results/{timestamp}.json") as f:
+    with open(f"simulation_results/{timestamp}.json", 'w') as f:
         f.writelines([json.dumps(s) for s in simulation_metrics])
 
 

@@ -128,6 +128,10 @@ class Channel(object):  # TODO: maybe change name to just channel
     def close_channel(self):
         if not self._open:
             return
+        for contract in self._state.htlc_contracts:
+            self._handle_contract_ended(contract)
+        self._state.htlc_contracts = []
+
         BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
         self.owner1_htlc_locked_setter(0)
         self.owner2_htlc_locked_setter(0)
@@ -138,10 +142,12 @@ class Channel(object):  # TODO: maybe change name to just channel
     def add_contract(self, contract: 'cn.Contract_HTLC') -> bool:
         if self.is_owner1(contract.sender):
             if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_wei:
-                return False  # TODO: report failure
+                contract.invalidate()
+                return False
             self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_wei)
         else:
             if self.amount_owner2_can_transfer_to_owner1 < contract.amount_in_wei:
+                contract.invalidate()
                 return False
             self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_wei)
         # TODO: subscribe to contract?
@@ -174,9 +180,6 @@ class Channel(object):  # TODO: maybe change name to just channel
         self._handle_contract_ended(contract)
 
         if contract.is_expired:
-            for other_contract in self._state.htlc_contracts:
-                self._handle_contract_ended(other_contract)
-            self._state.htlc_contracts = []
             self.close_channel()  # resolve on-chain
 
     def _handle_contract_ended(self, contract: 'cn.Contract_HTLC'):
@@ -203,3 +206,4 @@ class Channel(object):  # TODO: maybe change name to just channel
             BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_x, contract.pre_image_x)
         elif contract.pre_image_r:
             BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_r, contract.pre_image_r)
+            # TODO: what to do with active contracts when channel is closing

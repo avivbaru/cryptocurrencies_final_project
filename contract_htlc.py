@@ -18,7 +18,7 @@ class Contract_HTLC:
         self._pre_image_r = None
         self._payer = payer
         self._payee = payee  # TODO: change to payer and payee
-        self._is_accepted = False
+        self._is_valid = True
 
         self._money_to_transfer_to_payee = 0
 
@@ -81,9 +81,8 @@ class Contract_HTLC:
     def transfer_amount_to_payee(self):
         return self._money_to_transfer_to_payee
 
-    @property
-    def is_accepted(self):
-        return self._is_accepted
+    def invalidate(self):
+        self._is_valid = False
 
     # def accept(self, sender: 'ln.LightningNode'):
     #     if sender == self._sender:
@@ -111,7 +110,8 @@ class ContractForward(Contract_HTLC):
         #  owner
 
     def _on_expired(self):
-        if self._pre_image_r or self._pre_image_x or not self._channel_to_notify.is_open:
+        if self._pre_image_r or self._pre_image_x or not self._channel_to_notify.is_open or not \
+                self._is_valid:
             return
         super()._on_expired()
 
@@ -169,7 +169,8 @@ class ContractCancellation(Contract_HTLC):
         # TODO: maybe hold the other contract in the path?
 
     def _on_expired(self):
-        if self._pre_image_r or self._pre_image_x or not self._channel_to_notify.is_open:
+        if self._pre_image_r or self._pre_image_x or not self._channel_to_notify.is_open or not \
+                self._is_valid:
             return
         super()._on_expired()
 
