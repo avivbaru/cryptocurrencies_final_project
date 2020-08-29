@@ -219,8 +219,8 @@ fixltx2e
 
 \begin_inset FormulaMacro
 \newcommand{\chs}[2]{\left(\begin{array}{c}
- #1\\
- #2 
+#1\\
+#2
 \end{array}\right)}
 \end_inset
 
@@ -718,15 +718,16 @@ Node
 \begin_inset Newline newline
 \end_inset
 
+)האם אנחנו רוצים להתייחס לפרוטוקול הישן?(
+\begin_inset Newline newline
+\end_inset
+
 בעבודה זו ביקשנו לבדוק את ההשפעות של הפרוטוקול הנ
 \begin_inset Quotes erd
 \end_inset
 
-ל מבחינת עד כמה המתקפה 
-\begin_inset Newline newline
-\end_inset
-
-המדוברת הופכת ללא כלכלית, מה ההשפעה הכללית על הרשת וההשפעה הפרטנית על
+ל מבחינת עד כמה המתקפה המדוברת הופכת ללא כלכלית )להוריד כי אנחנו לא באמת
+ עושים??!(, מה ההשפעה הכללית על הרשת, ההשפעה הפרטנית על
 \family roman
 \series medium
 \shape up
@@ -780,8 +781,20 @@ Nodes
 \uwave default
 \noun default
 \color inherit
-ישרים אשר משתתפים ברשת המשתמשת בפרוטוקול זה.
- בנוסף לכך, הפרוטוקול מציג מתקפה חדשה )אשר מוצגת במאמר( בשם
+ישרים אשר משתתפים ברשת המשתמשת בפרוטוקול זה ובנוסף נציג מתקפת 
+\begin_inset Formula $Dos$
+\end_inset
+
+ שמתאפשרת בעזרת פרוטוקול זה ואסטרטגיה חדשה שנקרא לה 
+\begin_inset Formula $soft-griefing$
+\end_inset
+
+ ונבדוק את הכדאיות וההשפעה שלה.
+ 
+\begin_inset Newline newline
+\end_inset
+
+)להוריד?!( בנוסף לכך, הפרוטוקול מציג מתקפה חדשה )אשר מוצגת במאמר( בשם
 \family roman
 \series medium
 \shape up
@@ -1306,8 +1319,8 @@ R
 \uwave default
 \noun default
 \color inherit
-מתעלם מהחוזה ובערך גורם לכל השרשרת לנעול כספים ליום אחד לפחות ובמסלולים
- ארוכים יותר זו יכולה להיות בעיה רצינית הרבה יותר.
+מתעלם מהחוזה וגורם לכל השרשרת לנעול כספים ליום אחד לפחות ובמסלולים ארוכים
+ יותר זו יכולה להיות בעיה רצינית הרבה יותר.
 \end_layout
 
 \begin_layout Standard
@@ -1324,32 +1337,7 @@ HTLC-GP Protocl
 \end_layout
 
 \begin_layout Quotation
-כותבי המאמר מציעים פרוטוקול חדש אשר יחליף את פרוטוקול
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+כותבי המאמר מציעים בניה חדשה של 
 \lang english
 HTLC
 \family roman
@@ -1378,7 +1366,7 @@ HTLC
 \uwave default
 \noun default
 \color inherit
-המוכר ובעצם יטיל קנס על מבצע המתקפה המדוברת.
+על מנת להטיל קנס על מבצע המתקפה המדוברת.
  הרעיון הוא שמקבל החוזה יינעל כספים נוספים )בהתאם למיקומו במסלול התשלום(,
  אם החוזה פג תוקף, משלם מקבל החוזה את הסכום הנקוב לשולח החוזה )נאכף ע
 \begin_inset Quotes erd
@@ -1561,11 +1549,11 @@ Node
 \color inherit
 שקדם לו.
  בדוגמה זו דייב נועל )בנוסף לכספים לשלם העברה( 
-\begin_inset Formula $qpt$
+\begin_inset Formula $qp_{Alice}t$
 \end_inset
 
  כספים )כאשר 
-\begin_inset Formula $p$
+\begin_inset Formula $q$
 \end_inset
 
  זה 
@@ -1581,131 +1569,23 @@ Node
 \end_inset
 
  זה זמן נעילת החוזה בדקות ו-
-\begin_inset Formula $p$
+\begin_inset Formula $p_{Alice}$
 \end_inset
 
- זה סכום העברה, כרגע ללא התחשבות ב
-\lang english
-fee
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
-\lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-- במקרה זה נחשב 
-\begin_inset Formula $p$
+ זה סכום העברה שמשתנה בהתאם ל-
+\begin_inset Formula $fee$
 \end_inset
 
- לכל
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-\lang english
-Node
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
-\lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-בנפרד המתחשב בכמות כסף ש-
-\lang english
-Node
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
-\lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ספציפית מעבירה(, צ'ארלי נועל 
-\begin_inset Formula $qpt+qp\left(t-1\right)$
+ שמשולם ל-
+\begin_inset Formula $Node$
+\end_inset
+
+(, צ'ארלי נועל 
+\begin_inset Formula $qp_{Alice}t+qp_{Dave}\left(t-1\right)$
 \end_inset
 
  כספים ובוב 
-\begin_inset Formula $qpt+qp\left(t-1\right)+qp\left(t-2\right)$
+\begin_inset Formula $qp_{Alice}t+qp_{Dave}\left(t-1\right)+qp_{Charlie}\left(t-2\right)$
 \end_inset
 
 .
@@ -1764,25 +1644,371 @@ Griefing
 \noun default
 \color inherit
 ולהתעלם ממימוש החוזה שנשלח אליו, הוא ישלם לצ'ארלי 
-\begin_inset Formula $qpt+qp\left(t-1\right)+qp\left(t-2\right)$
+\begin_inset Formula $qp_{Alice}t+qp_{Dave}\left(t-1\right)+qp_{Charlie}\left(t-2\right)$
 \end_inset
 
 , צ'ארלי בתורו ישלם 
-\begin_inset Formula $qpt+qp\left(t-1\right)$
+\begin_inset Formula $qp_{Alice}t+qp_{Dave}\left(t-1\right)$
 \end_inset
 
  לדייב ובאותו אופן דייב ישלם לאליס 
-\begin_inset Formula $qpt$
+\begin_inset Formula $qp_{Alice}t$
 \end_inset
 
- ובכך כולם יקבלו תשלום על כך שנעלו כספים לשווא.
+ ובכך כולם יקבלו תשלום על כך שנעלו כספים לשווא מבוב שביצע 
+\begin_inset Formula $Griefing$
+\end_inset
+
+.
 \begin_inset Newline newline
 \end_inset
 
-כותבי המאמר טוענים כי פרוטוקול זה אמור להפוך את המתקפה ללא כלכלית.
- בהמשך נדבר על מקרים בהם אולי תוקפת כן תרצה לפעול בצורה זו למרות הפרוטוקול,
- מתקפות חדשות שהפרוטוקול מציג )שגם הוצגו במאמר(, עד כמה הוא פותר את הבעיה
- וכמה שינוי הפרוטוקול משפיע על הרשת.
+כותבי המאמר הציגו
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\numeric on
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+2
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\numeric off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+פרוטוקולים למימוש רעיון זה, הפרוטוקול הראשון 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המאמר}
+\end_layout
+
+\end_inset
+
+, והפרוטוקול השני שמוצג הגירסא הנוכחית של המאמר.
+ 
+\begin_inset Newline newline
+\end_inset
+
+בפרוטוקול הראשון, הוצג חוזה 
+\begin_inset Formula $HTLC$
+\end_inset
+
+ חדש בו לפי הסיטואציה של התמונה למעלה, אם 
+\begin_inset Formula $Alice$
+\end_inset
+
+ מעוניינת להעביר ל-
+\begin_inset Formula $Dave$
+\end_inset
+
+ כמות של 
+\begin_inset Formula $p_{Alice}$
+\end_inset
+
+, היא נועלת 
+\begin_inset Formula $p_{Alice}$
+\end_inset
+
+ בחוזה, ו-
+\begin_inset Formula $Dave$
+\end_inset
+
+ נועל מצידו את ה-
+\begin_inset Formula $penalty$
+\end_inset
+
+ )כפי שהוצג קודם(.
+ אם 
+\begin_inset Formula $Dave$
+\end_inset
+
+ יציג 
+\begin_inset Formula $x$
+\end_inset
+
+ כך ש-
+\begin_inset Formula $H\left(x\right)=H$
+\end_inset
+
+ )כמו בחוזה 
+\begin_inset Formula $HTLC$
+\end_inset
+
+ רגיל( עד זמן שנקבע ב-
+\begin_inset Formula $HTLC$
+\end_inset
+
+, הוא יקבל את כל הכסף הנעול.
+ אם לא הציג 
+\begin_inset Formula $x$
+\end_inset
+
+ כזה והזמן עבר, 
+\begin_inset Formula $Alice$
+\end_inset
+
+ תקבל את כל הכסף הנעול, וכך תפוצה על הזמן שהכסף שלה היה נעול.
+ נשתמש בחוזים כאלו בין 
+\begin_inset Formula $Alice,Dave,Charlie$
+\end_inset
+
+ ו-
+\begin_inset Formula $Bob$
+\end_inset
+
+ ובכך אם אחד מה-
+\begin_inset Formula $Node$
+\end_inset
+
+ יבצע 
+\begin_inset Formula $Griefing$
+\end_inset
+
+ הוא ישלם את הפיצוי כפי שהוצג קודם.
+ הפרוטוקול אמנם פתר את 
+\begin_inset Formula $Griefing\,attack$
+\end_inset
+
+ ע
+\begin_inset Quotes erd
+\end_inset
+
+י כך שהפך את המתקפה ללא משתלמת, אבל מספר בעיות נוספו שנפרט בהמשך נוספו בעקבותו.
+\begin_inset Newline newline
+\end_inset
+
+בפרוטוקול המעודכן, כש-
+\begin_inset Formula $Alice$
+\end_inset
+
+ מעוניינת להעביר כסף אל 
+\begin_inset Formula $Bob$
+\end_inset
+
+ באותה צורה שמוצגת בתמונה, היא שולחת אל 
+\begin_inset Formula $Bob$
+\end_inset
+
+ הודעה על כך שהיא מעוניינת לשלם לו, הוא מחזיר לה 
+\begin_inset Formula $H,Y$
+\end_inset
+
+ כך ש-
+\begin_inset Formula $H=H\left(x\right),Y=H\left(r\right)$
+\end_inset
+
+.
+ כעת, 
+\begin_inset Formula $Bob$
+\end_inset
+
+ יוצר חוזה 
+\begin_inset Formula $HTLC$
+\end_inset
+
+ שנקרא לו 
+\begin_inset Formula $Cancellation\,Contract$
+\end_inset
+
+ עם 
+\begin_inset Formula $Charlie$
+\end_inset
+
+ בו 
+\begin_inset Formula $Bob$
+\end_inset
+
+ נועל את ה-
+\begin_inset Formula $Penaly$
+\end_inset
+
+ לכל שאר ה-
+\begin_inset Formula $Nodes$
+\end_inset
+
+.
+ אם 
+\begin_inset Formula $Bob$
+\end_inset
+
+ מציג את 
+\begin_inset Formula $r$
+\end_inset
+
+ או 
+\begin_inset Formula $x$
+\end_inset
+
+, הכסף הנעול חוזר אליו.
+ אם הזמן של החוזה עבר, 
+\begin_inset Formula $Charlie$
+\end_inset
+
+ מקבל את הכסף הנעול )הפיצוי(.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $Charlie$
+\end_inset
+
+ יוצר בצורה דומה 
+\begin_inset Formula $Cancellation\,Contract$
+\end_inset
+
+ עם 
+\begin_inset Formula $Dave$
+\end_inset
+
+ שיוצר כזה עם 
+\begin_inset Formula $Alice$
+\end_inset
+
+.
+ 
+\begin_inset Newline newline
+\end_inset
+
+כעת, 
+\begin_inset Formula $Alice$
+\end_inset
+
+ שולחת אל 
+\begin_inset Formula $Charlie$
+\end_inset
+
+ חוזה 
+\begin_inset Formula $HTLC$
+\end_inset
+
+ חדש שבו היא נועלת 
+\begin_inset Formula $p_{Alice}$
+\end_inset
+
+.
+ אם 
+\begin_inset Formula $Dave$
+\end_inset
+
+ מציג את 
+\begin_inset Formula $x$
+\end_inset
+
+ הוא יכול לקבל את הכסף הנעול.
+ אם 
+\begin_inset Formula $Alice$
+\end_inset
+
+ מציגה את 
+\begin_inset Formula $r$
+\end_inset
+
+ או שתוקף החוזה פג, היא מקבלת את הכסף הנעול.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted5.png
+	scale 40
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בתמונה זו ניתן לראות את שלב שליחת 
+\numeric on
+
+\begin_inset Formula $H$
+\end_inset
+
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\numeric off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ו-
+\begin_inset Formula $Y$
+\end_inset
+
+ ואז את שלב נעילת הכסף.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section*
@@ -1792,7 +2018,7 @@ Reverse Griefing
 \end_layout
 
 \begin_layout Quotation
-הפרוטוקול מציג בעיה חדשה )אשר צויינה במאמר( בשם
+הפרוטוקול הראשון שהמאמר הציע מציג בעיה חדשה )אשר צויינה במאמר( בשם
 \family roman
 \series medium
 \shape up
@@ -1971,6 +2197,43 @@ Node
 
  יצטרך לשלם קנס על לא עוול בכפו.
  כותבי המאמר מציעים דרך למגר את התופעה שנדון על מהי ויעילותה בהמשך.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+
+\lang english
+Soft Griefing
+\end_layout
+
+\begin_layout Quotation
+בשרשור מיילים בנוגע למאמר, הוצג הרעיון של 
+\begin_inset Formula $Soft\,Griefing$
+\end_inset
+
+.
+ מתקפה זו דומה ל-
+\begin_inset Formula $Griefing$
+\end_inset
+
+ הרגיל, אך כעת ה-
+\begin_inset Formula $Node$
+\end_inset
+
+ הרשע ממשיך להשתתף ברגע האחרון לפני שהחוזה פג.
+ כלומר הוא גורם לכסף להיות נעול במשך הזמן הכי ממושך שאפשר ועדיין לא לשלם
+ את הקנס.
+ זהו חיסרון של הפרוטוקול מכיוון שלא מטיל עונש שתלוי בזמן תגובה של ה-
+\begin_inset Formula $Node$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
