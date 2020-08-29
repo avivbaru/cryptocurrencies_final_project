@@ -82,7 +82,7 @@ class TransactionInfo:
         return hash(id_str)
 
 class LightningNode:
-    def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
+    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.Channel] = {}
         self._hash_image_x_to_preimage: Dict[int, str] = {}
@@ -90,6 +90,7 @@ class LightningNode:
         self._channels: Dict[str, cm.Channel] = {}
         self._locked_funds: int = 0
         self._balance = balance
+        self._base_fee = base_fee
         self._fee_percentage = fee_percentage
         self._griefing_penalty_rate = griefing_penalty_rate  # TODO: maybe have this as an attribute of the blockchain
         self._pending_contracts: Set = set()
@@ -119,6 +120,10 @@ class LightningNode:
     def fee_percentage(self):
         return self._fee_percentage
 
+    @property
+    def base_fee(self):
+        return self._base_fee
+
     def get_capacity_left(self, other_node):
         if other_node.address in self._other_nodes_to_channels:
             channel = self._other_nodes_to_channels[other_node.address]
@@ -126,7 +131,7 @@ class LightningNode:
                 channel.amount_owner2_can_transfer_to_owner1
 
     def get_fee_for_transfer_amount(self, amount_in_wei: int) -> int:
-        return int(self._fee_percentage * amount_in_wei)
+        return self.base_fee + int(self._fee_percentage * amount_in_wei)
 
     def establish_channel(self, other_node: 'LightningNode', amount_in_wei: int) -> cm.Channel:
         channel_data = cm.ChannelData(self, other_node)
