@@ -346,7 +346,8 @@ class LightningNode:
 
         self._transaction_id_to_transaction_info[new_info.id] = new_info
         self._transaction_id_to_htlc_contracts[new_info.id] = contract
-        contract.attached_channel.add_contract(contract)
+        if contract.attached_channel.add_contract(contract):
+            return
 
         if nodes_between:
             self.send_regular_htlc(new_info, nodes_between[1:])
