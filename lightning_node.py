@@ -26,9 +26,8 @@ def random_delay_node(f):
 
 class TransactionInfo:
     def __init__(self, transaction_id: int, amount_in_wei: int, penalty: int, hash_x: int, hash_r: int,
-                 expiration_block_number: int, previous_node: 'LightningNode' = None, next_node: 'LightningNode' = None,
-                 delta: int = None):
-        # TODO: see how to handle delta, amount, penalty, time
+                 expiration_block_number: int, delta_wait_time: int, previous_node: 'LightningNode' = None,
+                 next_node: 'LightningNode' = None, delta: int = None):
         # TODO: delta is a safe measure - do we need it?
         self._id = transaction_id
         self._amount_in_wei = amount_in_wei
@@ -37,6 +36,7 @@ class TransactionInfo:
         self._hash_r = hash_r
         self._expiration_block_number = expiration_block_number
         self._delta = delta
+        self._delta_wait_time = delta_wait_time
         self._previous_node = previous_node
         self._next_node = next_node
 
@@ -65,6 +65,10 @@ class TransactionInfo:
         return self._expiration_block_number
 
     @property
+    def delta_wait_time(self) -> int:
+        return self._delta_wait_time
+
+    @property
     def previous_node(self):
         return self._previous_node
 
@@ -77,16 +81,13 @@ class TransactionInfo:
         id_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         return hash(id_str)
 
-
-
 class LightningNode:
     def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
-        # TODO: check if has balance when creating channels
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        self._other_nodes_to_channels: Dict[str, cm.ChannelManager] = {}
+        self._other_nodes_to_channels: Dict[str, cm.Channel] = {}
         self._hash_image_x_to_preimage: Dict[int, str] = {}
         self._hash_image_r_to_preimage: Dict[int, str] = {}
-        self._channels: Dict[str, cm.ChannelManager] = {}
+        self._channels: Dict[str, cm.Channel] = {}
         self._locked_funds: int = 0
         self._balance = balance
         self._fee_percentage = fee_percentage
@@ -127,25 +128,28 @@ class LightningNode:
     def get_fee_for_transfer_amount(self, amount_in_wei: int) -> int:
         return int(self._fee_percentage * amount_in_wei)
 
-    def establish_channel(self, other_party: 'LightningNode', amount_in_wei: int) -> cm.ChannelManager:
-        channel_data = cm.ChannelData(self, other_party)
-        default_split = cn.MessageState(amount_in_wei, 0)
-        channel = other_party.notify_of_channel(channel_data, default_split)
-        self._other_nodes_to_channels[other_party.address] = channel
+    def establish_channel(self, other_node: 'LightningNode', amount_in_wei: int) -> cm.Channel:
+        channel_data = cm.ChannelData(self, other_node)
+        default_split = cm.MessageState(amount_in_wei, 0)
+        channel = other_node.notify_of_channel(channel_data, default_split)
+        self._other_nodes_to_channels[other_node.address] = channel
         self._channels[channel_data.address] = channel
         self._balance -= amount_in_wei
 
         return channel
 
-    def notify_of_channel(self, channel_data: cm.ChannelData, default_split: cn.MessageState) -> cm.ChannelManager:
-        channel = cm.ChannelManager(channel_data, default_split)
+    def notify_of_channel(self, channel_data: cm.ChannelData, default_split: cm.MessageState) -> cm.Channel:
+        assert self._balance >= channel_data.total_wei
+        channel = cm.Channel(channel_data, default_split)
         self._other_nodes_to_channels[channel_data.owner1.address] = channel
         self._channels[channel_data.address] = channel
         return channel
 
-    def add_money_to_channel(self, channel: cm.ChannelManager, amount_in_wei: int):
+    def add_money_to_channel(self, channel: cm.Channel, amount_in_wei: int):
+        assert self._balance >= amount_in_wei
         channel.owner2_add_funds(amount_in_wei)
         self._balance -= amount_in_wei
+        # TODO: delete unneeded values in dicts
 
     def start_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
         hash_x, hash_r = final_node.generate_secret_x_hash(), final_node.generate_secret_r_hash()
@@ -155,10 +159,10 @@ class LightningNode:
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
         id = TransactionInfo.generate_id()
-        waiting_time = BLOCKCHAIN_INSTANCE.block_number + ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
-        griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, waiting_time)
-        info = TransactionInfo(id, amount_in_wei + total_fee, griefing_penalty, hash_x, hash_r, waiting_time,
-                               next_node=node_to_send)
+        delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
+        griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, delta_waiting_time)
+        info = TransactionInfo(id, amount_in_wei + total_fee, griefing_penalty, hash_x, hash_r,
+                               BLOCKCHAIN_INSTANCE.block_number +  delta_waiting_time, delta_waiting_time, next_node=node_to_send)
         self._transaction_id_to_transaction_info[id] = info
         self.send_transaction_information(node_to_send, info, nodes_between[1:])
         # 1. propogate transatcion info
@@ -173,7 +177,6 @@ class LightningNode:
 
     def _calculate_griefing_penalty(self, amount_in_wei: int, waiting_time):
         return int(self._griefing_penalty_rate * amount_in_wei * waiting_time * 10)
-    # TODO: time = exp_time - current_block_number... though current block number may vary between nodes
 
     def send_transaction_information(self, node_to_send: 'LightningNode', transaction_info: TransactionInfo,
                                      nodes_between: List['LightningNode']):
@@ -185,23 +188,26 @@ class LightningNode:
         fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
         amount_in_wei = previous_transaction_info.amount_in_wei - fee
         waiting_time = previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY
-        griefing_penalty = previous_transaction_info.penalty + self._calculate_griefing_penalty(amount_in_wei, waiting_time)
+        delta_waiting_time = previous_transaction_info.delta_wait_time - BLOCKS_IN_DAY
+        griefing_penalty = previous_transaction_info.penalty + self._calculate_griefing_penalty(amount_in_wei, delta_waiting_time)
         if nodes_between:
             node_to_send = nodes_between[0]
             info = TransactionInfo(previous_transaction_info.id, amount_in_wei, griefing_penalty,
-                                   previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time, sender,
-                                   node_to_send)
+                                   previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
+                                   delta_waiting_time, sender, node_to_send)
             self._transaction_id_to_transaction_info[previous_transaction_info.id] = info
             self.send_transaction_information(node_to_send, info, nodes_between[1:])
         else:
-            # TODO: maybe send this in function collector?
             info = TransactionInfo(previous_transaction_info.id, amount_in_wei, griefing_penalty,
-                                   previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time, sender)
-            self._transaction_id_to_transaction_info[previous_transaction_info.id] = info
-            self.send_cancellation_contract(previous_transaction_info.id)
+                                   previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
+                                   delta_waiting_time, sender)
+            self._transaction_id_to_transaction_info[info.id] = info
+            self.send_cancellation_contract(info.id)
+            r = self._hash_image_r_to_preimage[info.hash_r]
+            del self._hash_image_r_to_preimage[info.hash_r]
+            FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._handle_cancellation_is_about_to_expire(info.id, r), waiting_time - 1)
 
     def send_cancellation_contract(self, transaction_id: int):
-        #  TODO: calculate amount in transaction_info
         assert transaction_id in self._transaction_id_to_transaction_info
         info = self._transaction_id_to_transaction_info[transaction_id]
         channel = self._other_nodes_to_channels[info.previous_node.address]
@@ -215,12 +221,18 @@ class LightningNode:
         info = self._transaction_id_to_transaction_info[transaction_id]
 
         if not contract.attached_channel.add_contract(contract):
-            return  # TODO: not good!!!! this pays penalty so need to expose r before expired
+            return
 
         if info.previous_node is not None:
             self.send_cancellation_contract(transaction_id)
         else:
             self.send_forward_contract(transaction_id)
+
+    def _handle_cancellation_is_about_to_expire(self, transaction_id: int, r: str):
+        if transaction_id not in self._transaction_id_to_cancellation_contracts:
+            return
+
+        self.terminate_transaction(transaction_id, r)
 
     def send_forward_contract(self, transaction_id: int):
         assert transaction_id in self._transaction_id_to_transaction_info
@@ -236,21 +248,25 @@ class LightningNode:
     def receive_forward_contract(self, transaction_id: int, contract: 'cn.ContractForward'):
         info = self._transaction_id_to_transaction_info[transaction_id]
 
-        contract.attached_channel.add_contract(contract)
+        if not contract.attached_channel.add_contract(contract):
+            return
 
         if info.next_node is not None:
             self.send_forward_contract(transaction_id)
         else:
             # print("Transaction forward contracts construction successful!")
             x = self._hash_image_x_to_preimage[info.hash_x]
+            del self._hash_image_x_to_preimage[info.hash_x]
             self.resolve_transaction(transaction_id, x)
 
     @random_delay_node
     def resolve_transaction(self, transaction_id: int, x: str):
         info = self._transaction_id_to_transaction_info[transaction_id]
+        del self._transaction_id_to_transaction_info[transaction_id]
 
-        if info.next_node is not None:
+        if info.next_node is not None and transaction_id in self._transaction_id_to_forward_contracts:
             forward_contract = self._transaction_id_to_forward_contracts[transaction_id]
+            del self._transaction_id_to_forward_contracts[transaction_id]
             if forward_contract.is_expired:
                 return
             forward_contract.report_x(x)
@@ -260,23 +276,38 @@ class LightningNode:
             return
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
+        del self._transaction_id_to_cancellation_contracts[transaction_id]
+        if not cancellation_contract.is_expired:
+            return
         cancellation_contract.report_x(x)
 
         info.previous_node.resolve_transaction(transaction_id, x)
 
     def terminate_transaction(self, transaction_id: int, r: str):
+        if transaction_id not in self._transaction_id_to_forward_contracts:
+            return
+
         info = self._transaction_id_to_transaction_info[transaction_id]
+        del self._transaction_id_to_transaction_info[transaction_id]
 
         if info.next_node is not None:
             forward_contract = self._transaction_id_to_forward_contracts[transaction_id]
+            del self._transaction_id_to_forward_contracts[transaction_id]
+            if forward_contract.is_expired:
+                return
             forward_contract.report_r(r)
 
         if info.previous_node is None:
-            # print("Transaction ended (terminated)!")
+            print("Transaction ended (terminated)!")
             return
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
+        del self._transaction_id_to_cancellation_contracts[transaction_id]
+        if cancellation_contract.is_expired:
+            return
         cancellation_contract.report_r(r)
+
+        info.previous_node.terminate_transaction(transaction_id, r)
 
     def start_regular_htlc_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
         hash_x = final_node.generate_secret_x_hash()
@@ -285,8 +316,9 @@ class LightningNode:
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
         id = TransactionInfo.generate_id()
-        waiting_time = BLOCKCHAIN_INSTANCE.block_number + ((len(nodes_between) + 1) * 144)
-        info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, 0, waiting_time, next_node=node_to_send)
+        delta_waiting_time = ((len(nodes_between) + 1) * 144)
+        info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, 0, BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time,
+                               delta_waiting_time, next_node=node_to_send)
         self._transaction_id_to_transaction_info[id] = info
         self.send_regular_htlc(info, nodes_between[1:])
 
@@ -302,8 +334,10 @@ class LightningNode:
         node_to_send = nodes_between[0] if nodes_between else None
         fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
         amount_in_wei = previous_transaction_info.amount_in_wei - fee
+        delta_waiting_time = previous_transaction_info.delta_wait_time - BLOCKS_IN_DAY
         new_info = TransactionInfo(previous_transaction_info.id, amount_in_wei, 0, previous_transaction_info.hash_x, 0,
-                                   previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY, sender, node_to_send)
+                                   previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY, delta_waiting_time,
+                                   sender, node_to_send)
 
         self._transaction_id_to_transaction_info[new_info.id] = new_info
         self._transaction_id_to_htlc_contracts[new_info.id] = contract
@@ -316,12 +350,15 @@ class LightningNode:
             x = self._hash_image_x_to_preimage[new_info.hash_x]
             self.resolve_htlc_transaction(new_info.id, x)
 
-    # @random_delay_node
+    @random_delay_node
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
         info = self._transaction_id_to_transaction_info[transaction_id]
+        del self._transaction_id_to_transaction_info[transaction_id]
 
         if info.previous_node is not None:
             contract = self._transaction_id_to_htlc_contracts[transaction_id]
+            if contract.is_expired:
+                return
             contract.report_x(x)
         else:
             # print("Transaction (regular htlc) ended!")
@@ -329,155 +366,41 @@ class LightningNode:
 
         info.previous_node.resolve_htlc_transaction(transaction_id, x)
 
-
-    # def send_htlc(self, node_to_send: 'LightningNode', amount_in_wei: int, hash_image: int,
-    #               nodes_between: List['LightningNode'], expiration_time: int, cumulative_griefing_penalty: int = 0):
-    #     assert node_to_send
-    #     channel = self._other_nodes_to_channels[node_to_send.address]
-    #     assert channel
-    #     delta_amount = self._get_delta_for_sending_money(amount_in_wei, channel)
-    #
-    #     htlc_contract = cn_gp.Contract_HTLC_GP(delta_amount, hash_image, expiration_time, channel, self, node_to_send,
-    #                                            cumulative_griefing_penalty +
-    #                                            self._calculate_griefing_penalty(amount_in_wei, expiration_time -
-    #                                                                             BLOCKCHAIN_INSTANCE.block_number))
-    #     # TODO: maybe have a factory for creating HTLC vs HTLC-GP
-    #     # TODO: maybe have the htlc not active till second owner calls a specific function
-    #     self._pending_contracts.add(htlc_contract)
-    #     node_to_send.receive_htlc(self, htlc_contract, amount_in_wei, nodes_between)
-    #
-    # def _get_delta_for_sending_money(self, amount_in_wei: int, channel: cm.ChannelManager) -> int:
-    #     current_owner1_balance = channel.channel_state.message_state.owner1_balance
-    #     current_owner2_balance = channel.channel_state.channel_data.total_wei - \
-    #                              channel.channel_state.message_state.owner1_balance
-    #     if channel.channel_state.channel_data.owner1.address == self.address:
-    #         assert (current_owner1_balance - amount_in_wei >= 0)  # TODO: put more
-    #         # asserts in code!!!
-    #         return -amount_in_wei
-    #     else:
-    #         assert(current_owner2_balance - amount_in_wei >= 0)
-    #         return amount_in_wei
-    #
-    # def receive_htlc(self, sender: 'LightningNode', contract: cn.Contract_HTLC, amount_in_wei: int,
-    #                  nodes_between: List['LightningNode'], cumulative_griefing_penalty: int = 0):
-    #     contract.attached_channel.add_contract(contract)
-    #     sender.accept_contract(contract)
-    #     if nodes_between:
-    #         node_to_send = nodes_between[0]
-    #         fee = self.get_fee_for_transfer_amount(amount_in_wei)
-    #         self.send_htlc(node_to_send, amount_in_wei - fee, contract.hash_image, nodes_between[1:],
-    #                        contract.expiration_block_number - 1, cumulative_griefing_penalty)
-    #     elif contract.hash_image in self._hash_image_to_preimage:
-    #         self._start_resolving_contract_off_chain(sender, contract)
-    #     assert False
-    #
-    # def accept_contract(self, contract: cn.Contract_HTLC):
-    #     assert contract in self._pending_contracts
-    #     self._pending_contracts.remove(contract)
-    #     contract.accept(self)
-    #
-    # def decline_contract(self, contract: cn.Contract_HTLC):
-    #     assert contract in self._pending_contracts
-    #     self._pending_contracts.remove(contract)
-    #     other_contract = self._find_other_contract_with_same_pre_image(contract.hash_image, contract.attached_channel)
-    #     other_contract.sender.terminate_contract(other_contract)
-    #
-    # def terminate_contract(self, contract: cn.Contract_HTLC):
-    #     other_contract = self._find_other_contract_with_same_pre_image(contract.hash_image, contract.attached_channel)
-    #     other_contract.sender.terminate_contract(other_contract)  # TODO: finish this function, also add terminate in contract
-    #
-    # def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
-    #     assert contract not in self._pending_contracts
-    #     contract.resolve_offchain(self._hash_image_to_preimage[contract.hash_image])
-    #     sender.notify_of_resolve_htlc_offchain(contract)
-    #
-
     def generate_secret_x_hash(self) -> (int, int):
         x = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        self._hash_image_x_to_preimage[hash(x)] = x
-        return hash(x)
+        hash_image = hash(x)
+        self._hash_image_x_to_preimage[hash_image] = x
+        return hash_image
 
     def generate_secret_r_hash(self) -> int:
         r = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        self._hash_image_r_to_preimage[hash(r)] = r
-        return hash(r)
+        hash_image = hash(r)
+        self._hash_image_r_to_preimage[hash_image] = r
+        return hash_image
 
     def close_channel(self, node):
         if node.address not in self._other_nodes_to_channels:
             return
 
         channel = self._other_nodes_to_channels[node.address]
-        assert channel
+        del self._other_nodes_to_channels[node.address]
+        if channel not in self._channels:
+            return
         channel.close_channel()
         self._balance += channel.owner1_balance if channel.is_owner1(self) else channel.owner2_balance
         del self._channels[channel.channel_state.channel_data.address]
-        del self._other_nodes_to_channels[node.address]
-
-    # def close_channel_htlc(self, contract: cn.Contract_HTLC):
-    #     if contract.attached_channel not in self._channels or contract.pre_image not in self._hash_image_to_preimage:
-    #         return
-    #
-    #     contract.resolve_onchain(self._hash_image_to_preimage[contract.pre_image])
-    #     del self._channels[contract.attached_channel.channel_state.channel_data.address]
-    #     other_node = contract.attached_channel.channel_state.channel_data.receiver if \
-    #         contract.attached_channel.is_owner1(self) else \
-    #         contract.attached_channel.channel_state.channel_data.sender
-    #     del self._other_nodes_to_channels[other_node.address]
-    #
-    # def find_pre_image(self, channel_closed: cm.ChannelManager):
-    #     pre_image = BLOCKCHAIN_INSTANCE.get_closed_channel_secret_x(channel_closed)
-    #     self._hash_image_to_preimage[hash(pre_image)] = pre_image
-    #     return pre_image
-    #
-    # def notify_of_resolve_htlc_onchain(self, contract: cn.Contract_HTLC):
-    #     if contract.attached_channel.channel_state.channel_data.address not in self._channels:
-    #         return
-    #
-    #     # pre_image = self.find_pre_image(contract.attached_channel) TODO: no real need for this one
-    #     contract.attached_channel.resolve_htlc(contract)
-    #     contract.attached_channel.close_channel()  # TODO: what else should do here?
-    #     del self._channels[contract.attached_channel.channel_state.channel_data.address]
-    #     other_contract: cn.Contract_HTLC = self._find_other_contract_with_same_pre_image(contract.hash_image,
-    #                                                                                      contract.attached_channel)
-    #     if other_contract is not None:
-    #         other_contract.resolve_onchain(contract.pre_image)
-    #
-    # def _find_other_contract_with_same_pre_image(self, hash_image: int,
-    #                                              other_channel: cm.ChannelManager) -> Optional[cn.Contract_HTLC]:
-    #     for channel in self._channels.values():
-    #         if channel == other_channel:
-    #             continue
-    #         for htlc_contract in channel.channel_state.htlc_contracts:
-    #             if htlc_contract.hash_image == hash_image:
-    #                 return htlc_contract
-    #     return None
-    #
-    # def notify_of_resolve_htlc_offchain(self, contract: cn.Contract_HTLC):
-    #     if contract.attached_channel.channel_state.channel_data.address not in self._channels:
-    #         return
-    #
-    #     contract.attached_channel.resolve_htlc(contract)
-    #     other_contract: cn.Contract_HTLC = self._find_other_contract_with_same_pre_image(contract.hash_image,
-    #                                                                                      contract.attached_channel)
-    #     # TODO: maybe have the owners inside the htlc_contracts so to not have this shit
-    #     if other_contract is not None:
-    #         other_contract.resolve_offchain(contract.pre_image)
-    #         other_node = other_contract.receiver if other_contract.sender.address == self.address else other_contract.sender
-    #         self._notify_other_node_of_resolving_contract(other_node, other_contract)
-    #
-    # def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
-    #     other_node.notify_of_resolve_htlc_offchain(contract)
-    #
-    # def notify_of_griefed_contract(self, contract: cn.Contract_HTLC):
-    #     other_contract: cn.Contract_HTLC = self._find_other_contract_with_same_pre_image(contract.hash_image,
-    #                                                                                      contract.attached_channel)
-    #     if other_contract is not None:
-    #         other_node = other_contract.sender
-    #         assert self.address == other_contract.receiver.address
-    #         other_node.notify_of_griefed_contract(other_contract)
 
     def notify_of_change_in_locked_funds(self, locked_fund):
         self._locked_funds += locked_fund
+
+    def notify_of_closed_channel(self, channel: 'cm.Channel', other_node: 'LightningNode'):
+        if channel.channel_state.channel_data.address not in self._channels:
+            return
+        del self._channels[channel.channel_state.channel_data.address]
+
+        if other_node.address in self._other_nodes_to_channels:
+            del self._other_nodes_to_channels[other_node.address]
+
 
 
 # class LightningNodeGriefing(LightningNode):
