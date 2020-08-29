@@ -2,7 +2,6 @@ from typing import Dict, List, Tuple, Callable, Optional, Set
 import random
 import string
 import contract_htlc as cn
-import contract_htlc_gp as cn_gp
 import channel_manager as cm
 from singletons import *
 
@@ -82,7 +81,7 @@ class TransactionInfo:
         return hash(id_str)
 
 class LightningNode:
-    def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
+    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.Channel] = {}
         self._hash_image_x_to_preimage: Dict[int, str] = {}
@@ -90,6 +89,7 @@ class LightningNode:
         self._channels: Dict[str, cm.Channel] = {}
         self._locked_funds: int = 0
         self._balance = balance
+        self._base_fee = base_fee
         self._fee_percentage = fee_percentage
         self._griefing_penalty_rate = griefing_penalty_rate  # TODO: maybe have this as an attribute of the blockchain
         self._pending_contracts: Set = set()
@@ -119,6 +119,10 @@ class LightningNode:
     def fee_percentage(self):
         return self._fee_percentage
 
+    @property
+    def base_fee(self):
+        return self._base_fee
+
     def get_capacity_left(self, other_node):
         if other_node.address in self._other_nodes_to_channels:
             channel = self._other_nodes_to_channels[other_node.address]
@@ -126,7 +130,7 @@ class LightningNode:
                 channel.amount_owner2_can_transfer_to_owner1
 
     def get_fee_for_transfer_amount(self, amount_in_wei: int) -> int:
-        return int(self._fee_percentage * amount_in_wei)
+        return self.base_fee + int(self._fee_percentage * amount_in_wei)
 
     def establish_channel(self, other_node: 'LightningNode', amount_in_wei: int) -> cm.Channel:
         channel_data = cm.ChannelData(self, other_node)
@@ -272,12 +276,12 @@ class LightningNode:
             forward_contract.report_x(x)
 
         if info.previous_node is None:
-            # print("Transaction ended!")
+            METRICS_COLLECTOR_INSTANCE.count("Transactions successful")
             return
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
         del self._transaction_id_to_cancellation_contracts[transaction_id]
-        if not cancellation_contract.is_expired:
+        if cancellation_contract.is_expired:
             return
         cancellation_contract.report_x(x)
 
@@ -298,7 +302,6 @@ class LightningNode:
             forward_contract.report_r(r)
 
         if info.previous_node is None:
-            print("Transaction ended (terminated)!")
             return
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
@@ -435,26 +438,19 @@ class LightningNode:
         #                                      ._notify_other_node_of_resolving_contract(other_node, contract)))
 
 
-# class LightningNodeSoftGriefing(LightningNode):
-#     def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
-#         super().__init__(balance, fee_percentage, griefing_penalty_rate)
-#
-#     def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
-#         target_block_number = contract.expiration_block_number - 1
-#         FUNCTION_COLLECTOR_INSTANCE.append(
-#             lambda: super(LightningNodeSoftGriefing, self).
-#                 _start_resolving_contract_off_chain(sender, contract), target_block_number)
-#
-#     def _collector_function_creator(self, func: Callable[[], None]) -> Callable[[], None]:
-#         def check_block_and_use_function():
-#             func()
-#         return check_block_and_use_function
-#
-#     def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
-#         target_block_number = contract.expiration_block_number - 1
-#         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
-#                                            ._notify_other_node_of_resolving_contract(other_node, contract),
-#                                            target_block_number)
+class LightningNodeSoftGriefing(LightningNode):
+    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
+        super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
+
+    def resolve_transaction(self, transaction_id: int, x: str):
+        info = self._transaction_id_to_transaction_info[transaction_id]
+        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
+                                           .resolve_transaction, info.expiration_block_number - 1)
+
+    def resolve_htlc_transaction(self, transaction_id: int, x: str):
+        info = self._transaction_id_to_transaction_info[transaction_id]
+        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
+                                           .resolve_htlc_transaction, info.expiration_block_number - 1)
 
 
 # class LightningNodeReverseGriefing(LightningNode):

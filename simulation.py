@@ -55,8 +55,8 @@ def create_node(is_soft_griefing=False):
     base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]  # todo:use this
     if is_soft_griefing:
         # TODO: change to soft
-        return lightning_node.LightningNode(STARTING_BALANCE, fee_percentage, GRIEFING_PENALTY_RATE)
-    return lightning_node.LightningNode(STARTING_BALANCE, fee_percentage, GRIEFING_PENALTY_RATE)
+        return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
+    return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
 
 
 def run_simulation(number_of_blocks, network):
@@ -96,9 +96,9 @@ def run_simulation(number_of_blocks, network):
             FUNCTION_COLLECTOR_INSTANCE.run()
 
     max_block = FUNCTION_COLLECTOR_INSTANCE.get_max_k()
-    if BLOCKCHAIN_INSTANCE.block_number < max_block:
-        BLOCKCHAIN_INSTANCE.wait_k_blocks(max_block - BLOCKCHAIN_INSTANCE.block_number)
-    FUNCTION_COLLECTOR_INSTANCE.run()
+    while BLOCKCHAIN_INSTANCE.block_number < max_block:
+        BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
+        FUNCTION_COLLECTOR_INSTANCE.run()
     close_channel_and_log_metrics(network)
     metrics = METRICS_COLLECTOR_INSTANCE.get_metrics()
     metrics_str = '\n'.join([f'\t{k}: {v}' for k, v in metrics.items()])
@@ -112,14 +112,14 @@ def close_channel_and_log_metrics(network):
         for other_node in network.edges[node]:
             node.close_channel(other_node)
 
-        if type(node) is lightning_node.LightningNode:
+        if type(node) is lightning_node.LightningNodeSoftGriefing:
+            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG,
+                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        elif type(node) is lightning_node.LightningNode:
             METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG,
                                                BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
         # if type(node) is lightning_node.LightningNodeGriefing:
         #     METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG,
-        #                                        BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        # if type(node) is lightning_node.LightningNodeSoftGriefing:
-        #     METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG,
         #                                        BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
 
 

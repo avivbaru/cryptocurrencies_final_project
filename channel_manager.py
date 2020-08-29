@@ -38,7 +38,9 @@ class ChannelState:
         self.htlc_contracts: List['cn.Contract_HTLC'] = []
 
 
-class Channel(object):  # TODO: maybe change name to just channel
+class Channel(object):
+    # TODO: figure out what to do with open HTLC when the channel is closing
+    # TODO: should I transfer all funds to the other party if htlc contract is expired?
     def __init__(self, data: ChannelData, default_split: 'MessageState'):
         self._owner1_htlc_locked: int = 0
         self._owner2_htlc_locked: int = 0
@@ -183,6 +185,8 @@ class Channel(object):  # TODO: maybe change name to just channel
             self.close_channel()  # resolve on-chain
 
     def _handle_contract_ended(self, contract: 'cn.Contract_HTLC'):
+        if contract not in self._state.htlc_contracts:
+            return # TODO: this is not good! fix the above todo
         self._state.htlc_contracts.remove(contract)
 
         locked_for_owner1 = 0
