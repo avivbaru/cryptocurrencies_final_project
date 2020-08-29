@@ -10,6 +10,7 @@ from network import Network
 from singletons import METRICS_COLLECTOR_INSTANCE, FUNCTION_COLLECTOR_INSTANCE, BLOCKCHAIN_INSTANCE
 
 # metrics names
+# TODO: add metrics: number of sends,
 HONEST_NODE_BALANCE_AVG = "honest_node_balance"
 GRIEFING_NODE_BALANCE_AVG = "griefing_node_balance"
 GRIEFING_SOFT_NODE_BALANCE_AVG = "soft_griefing_node_balance"
@@ -225,7 +226,7 @@ def simulate_random_network(number_of_nodes=100, soft_griefing_percentage=0.05, 
 
 
 def run_multiply_simulation():
-    number_of_nodes = 1000
+    number_of_nodes = 100
     number_of_blocks = 15
     soft_griefing_percentages = [0.01, 0.05, 0.1, 0.15]
     simulation_metrics = []
@@ -242,7 +243,8 @@ def run_multiply_simulation():
     print(simulation_metrics)
     timestamp = datetime.timestamp(datetime.now())
     with open(f"simulation_results/{timestamp}.json", 'w') as f:
-        f.writelines([json.dumps(s) for s in simulation_metrics])
+        for s in simulation_metrics:
+            f.write(json.dumps(s) + '\n')
 
 
 def main():
