@@ -185,6 +185,8 @@ class Channel(object):
             self.close_channel()  # resolve on-chain
 
     def _handle_contract_ended(self, contract: 'cn.Contract_HTLC'):
+        if contract not in self._state.htlc_contracts:
+            return # TODO: this is not good! fix the above todo
         self._state.htlc_contracts.remove(contract)
 
         locked_for_owner1 = 0

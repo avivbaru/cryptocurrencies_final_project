@@ -29,6 +29,9 @@ class Contract_HTLC:
         assert self.is_expired
 
     def _check_is_pre_image_available(self):
+        if self._pre_image_r or self._pre_image_x:
+            return
+
         x = BLOCKCHAIN_INSTANCE.get_pre_image_if_exists_onchain(self.hash_x)
         if x:
             self.report_x(x)
