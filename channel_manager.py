@@ -5,6 +5,18 @@ from typing import *
 import contract_htlc as cn
 from singletons import *
 
+
+class MessageState:
+    def __init__(self, owner1_balance, serial, channel_address=None):
+        self.owner1_balance = owner1_balance
+        self._serial = serial
+        self.channel_address = channel_address
+
+    @property
+    def serial_number(self):
+        return self._serial
+
+
 class ChannelData:
     def __init__(self, owner1: 'ln.LightningNode', owner2: 'ln.LightningNode'):
         self.address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -20,14 +32,14 @@ class ChannelData:
 
 
 class ChannelState:
-    def __init__(self, channel_data: ChannelData, message_state: 'cn.MessageState' = None):
+    def __init__(self, channel_data: ChannelData, message_state: 'MessageState' = None):
         self.channel_data: ChannelData = channel_data
         self.message_state: 'cn.MessageState' = message_state
         self.htlc_contracts: List['cn.Contract_HTLC'] = []
 
 
-class ChannelManager(object):  # TODO: maybe change name to just channel
-    def __init__(self, data: ChannelData, default_split: 'cn.MessageState'):
+class Channel(object):  # TODO: maybe change name to just channel
+    def __init__(self, data: ChannelData, default_split: 'MessageState'):
         self._owner1_htlc_locked: int = 0
         self._owner2_htlc_locked: int = 0
         self._state: ChannelState = ChannelState(data)
@@ -50,6 +62,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def _compute_amount_owner1_can_transfer_to_owner2(self):
         self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance - self._owner1_htlc_locked
+        assert self._amount_owner1_can_transfer_to_owner2 >= 0
 
     def owner2_htlc_locked_setter(self, owner2_htlc_locked: int):
         assert owner2_htlc_locked >= 0
@@ -61,6 +74,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
     def _compute_amount_owner2_can_transfer_to_owner1(self):
         self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_wei -
                                                       self._state.message_state.owner1_balance) - self._owner2_htlc_locked
+        assert self._amount_owner2_can_transfer_to_owner1 >= 0
 
     @property
     def channel_state(self) -> ChannelState:
@@ -89,15 +103,14 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
     def is_owner1(self, node: 'ln.LightningNode') -> bool:
         return node.address == self.channel_state.channel_data.owner1.address
 
-    def update_message(self, message_state: 'cn.MessageState') -> None:
+    def update_message(self, message_state: 'MessageState') -> None:
         self._check_new_message_state(message_state)
         self.channel_state.message_state = message_state
         self._compute_amount_owner1_can_transfer_to_owner2()
         self._compute_amount_owner2_can_transfer_to_owner1()
 
-    def _check_new_message_state(self, message_state: 'cn.MessageState') -> None:
-        if message_state.serial_number < 0 or \
-                message_state.owner1_balance > self._state.channel_data.total_wei:
+    def _check_new_message_state(self, message_state: 'MessageState') -> None:
+        if message_state.serial_number < 0 or message_state.owner1_balance > self._state.channel_data.total_wei:
             raise ValueError("Invalid message state received.")
 
         if self._state.message_state is None:
@@ -118,16 +131,22 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
         self.owner1_htlc_locked_setter(0)
         self.owner2_htlc_locked_setter(0)
+        self._state.channel_data.owner1.notify_of_closed_channel(self, self._state.channel_data.owner2)
+        self._state.channel_data.owner2.notify_of_closed_channel(self, self._state.channel_data.owner1)
         self._open = False
 
-    def add_contract(self, contract: 'cn.Contract_HTLC'):
+    def add_contract(self, contract: 'cn.Contract_HTLC') -> bool:
         if self.is_owner1(contract.sender):
+            if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_wei:
+                return False  # TODO: report failure
             self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_wei)
         else:
+            if self.amount_owner2_can_transfer_to_owner1 < contract.amount_in_wei:
+                return False
             self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_wei)
         # TODO: subscribe to contract?
         self._state.htlc_contracts.append(contract)
-
+        return True
 
     # def resolve_htlc(self, contract: 'cn.Contract_HTLC'):
     #     if contract not in self._state.htlc_contracts:
@@ -145,27 +164,42 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def _update_message_state(self, new_owner1_balance: int):
         current_message_state = self._state.message_state
-        message_state = cn.MessageState(new_owner1_balance, current_message_state.serial_number + 1,
+        message_state = MessageState(new_owner1_balance, current_message_state.serial_number + 1,
                                         self._state.channel_data.address)
         self.update_message(message_state)
 
     def notify_of_end_of_contract(self, contract: 'cn.Contract_HTLC'):
-        assert contract in self._state.htlc_contracts
+        # assert contract in self._state.htlc_contracts TODO: this fails cause contract is not added but gets expired - fix it
+        #  by adding a "invalidate" option to contracts - the if is a fix for now
+        self._handle_contract_ended(contract)
 
+        if contract.is_expired:
+            for other_contract in self._state.htlc_contracts:
+                self._handle_contract_ended(other_contract)
+            self._state.htlc_contracts = []
+            self.close_channel()  # resolve on-chain
+
+    def _handle_contract_ended(self, contract: 'cn.Contract_HTLC'):
         self._state.htlc_contracts.remove(contract)
 
+        locked_for_owner1 = 0
+        locked_for_owner2 = 0
+        transfer_to_owner1 = 0
+        transfer_to_owner2 = 0
         if self.is_owner1(contract.sender):
-            transfer_to_owner1 = contract.transfer_amount_to_sender
-            transfer_to_owner2 = contract.transfer_amount_to_receiver
+            locked_for_owner1 = contract.amount_in_wei
+            transfer_to_owner2 = contract.transfer_amount_to_payee
         else:
-            transfer_to_owner1 = contract.transfer_amount_to_receiver
-            transfer_to_owner2 = contract.transfer_amount_to_sender
+            locked_for_owner2 = contract.amount_in_wei
+            transfer_to_owner1 = contract.transfer_amount_to_payee
 
-        self.owner1_htlc_locked_setter(int(self._owner1_htlc_locked - transfer_to_owner1))
-        self.owner2_htlc_locked_setter(int(self._owner2_htlc_locked - transfer_to_owner2))
+        self.owner1_htlc_locked_setter(int(self._owner1_htlc_locked - locked_for_owner1))
+        self.owner2_htlc_locked_setter(int(self._owner2_htlc_locked - locked_for_owner2))
 
         new_owner1_balance = self._state.message_state.owner1_balance + transfer_to_owner1 - transfer_to_owner2
         self._update_message_state(new_owner1_balance)
 
-        if contract.is_expired:
-            BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)  # resolve on-chain
+        if contract.pre_image_x:
+            BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_x, contract.pre_image_x)
+        elif contract.pre_image_r:
+            BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_r, contract.pre_image_r)
