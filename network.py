@@ -29,9 +29,13 @@ class Network:
                     self.capacity[(from_node, to_node)] = from_node.get_capacity_left(to_node)
         return self.capacity
 
-    def update_capacity_map(self, edges_to_update: List[Tuple[LightningNode, LightningNode]]):
-        for edge in edges_to_update:
-            self.capacity[edge] = edge[0].get_capacity_left(edge[1])
+    def update_capacity_map(self, sender: LightningNode,
+                            nodes_between: Dict[LightningNode, List[LightningNode]]):
+        prev = sender
+        for curr in nodes_between:
+            self.capacity[(prev, curr)] = prev.get_capacity_left(curr)
+            self.capacity[(curr, prev)] = curr.get_capacity_left(prev)
+            prev = curr
 
     def get_fees_map(self) -> Dict[Tuple[LightningNode, LightningNode], float]:
         if not self.fees_rate_map:
@@ -46,9 +50,10 @@ class Network:
         capacity_map: Dict[Tuple[LightningNode, LightningNode], int] = self.get_capacity_map()
         nodes: Set[LightningNode] = set(self.nodes)
         visited: Dict[LightningNode, int] = {initial: amount_in_wei}
-        path: Dict[LightningNode, LightningNode] = {}
+        first_node_in_path_map: Dict[LightningNode, LightningNode] = {}
         capacity_left_in_path: Dict[LightningNode, int] = {initial: float('inf')}
-        fee_paid: Dict[LightningNode, int] = {initial: 0}
+        fee_paid_map: Dict[LightningNode, int] = {initial: 0}
+        path: Dict[LightningNode, List[LightningNode]] = {initial: []}
 
         while nodes:
             min_node = None
@@ -75,31 +80,27 @@ class Network:
 
                     # check if griefing is possible
                     is_griefing_possible = True
+                    nodes_between = path[min_node] + [edge_node]
                     if griefing_penalty_rate > 0:
-                        is_griefing_possible = Network._is_griefing_possible(capacity_map, edge_node,
-                                                                             fee_paid,
+                        is_griefing_possible = Network._is_griefing_possible(capacity_map, nodes_between,
+                                                                             fee_paid_map,
                                                                              griefing_penalty_rate,
-                                                                             initial, min_node, new_wei, path)
+                                                                             initial, new_wei)
 
                     if (edge_node not in visited or new_wei < visited[edge_node]) \
                             and capacity_left >= 0 and is_griefing_possible:
                         visited[edge_node] = new_wei
-                        path[edge_node] = min_node
+                        first_node_in_path_map[edge_node] = min_node
+                        path[edge_node] = nodes_between
                         capacity_left_in_path[edge_node] = capacity_left
-                        fee_paid[edge_node] = fee_between
+                        fee_paid_map[edge_node] = fee_between
 
         return visited, path
 
     @staticmethod
-    def _is_griefing_possible(capacity_map, edge_node, fee_paid, griefing_penalty_rate, initial,
-                              min_node, new_wei, path):
-        nodes_in_path = [edge_node]
-        curr = min_node
-        while curr != initial:
-            nodes_in_path.append(curr)
-            curr = path[curr]
+    def _is_griefing_possible(capacity_map, nodes_in_path, fee_paid_map, griefing_penalty_rate, initial,
+                              new_wei):
         length = len(nodes_in_path) + 1
-        nodes_in_path.reverse()
         prev = initial
         temp_wei = new_wei
         is_griefing_possible = True
@@ -110,5 +111,5 @@ class Network:
                                    griefing_penalty_sum <= capacity_map[(n, prev)]
             prev = n
             length -= 1
-            temp_wei -= fee_paid.get(n, 0)
+            temp_wei -= fee_paid_map.get(n, 0)
         return is_griefing_possible
