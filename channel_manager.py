@@ -50,6 +50,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
 
     def _compute_amount_owner1_can_transfer_to_owner2(self):
         self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance - self._owner1_htlc_locked
+        assert self._amount_owner1_can_transfer_to_owner2 >= 0
 
     def owner2_htlc_locked_setter(self, owner2_htlc_locked: int):
         assert owner2_htlc_locked >= 0
@@ -61,6 +62,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
     def _compute_amount_owner2_can_transfer_to_owner1(self):
         self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_wei -
                                                       self._state.message_state.owner1_balance) - self._owner2_htlc_locked
+        assert self._amount_owner2_can_transfer_to_owner1 >= 0
 
     @property
     def channel_state(self) -> ChannelState:
@@ -96,8 +98,7 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         self._compute_amount_owner2_can_transfer_to_owner1()
 
     def _check_new_message_state(self, message_state: 'cn.MessageState') -> None:
-        if message_state.serial_number < 0 or \
-                message_state.owner1_balance > self._state.channel_data.total_wei:
+        if message_state.serial_number < 0 or message_state.owner1_balance > self._state.channel_data.total_wei:
             raise ValueError("Invalid message state received.")
 
         if self._state.message_state is None:
@@ -120,14 +121,18 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         self.owner2_htlc_locked_setter(0)
         self._open = False
 
-    def add_contract(self, contract: 'cn.Contract_HTLC'):
+    def add_contract(self, contract: 'cn.Contract_HTLC') -> bool:
         if self.is_owner1(contract.sender):
+            if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_wei:
+                return False  # TODO: report failure
             self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_wei)
         else:
+            if self.amount_owner2_can_transfer_to_owner1 < contract.amount_in_wei:
+                return False
             self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_wei)
         # TODO: subscribe to contract?
         self._state.htlc_contracts.append(contract)
-
+        return True
 
     # def resolve_htlc(self, contract: 'cn.Contract_HTLC'):
     #     if contract not in self._state.htlc_contracts:
@@ -150,22 +155,30 @@ class ChannelManager(object):  # TODO: maybe change name to just channel
         self.update_message(message_state)
 
     def notify_of_end_of_contract(self, contract: 'cn.Contract_HTLC'):
-        assert contract in self._state.htlc_contracts
+        # assert contract in self._state.htlc_contracts TODO: this fails cause contract is not added but gets expired - fix it
+        #  by adding a "invalidate" option to contracts - the if is a fix for now
+        if contract not in self._state.htlc_contracts:
+            return
 
         self._state.htlc_contracts.remove(contract)
 
+        locked_for_owner1 = 0
+        locked_for_owner2 = 0
+        transfer_to_owner1 = 0
+        transfer_to_owner2 = 0
         if self.is_owner1(contract.sender):
-            transfer_to_owner1 = contract.transfer_amount_to_sender
+            locked_for_owner1 = contract.amount_in_wei
             transfer_to_owner2 = contract.transfer_amount_to_receiver
         else:
+            locked_for_owner2 = contract.amount_in_wei
             transfer_to_owner1 = contract.transfer_amount_to_receiver
-            transfer_to_owner2 = contract.transfer_amount_to_sender
 
-        self.owner1_htlc_locked_setter(int(self._owner1_htlc_locked - transfer_to_owner1))
-        self.owner2_htlc_locked_setter(int(self._owner2_htlc_locked - transfer_to_owner2))
+        self.owner1_htlc_locked_setter(int(self._owner1_htlc_locked - locked_for_owner1))
+        self.owner2_htlc_locked_setter(int(self._owner2_htlc_locked - locked_for_owner2))
 
         new_owner1_balance = self._state.message_state.owner1_balance + transfer_to_owner1 - transfer_to_owner2
         self._update_message_state(new_owner1_balance)
 
         if contract.is_expired:
+            # TODO: close all active contracts - and don't resolve if contract is bad
             BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)  # resolve on-chain

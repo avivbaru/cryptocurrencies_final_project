@@ -105,7 +105,7 @@ class Network:
         is_griefing_possible = True
         griefing_penalty_sum = 0
         for i, n in enumerate(nodes_in_path):
-            griefing_penalty_sum += temp_wei * griefing_penalty_rate * length * 1440
+            griefing_penalty_sum += int(temp_wei * griefing_penalty_rate * length * 1440)
             is_griefing_possible = is_griefing_possible and \
                                    griefing_penalty_sum <= capacity_map[(n, prev)]
             prev = n

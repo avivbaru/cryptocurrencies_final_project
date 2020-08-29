@@ -31,7 +31,7 @@ class Contract_HTLC:
         self._sender = sender
         self._receiver = receiver  # TODO: change to payer and payee
         self._is_accepted = False
-        self._money_to_transfer_to_sender = 0
+
         self._money_to_transfer_to_receiver = 0
 
         FUNCTION_COLLECTOR_INSTANCE.append(self._on_expired, expiration_block_number)
@@ -80,10 +80,6 @@ class Contract_HTLC:
         return self._receiver
 
     @property
-    def transfer_amount_to_sender(self):
-        return self._money_to_transfer_to_sender
-
-    @property
     def transfer_amount_to_receiver(self):
         return self._money_to_transfer_to_receiver
 
@@ -121,21 +117,16 @@ class ContractForward(Contract_HTLC):
         if self._pre_image_r or self._pre_image_x:
             return
 
-        self._money_to_transfer_to_sender = self.amount_in_wei
-        self._money_to_transfer_to_receiver = 0
         self._channel_to_notify.notify_of_end_of_contract(self)
 
     def report_x(self, x: str):
         super().report_x(x)
-        self.attached_channel.notify_of_end_of_contract(self)
-        self._money_to_transfer_to_sender = 0
         self._money_to_transfer_to_receiver = self.amount_in_wei
+        self.attached_channel.notify_of_end_of_contract(self)
 
     def report_r(self, r: str):
         super().report_r(r)
         self.attached_channel.notify_of_end_of_contract(self)
-        self._money_to_transfer_to_sender = self.amount_in_wei
-        self._money_to_transfer_to_receiver = 0
 
     # def resolve_onchain(self, pre_image: str) -> bool:
     #     if not self._validate(pre_image):
@@ -184,18 +175,13 @@ class ContractCancellation(Contract_HTLC):
         if self._pre_image_r or self._pre_image_x:
             return
 
-        self._money_to_transfer_to_sender = 0
         self._money_to_transfer_to_receiver = self.amount_in_wei
         self._channel_to_notify.notify_of_end_of_contract(self)
 
     def report_x(self, x: str):
         super().report_x(x)
-        self._money_to_transfer_to_sender = self.amount_in_wei
-        self._money_to_transfer_to_receiver = 0
         self.attached_channel.notify_of_end_of_contract(self)
 
     def report_r(self, r: str):
         super().report_r(r)
-        self._money_to_transfer_to_sender = self.amount_in_wei
-        self._money_to_transfer_to_receiver = 0
         self.attached_channel.notify_of_end_of_contract(self)

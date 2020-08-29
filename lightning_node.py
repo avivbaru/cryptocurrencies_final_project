@@ -6,6 +6,7 @@ import contract_htlc_gp as cn_gp
 import channel_manager as cm
 from singletons import *
 
+BLOCKS_IN_DAY = 144
 
 BLOCK_IN_DAY = 5
 
@@ -154,7 +155,7 @@ class LightningNode:
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
         id = TransactionInfo.generate_id()
-        waiting_time = BLOCKCHAIN_INSTANCE.block_number + ((len(nodes_between) + 1) * 144)
+        waiting_time = BLOCKCHAIN_INSTANCE.block_number + ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
         griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, waiting_time)
         info = TransactionInfo(id, amount_in_wei + total_fee, griefing_penalty, hash_x, hash_r, waiting_time,
                                next_node=node_to_send)
@@ -179,24 +180,25 @@ class LightningNode:
         # TODO: not much logic here... maybe we should give up this function
         node_to_send.receive_transaction_information(self, transaction_info, nodes_between)
 
-    def receive_transaction_information(self, sender: 'LightningNode', transaction_info: TransactionInfo,
+    def receive_transaction_information(self, sender: 'LightningNode', previous_transaction_info: TransactionInfo,
                                         nodes_between: List['LightningNode']):
-        fee = self.get_fee_for_transfer_amount(transaction_info.amount_in_wei)
-        amount_in_wei = transaction_info.amount_in_wei - fee
-        waiting_time = transaction_info.expiration_block_number - 1
-        griefing_penalty = self._calculate_griefing_penalty(amount_in_wei, waiting_time)
+        fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
+        amount_in_wei = previous_transaction_info.amount_in_wei - fee
+        waiting_time = previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY
+        griefing_penalty = previous_transaction_info.penalty + self._calculate_griefing_penalty(amount_in_wei, waiting_time)
         if nodes_between:
             node_to_send = nodes_between[0]
-            info = TransactionInfo(transaction_info.id, amount_in_wei, griefing_penalty, transaction_info.hash_x,
-                                   transaction_info.hash_r, transaction_info.expiration_block_number - 1, sender, node_to_send)
-            self._transaction_id_to_transaction_info[transaction_info.id] = info
+            info = TransactionInfo(previous_transaction_info.id, amount_in_wei, griefing_penalty,
+                                   previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time, sender,
+                                   node_to_send)
+            self._transaction_id_to_transaction_info[previous_transaction_info.id] = info
             self.send_transaction_information(node_to_send, info, nodes_between[1:])
         else:
             # TODO: maybe send this in function collector?
-            info = TransactionInfo(transaction_info.id, amount_in_wei, griefing_penalty, transaction_info.hash_x,
-                                   transaction_info.hash_r, transaction_info.expiration_block_number - 1, sender)
-            self._transaction_id_to_transaction_info[transaction_info.id] = info
-            self.send_cancellation_contract(transaction_info.id)
+            info = TransactionInfo(previous_transaction_info.id, amount_in_wei, griefing_penalty,
+                                   previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time, sender)
+            self._transaction_id_to_transaction_info[previous_transaction_info.id] = info
+            self.send_cancellation_contract(previous_transaction_info.id)
 
     def send_cancellation_contract(self, transaction_id: int):
         #  TODO: calculate amount in transaction_info
@@ -212,7 +214,8 @@ class LightningNode:
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
         info = self._transaction_id_to_transaction_info[transaction_id]
 
-        contract.attached_channel.add_contract(contract)
+        if not contract.attached_channel.add_contract(contract):
+            return  # TODO: not good!!!! this pays penalty so need to expose r before expired
 
         if info.previous_node is not None:
             self.send_cancellation_contract(transaction_id)
@@ -248,6 +251,8 @@ class LightningNode:
 
         if info.next_node is not None:
             forward_contract = self._transaction_id_to_forward_contracts[transaction_id]
+            if forward_contract.is_expired:
+                return
             forward_contract.report_x(x)
 
         if info.previous_node is None:
@@ -298,7 +303,7 @@ class LightningNode:
         fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
         amount_in_wei = previous_transaction_info.amount_in_wei - fee
         new_info = TransactionInfo(previous_transaction_info.id, amount_in_wei, 0, previous_transaction_info.hash_x, 0,
-                                   previous_transaction_info.expiration_block_number - 1, sender, node_to_send)
+                                   previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY, sender, node_to_send)
 
         self._transaction_id_to_transaction_info[new_info.id] = new_info
         self._transaction_id_to_htlc_contracts[new_info.id] = contract
@@ -311,7 +316,7 @@ class LightningNode:
             x = self._hash_image_x_to_preimage[new_info.hash_x]
             self.resolve_htlc_transaction(new_info.id, x)
 
-    @random_delay_node
+    # @random_delay_node
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
         info = self._transaction_id_to_transaction_info[transaction_id]
 

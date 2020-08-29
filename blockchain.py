@@ -40,6 +40,8 @@ class BlockChain:
         self._open_channels[channel.channel_state.channel_data.address] = channel
 
     def close_channel(self, message_state: 'cn.MessageState'):
+        if message_state.channel_address not in self._open_channels:
+            return # TODO: if we resolve all contracts of a closing channel, there is no need for this!!
         channel: cm.ChannelManager = self._open_channels[message_state.channel_address]
         owner2_balance = channel.channel_state.channel_data.total_wei - message_state.owner1_balance
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1.address] += \

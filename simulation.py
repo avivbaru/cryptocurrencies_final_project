@@ -57,7 +57,7 @@ def run_simulation(number_of_blocks, htlcs_per_block, network, channel_starting_
 
             METRICS_COLLECTOR_INSTANCE.average(PATH_LENGTH_AVG, len(nodes_between))
             nodes_between.reverse()
-            send_htlc_successfully = sender_node.start_transaction(receiver_node, amount_in_wei, nodes_between)
+            send_htlc_successfully = sender_node.start_regular_htlc_transaction(receiver_node, amount_in_wei, nodes_between)
             network.update_capacity_map(edge_to_update)
             if send_htlc_successfully:
                 METRICS_COLLECTOR_INSTANCE.count(SEND_SUCCESSFULLY)
