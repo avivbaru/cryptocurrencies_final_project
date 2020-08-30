@@ -26,21 +26,15 @@ class BlockChain:
     @property
     def fee(self):
         return self._fee
-    # TODO: maybe use and check before making a transaction
 
     def wait_k_blocks(self, k):
-        for i in range(k):
-            self._block_number += 1
-            # notify all of block mined
-
-        # TODO: maybe make this not immediate (one by one)
-        # can have a subscribe method that calls all objects that called it with a new state (every time)
+        self._block_number += 1
 
     def add_channel(self, channel: 'cm.Channel'):
         self.apply_transaction(channel.channel_state.channel_data.owner1, channel.channel_state.message_state.owner1_balance)
         self._open_channels[channel.channel_state.channel_data.address] = channel
 
-    def close_channel(self, message_state: 'cn.MessageState'):
+    def close_channel(self, message_state: 'cm.MessageState'):
         if message_state.channel_address not in self._open_channels:
             return # TODO: if we resolve all contracts of a closing channel, there is no need for this!!
         channel: cm.Channel = self._open_channels[message_state.channel_address]
@@ -48,7 +42,6 @@ class BlockChain:
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1.address] += \
             message_state.owner1_balance * (1 - self._fee)
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner2.address] += owner2_balance * (1 - self._fee)
-        # TODO: subtract transactions fee
 
         del self._open_channels[message_state.channel_address]
         # if contract:

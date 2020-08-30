@@ -1,7 +1,7 @@
 import lightning_node as ln
 import random
 import string
-from typing import *
+from typing import Optional
 import contract_htlc as cn
 from singletons import *
 
@@ -22,19 +22,13 @@ class ChannelData:
         self.address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self.owner1 = owner1
         self.owner2 = owner2
-        self._total_wei = 0
-
-    @property
-    def total_wei(self):
-        return self._total_wei
-
-#  TODO: maybe give up on message state completely
+        self.total_wei = 0
 
 
 class ChannelState:
     def __init__(self, channel_data: ChannelData, message_state: 'MessageState' = None):
         self.channel_data: ChannelData = channel_data
-        self.message_state: 'cn.MessageState' = message_state
+        self.message_state: 'MessageState' = message_state
         self.htlc_contracts: List['cn.Contract_HTLC'] = []
 
 
@@ -45,7 +39,7 @@ class Channel(object):
         self._owner1_htlc_locked: int = 0
         self._owner2_htlc_locked: int = 0
         self._state: ChannelState = ChannelState(data)
-        self._state.channel_data._total_wei = default_split.owner1_balance
+        self._state.channel_data.total_wei = default_split.owner1_balance
         default_split.channel_address = data.address  # TODO: not so pretty...
         self.update_message(default_split)
         self._open = True
@@ -122,16 +116,19 @@ class Channel(object):
             raise ValueError("Tried to update message with an older one.")
 
     def owner2_add_funds(self, owner2_amount_in_wei: int):
-        self._state.channel_data._total_wei += owner2_amount_in_wei  # TODO: see how to get rid of this warning
+        self._state.channel_data.total_wei += owner2_amount_in_wei
         self._compute_amount_owner2_can_transfer_to_owner1()
         BLOCKCHAIN_INSTANCE.apply_transaction(self.channel_state.channel_data.owner2, owner2_amount_in_wei)
-        # self.owner2_add_funds.__code__ = (lambda: None).__code__  # so it can not be set again
 
-    def close_channel(self):
+    def close_channel(self, bad_node: Optional['ln.LightningNode'] = None):
         if not self._open:
             return
+        assert (bad_node or not self._state.htlc_contracts)
+        if self._state.htlc_contracts:
+            print("THE STRUGGLE IS REAL!!")
         for contract in self._state.htlc_contracts:
-            self._handle_contract_ended(contract)
+            contract.invalidate()
+            # self._handle_contract_ended(contract)
         self._state.htlc_contracts = []
 
         BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
@@ -142,7 +139,7 @@ class Channel(object):
         self._open = False
 
     def add_contract(self, contract: 'cn.Contract_HTLC') -> bool:
-        if self.is_owner1(contract.sender):
+        if self.is_owner1(contract.payer):
             if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_wei:
                 contract.invalidate()
                 return False
@@ -152,7 +149,6 @@ class Channel(object):
                 contract.invalidate()
                 return False
             self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_wei)
-        # TODO: subscribe to contract?
         self._state.htlc_contracts.append(contract)
         return True
 
@@ -193,7 +189,7 @@ class Channel(object):
         locked_for_owner2 = 0
         transfer_to_owner1 = 0
         transfer_to_owner2 = 0
-        if self.is_owner1(contract.sender):
+        if self.is_owner1(contract.payer):
             locked_for_owner1 = contract.amount_in_wei
             transfer_to_owner2 = contract.transfer_amount_to_payee
         else:

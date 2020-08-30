@@ -3,3 +3,9 @@
 */.idea/*
 *.zip
 */*.zip
+__pycache__/blockchain.cpython-37.pyc
+__pycache__/channel_manager.cpython-37.pyc
+__pycache__/contract_htlc.cpython-37.pyc
+__pycache__/lightning_node.cpython-37.pyc
+__pycache__/network.cpython-37.pyc
+__pycache__/utils.cpython-37.pyc

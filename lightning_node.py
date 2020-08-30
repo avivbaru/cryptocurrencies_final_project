@@ -15,7 +15,7 @@ STARTING_SERIAL = 0  # first serial number
 
 def random_delay_node(f):
     def wrapper(self, *args):
-        if random.uniform(0, 1) <= self._probability:
+        if random.uniform(0, 1) <= self._probability_to_not_respond_immediately:
             FUNCTION_COLLECTOR_INSTANCE.append(lambda: f(self, *args), BLOCKCHAIN_INSTANCE.block_number + 1)
         else:
             return f(self, *args)
@@ -28,6 +28,9 @@ class TransactionInfo:
                  expiration_block_number: int, delta_wait_time: int, previous_node: 'LightningNode' = None,
                  next_node: 'LightningNode' = None, delta: int = None):
         # TODO: delta is a safe measure - do we need it?
+        assert amount_in_wei > 0
+        assert penalty >= 0
+
         self._id = transaction_id
         self._amount_in_wei = amount_in_wei
         self._penalty = penalty
@@ -91,13 +94,12 @@ class LightningNode:
         self._balance = balance
         self._base_fee = base_fee
         self._fee_percentage = fee_percentage
-        self._griefing_penalty_rate = griefing_penalty_rate  # TODO: maybe have this as an attribute of the blockchain
-        self._pending_contracts: Set = set()
+        self._griefing_penalty_rate = griefing_penalty_rate
         self._transaction_id_to_transaction_info: Dict[int, TransactionInfo] = {}
         self._transaction_id_to_forward_contracts: Dict[int, 'cn.ContractForward'] = {}
         self._transaction_id_to_cancellation_contracts: Dict[int, 'cn.ContractCancellation'] = {}
         self._transaction_id_to_htlc_contracts: Dict[int, 'cn.Contract_HTLC'] = {}
-        self._probability = 1
+        self._probability_to_not_respond_immediately = 1
 
         BLOCKCHAIN_INSTANCE.add_node(self, balance)
 
@@ -153,7 +155,6 @@ class LightningNode:
         assert self._balance >= amount_in_wei
         channel.owner2_add_funds(amount_in_wei)
         self._balance -= amount_in_wei
-        # TODO: delete unneeded values in dicts
 
     def start_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
         hash_x, hash_r = final_node.generate_secret_x_hash(), final_node.generate_secret_r_hash()
@@ -166,12 +167,9 @@ class LightningNode:
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
         griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, delta_waiting_time)
         info = TransactionInfo(id, amount_in_wei + total_fee, griefing_penalty, hash_x, hash_r,
-                               BLOCKCHAIN_INSTANCE.block_number +  delta_waiting_time, delta_waiting_time, next_node=node_to_send)
+                               BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time, delta_waiting_time, next_node=node_to_send)
         self._transaction_id_to_transaction_info[id] = info
         self.send_transaction_information(node_to_send, info, nodes_between[1:])
-        # 1. propogate transatcion info
-        # 2. start cancael contracts
-        # 3. start pay contracts
 
     def _calculate_fee_for_route(self, path_nodes: List['LightningNode'], amount_in_wei: int) -> int:
         transfer_amount = amount_in_wei
@@ -193,7 +191,8 @@ class LightningNode:
         amount_in_wei = previous_transaction_info.amount_in_wei - fee
         waiting_time = previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY
         delta_waiting_time = previous_transaction_info.delta_wait_time - BLOCKS_IN_DAY
-        griefing_penalty = previous_transaction_info.penalty + self._calculate_griefing_penalty(amount_in_wei, delta_waiting_time)
+        griefing_penalty = previous_transaction_info.penalty + \
+                           self._calculate_griefing_penalty(previous_transaction_info.amount_in_wei, delta_waiting_time)
         if nodes_between:
             node_to_send = nodes_between[0]
             info = TransactionInfo(previous_transaction_info.id, amount_in_wei, griefing_penalty,
@@ -202,7 +201,7 @@ class LightningNode:
             self._transaction_id_to_transaction_info[previous_transaction_info.id] = info
             self.send_transaction_information(node_to_send, info, nodes_between[1:])
         else:
-            info = TransactionInfo(previous_transaction_info.id, amount_in_wei, griefing_penalty,
+            info = TransactionInfo(previous_transaction_info.id, previous_transaction_info.amount_in_wei, griefing_penalty,
                                    previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
                                    delta_waiting_time, sender)
             self._transaction_id_to_transaction_info[info.id] = info
@@ -216,7 +215,7 @@ class LightningNode:
         info = self._transaction_id_to_transaction_info[transaction_id]
         channel = self._other_nodes_to_channels[info.previous_node.address]
 
-        cancellation_contract = cn.ContractCancellation(info.penalty, info.hash_x, info.hash_r,
+        cancellation_contract = cn.ContractCancellation(transaction_id, info.penalty, info.hash_x, info.hash_r,
                                                         info.expiration_block_number, channel, self, info.previous_node)
         self._transaction_id_to_cancellation_contracts[transaction_id] = cancellation_contract
         info.previous_node.receive_cancellation_contract(transaction_id, cancellation_contract)
@@ -244,8 +243,8 @@ class LightningNode:
         info = self._transaction_id_to_transaction_info[transaction_id]
         channel = self._other_nodes_to_channels[info.next_node.address]
 
-        forward_contract = cn.ContractForward(info.amount_in_wei, info.hash_x, info.hash_r, info.expiration_block_number,
-                                              channel, self, info.next_node)
+        forward_contract = cn.ContractForward(transaction_id, info.amount_in_wei, info.hash_x, info.hash_r,
+                                              info.expiration_block_number, channel, self, info.next_node)
         self._transaction_id_to_forward_contracts[transaction_id] = forward_contract
         info.next_node.receive_forward_contract(transaction_id, forward_contract)
 
@@ -328,7 +327,7 @@ class LightningNode:
     def send_regular_htlc(self, transaction_info: TransactionInfo, nodes_between: List['LightningNode']):
         channel = self._other_nodes_to_channels[transaction_info.next_node.address]
 
-        contract = cn.Contract_HTLC(transaction_info.amount_in_wei, transaction_info.hash_x, 0,
+        contract = cn.Contract_HTLC(transaction_info.id, transaction_info.amount_in_wei, transaction_info.hash_x, 0,
                                     transaction_info.expiration_block_number, channel, self, transaction_info.next_node)
         transaction_info.next_node.receive_regular_htlc(self, transaction_info, contract, nodes_between)
 
@@ -406,38 +405,6 @@ class LightningNode:
             del self._other_nodes_to_channels[other_node.address]
 
 
-
-# class LightningNodeGriefing(LightningNode):
-#     def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
-#         super().__init__(balance, fee_percentage, griefing_penalty_rate)
-#
-#     def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
-#         return # this waits for expiration, classic griefing. below is "soft griefing"
-        # target_block_number = contract.expiration_block_number - 1
-        # FUNCTION_COLLECTOR_INSTANCE.append(
-        #     self._collector_function_creator(target_block_number,
-        #                                      lambda: super(LightningNodeGriefing, self)
-        #                                      ._start_resolving_contract_off_chain(sender, contract)))
-
-    # def _collector_function_creator(self, block_number: int, func: Callable[[], None]) -> Callable[[], bool]:
-    #     def check_block_and_use_function():
-    #         if BLOCKCHAIN_INSTANCE.block_number <= block_number:
-    #             return False
-    #
-    #         print("Griefined!")
-    #         func()
-    #         return True
-    #     return check_block_and_use_function
-
-    # def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
-    #     return
-        # target_block_number = contract.expiration_block_number - 1
-        # FUNCTION_COLLECTOR_INSTANCE.append(
-        #     self._collector_function_creator(target_block_number,
-        #                                      lambda: super(LightningNodeGriefing, self)
-        #                                      ._notify_other_node_of_resolving_contract(other_node, contract)))
-
-
 class LightningNodeSoftGriefing(LightningNode):
     def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
         super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
@@ -451,70 +418,3 @@ class LightningNodeSoftGriefing(LightningNode):
         info = self._transaction_id_to_transaction_info[transaction_id]
         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
                                            .resolve_htlc_transaction, info.expiration_block_number - 1)
-
-
-# class LightningNodeReverseGriefing(LightningNode):
-#     def __init__(self, balance: int, fee_percentage: float = 0.1, griefing_penalty_rate: float = 0.01):
-#         super().__init__(balance, fee_percentage, griefing_penalty_rate)
-#         self._peers: List['LightningNodeReverseGriefing'] = []
-#         self._hash_to_peer: Dict[int, 'LightningNodeReverseGriefing'] = {}
-#         self._hash_to_grief: List[int] = []
-#         self._hash_to_not_accept_disable: List[int] = []
-#
-#     @property
-#     def peers(self):
-#         return self._peers
-#
-#     def _notify_of_peer(self, peer: 'LightningNodeReverseGriefing'):
-#         self._add_peers_from_new_peer(peer)
-#         peer._add_peers_from_new_peer(self)
-#
-#     def _add_peers_from_new_peer(self, peer: 'LightningNodeReverseGriefing'):
-#         self._peers.append(peer)
-#         self._peers.extend(peer.peers)
-#         self._peers.remove(self)
-#
-#     def _notify_peer_of_hash(self, hash: int):
-#         for peer in self._peers:
-#             peer._receive_contract_from_peer(hash, peer)
-#
-#     def _notify_peer_of_hash_not_accept_disable(self, hash: int):
-#         self._hash_to_not_accept_disable.append(hash)
-#
-#     def _receive_contract_from_peer(self, hash: int, peer: 'LightningNodeReverseGriefing'):
-#         self._hash_to_peer[hash] = peer
-#
-#     def receive_htlc(self, sender: 'LightningNode', contract: cn.Contract_HTLC, amount_in_wei: int,
-#                      nodes_between: List['LightningNode'], cumulative_griefing_penalty: int = 0):
-#         if contract.hash_image in self._hash_to_peer:
-#             # Griefing!!!!!!
-#             # what happend if there is more then 2?????
-#             self._hash_to_peer[contract.hash_image]._notify_peer_of_hash_not_accept_disable(contract.hash_image)
-#             return
-#         self._notify_peer_of_hash(contract.hash_image)
-#         super().receive_htlc(sender, contract, amount_in_wei, nodes_between, cumulative_griefing_penalty)
-#
-#     # TODO: complete!
-#     def decline_contract(self, contract: cn.Contract_HTLC):
-#         if contract.hash_image in self._hash_to_not_accept_disable:
-#             # getting money!!!!!
-#             return
-#         super().decline_contract(contract)
-
-    # def _start_resolving_contract_off_chain(self, sender: 'LightningNode', contract: cn.Contract_HTLC):
-    #     target_block_number = contract.expiration_block_number - 1
-    #     FUNCTION_COLLECTOR_INSTANCE.append(
-    #         lambda: super(LightningNodeSoftGriefing, self).
-    #             _start_resolving_contract_off_chain(sender, contract), target_block_number)
-    #
-    # def _collector_function_creator(self, func: Callable[[], None]) -> Callable[[], None]:
-    #     def check_block_and_use_function():
-    #         func()
-    #     return check_block_and_use_function
-    #
-    # def _notify_other_node_of_resolving_contract(self, other_node: 'LightningNode', contract: cn.Contract_HTLC):
-    #     target_block_number = contract.expiration_block_number - 1
-    #     FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
-    #                                        ._notify_other_node_of_resolving_contract(other_node, contract),
-    #                                        target_block_number)
-
