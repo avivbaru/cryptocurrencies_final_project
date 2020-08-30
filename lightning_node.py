@@ -15,7 +15,7 @@ STARTING_SERIAL = 0  # first serial number
 
 def random_delay_node(f):
     def wrapper(self, *args):
-        if random.uniform(0, 1) <= self._probability:
+        if random.uniform(0, 1) <= self._probability_to_not_respond_immediately:
             FUNCTION_COLLECTOR_INSTANCE.append(lambda: f(self, *args), BLOCKCHAIN_INSTANCE.block_number + 1)
         else:
             return f(self, *args)
@@ -91,13 +91,12 @@ class LightningNode:
         self._balance = balance
         self._base_fee = base_fee
         self._fee_percentage = fee_percentage
-        self._griefing_penalty_rate = griefing_penalty_rate  # TODO: maybe have this as an attribute of the blockchain
-        self._pending_contracts: Set = set()
+        self._griefing_penalty_rate = griefing_penalty_rate
         self._transaction_id_to_transaction_info: Dict[int, TransactionInfo] = {}
         self._transaction_id_to_forward_contracts: Dict[int, 'cn.ContractForward'] = {}
         self._transaction_id_to_cancellation_contracts: Dict[int, 'cn.ContractCancellation'] = {}
         self._transaction_id_to_htlc_contracts: Dict[int, 'cn.Contract_HTLC'] = {}
-        self._probability = 1
+        self._probability_to_not_respond_immediately = 1
 
         BLOCKCHAIN_INSTANCE.add_node(self, balance)
 
@@ -153,7 +152,6 @@ class LightningNode:
         assert self._balance >= amount_in_wei
         channel.owner2_add_funds(amount_in_wei)
         self._balance -= amount_in_wei
-        # TODO: delete unneeded values in dicts
 
     def start_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
         hash_x, hash_r = final_node.generate_secret_x_hash(), final_node.generate_secret_r_hash()

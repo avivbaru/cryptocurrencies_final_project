@@ -28,13 +28,11 @@ class ChannelData:
     def total_wei(self):
         return self._total_wei
 
-#  TODO: maybe give up on message state completely
-
 
 class ChannelState:
     def __init__(self, channel_data: ChannelData, message_state: 'MessageState' = None):
         self.channel_data: ChannelData = channel_data
-        self.message_state: 'cn.MessageState' = message_state
+        self.message_state: 'MessageState' = message_state
         self.htlc_contracts: List['cn.Contract_HTLC'] = []
 
 
@@ -152,7 +150,6 @@ class Channel(object):
                 contract.invalidate()
                 return False
             self.owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_wei)
-        # TODO: subscribe to contract?
         self._state.htlc_contracts.append(contract)
         return True
 

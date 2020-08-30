@@ -4,14 +4,12 @@ from singletons import *
 
 
 class Contract_HTLC:
-    def __init__(self, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
+    def __init__(self, amount_in_wei: int, hash_x: int, expiration_block_number: int,
                  attached_channel: cm.Channel, payer: 'ln.LightningNode', payee: 'ln.LightningNode'):
-        # TODO: remove what does not belong to regular htlc
         assert amount_in_wei > 0
 
         self._amount_in_wei: int = amount_in_wei
         self._hash_x: int = hash_x
-        self._hash_r: int = hash_r
         self._expiration_block_number: int = expiration_block_number
         self._channel_to_notify: cm.Channel = attached_channel
         self._pre_image_x = None
@@ -89,7 +87,7 @@ class Contract_HTLC:
 
     # def accept(self, sender: 'ln.LightningNode'):
     #     if sender == self._sender:
-    #         self._is_accepted = True TODO: do we need this now?
+    #         self._is_accepted = True
 
     def report_x(self, x: str):
         assert not self.is_expired
@@ -107,8 +105,9 @@ class Contract_HTLC:
 class ContractForward(Contract_HTLC):
     def __init__(self, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
                  attached_channel: cm.Channel, payer: 'ln.LightningNode', payee: 'ln.LightningNode'):
-        super().__init__(amount_in_wei, hash_x, hash_r, expiration_block_number, attached_channel, payer, payee)
+        super().__init__(amount_in_wei, hash_x, expiration_block_number, attached_channel, payer, payee)
 
+        self._hash_r: int = hash_r
         # when expired or revealed r - money goes to owner 1. if revealed x - to owner 2 TODO: communicate with channel and not
         #  owner
 
@@ -165,8 +164,9 @@ class ContractForward(Contract_HTLC):
 class ContractCancellation(Contract_HTLC):
     def __init__(self, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
                  attached_channel: cm.Channel, payer: 'ln.LightningNode', payee: 'ln.LightningNode'):
-        super().__init__(amount_in_wei, hash_x, hash_r, expiration_block_number, attached_channel, payer, payee)
+        super().__init__(amount_in_wei, hash_x, expiration_block_number, attached_channel, payer, payee)
 
+        self._hash_r: int = hash_r
         # when expired - money goes to owner 2. if revealed - to owner 1 TODO: communicate with channel and not owner
 
         # TODO: maybe hold the other contract in the path?
