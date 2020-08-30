@@ -56,16 +56,6 @@ class BlockChain:
 
         self._nodes_addresses_to_balances[node.address] = balance
 
-    # def resolve_htlc_contract(self, contract: 'cn.Contract_HTLC'):
-    #     owner1 = contract.attached_channel.channel_state.channel_data.owner1
-    #     owner2 = contract.attached_channel.channel_state.channel_data.owner2
-    #     balance_delta = contract.owner1_balance_delta
-    #
-    #     self._nodes_addresses_to_balances[owner1] += balance_delta
-    #     self._nodes_addresses_to_balances[owner2] -= balance_delta
-
-        # self._channels_to_htlcs[contract.attached_channel.channel_state.channel_data.address] = contract
-
     def get_pre_image_if_exists_onchain(self, hash_image: int) -> Optional[str]:
         if hash_image in self._hash_image_to_pre_images:
             return self._hash_image_to_pre_images[hash_image]

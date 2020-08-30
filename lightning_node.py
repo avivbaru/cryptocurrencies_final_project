@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Callable, Optional, Set
+from typing import Dict, List
 import random
 import string
 import contract_htlc as cn
@@ -22,13 +22,25 @@ def random_delay_node(f):
     return wrapper
 
 
-
 class TransactionInfo:
     def __init__(self, transaction_id: int, amount_in_wei: int, penalty: int, hash_x: int, hash_r: int,
                  expiration_block_number: int, delta_wait_time: int, previous_node: 'LightningNode' = None,
                  next_node: 'LightningNode' = None, delta: int = None):
+        """
+
+        :param transaction_id:
+        :param amount_in_wei: amount to transfer in transaction
+        :param penalty: amount to pay upon griefing
+        :param hash_x:
+        :param hash_r:
+        :param expiration_block_number:
+        :param delta_wait_time:
+        :param previous_node:
+        :param next_node:
+        :param delta:
+        """
         # TODO: delta is a safe measure - do we need it?
-        assert amount_in_wei > 0
+        assert amount_in_wei >= 0
         assert penalty >= 0
 
         self._id = transaction_id
@@ -83,8 +95,10 @@ class TransactionInfo:
         id_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         return hash(id_str)
 
+
 class LightningNode:
-    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
+    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01,
+                 delta: int = 40):
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.Channel] = {}
         self._hash_image_x_to_preimage: Dict[int, str] = {}
@@ -100,6 +114,7 @@ class LightningNode:
         self._transaction_id_to_cancellation_contracts: Dict[int, 'cn.ContractCancellation'] = {}
         self._transaction_id_to_htlc_contracts: Dict[int, 'cn.Contract_HTLC'] = {}
         self._probability_to_not_respond_immediately = 1
+        self._delta = delta
 
         BLOCKCHAIN_INSTANCE.add_node(self, balance)
 
@@ -165,13 +180,14 @@ class LightningNode:
 
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
-        griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, delta_waiting_time)
-        info = TransactionInfo(id, amount_in_wei + total_fee, griefing_penalty, hash_x, hash_r,
+        # griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, delta_waiting_time)
+        info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, hash_r,
                                BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time, delta_waiting_time, next_node=node_to_send)
         self._transaction_id_to_transaction_info[id] = info
         self.send_transaction_information(node_to_send, info, nodes_between[1:])
 
-    def _calculate_fee_for_route(self, path_nodes: List['LightningNode'], amount_in_wei: int) -> int:
+    @staticmethod
+    def _calculate_fee_for_route(path_nodes: List['LightningNode'], amount_in_wei: int) -> int:
         transfer_amount = amount_in_wei
         for node in reversed(path_nodes):
             transfer_amount += node.get_fee_for_transfer_amount(transfer_amount)
@@ -201,9 +217,10 @@ class LightningNode:
             self._transaction_id_to_transaction_info[previous_transaction_info.id] = info
             self.send_transaction_information(node_to_send, info, nodes_between[1:])
         else:
-            info = TransactionInfo(previous_transaction_info.id, previous_transaction_info.amount_in_wei, griefing_penalty,
+            info = TransactionInfo(previous_transaction_info.id, 0, griefing_penalty,
                                    previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
                                    delta_waiting_time, sender)
+            # TODO: see that info is constructed the right way
             self._transaction_id_to_transaction_info[info.id] = info
             self.send_cancellation_contract(info.id)
             r = self._hash_image_r_to_preimage[info.hash_r]
@@ -230,6 +247,19 @@ class LightningNode:
             self.send_cancellation_contract(transaction_id)
         else:
             self.send_forward_contract(transaction_id)
+            FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._check_if_forward_contract_is_available(transaction_id),
+                                               info.expiration_block_number - self._delta)
+
+    def _check_if_forward_contract_is_available(self, transaction_id: int):
+        if transaction_id not in self._transaction_id_to_cancellation_contracts or \
+                transaction_id in self._transaction_id_to_forward_contracts:
+            return
+
+        info = self._transaction_id_to_transaction_info[transaction_id]
+        r = self._hash_image_r_to_preimage[info.hash_r]
+        self.terminate_transaction(transaction_id, r)
+
+
 
     def _handle_cancellation_is_about_to_expire(self, transaction_id: int, r: str):
         if transaction_id not in self._transaction_id_to_cancellation_contracts:
@@ -335,13 +365,13 @@ class LightningNode:
                              contract: 'cn.Contract_HTLC', nodes_between: List['LightningNode']):
         node_to_send = nodes_between[0] if nodes_between else None
         fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
-        amount_in_wei = previous_transaction_info.amount_in_wei - fee
+        amount_in_wei = previous_transaction_info.amount_in_wei - fee if nodes_between else 0
         delta_waiting_time = previous_transaction_info.delta_wait_time - BLOCKS_IN_DAY
         new_info = TransactionInfo(previous_transaction_info.id, amount_in_wei, 0, previous_transaction_info.hash_x, 0,
                                    previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY, delta_waiting_time,
                                    sender, node_to_send)
 
-        self._transaction_id_to_transaction_info[new_info.id] = new_info
+        self._transaction_id_to_transaction_info[new_info.id] = previous_transaction_info  # TODO: check info handling is right
         self._transaction_id_to_htlc_contracts[new_info.id] = contract
         if contract.attached_channel.add_contract(contract):
             return
@@ -404,17 +434,41 @@ class LightningNode:
         if other_node.address in self._other_nodes_to_channels:
             del self._other_nodes_to_channels[other_node.address]
 
+    def notify_of_cancellation_contract_about_to_expire(self, contract: 'cn.ContractCancellation'):
+        if contract.hash_r not in self._hash_image_r_to_preimage:
+            return
+        r = self._hash_image_r_to_preimage[contract.hash_r]
+        contract.report_r(r)
+        info = self._transaction_id_to_transaction_info[contract.transaction_id]
+        info.previous_node.terminate_transaction(info.id, r)
+
+    def notify_of_contract_invalidation(self, contract: 'cn.Contract_HTLC'):
+        if contract.transaction_id in self._transaction_id_to_forward_contracts:
+            del self._transaction_id_to_forward_contracts[contract.transaction_id]
+        if contract.transaction_id in self._transaction_id_to_cancellation_contracts:
+            del self._transaction_id_to_cancellation_contracts[contract.transaction_id]
+        if contract.transaction_id in self._transaction_id_to_transaction_info:
+            del self._transaction_id_to_transaction_info[contract.transaction_id]
+
+    def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
+        contract.invalidate()  # TODO: see if needed
+
 
 class LightningNodeSoftGriefing(LightningNode):
     def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
         super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
+        self._block_number_to_resolve = 20
 
     def resolve_transaction(self, transaction_id: int, x: str):
         info = self._transaction_id_to_transaction_info[transaction_id]
         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
-                                           .resolve_transaction, info.expiration_block_number - 1)
+                                           .resolve_transaction, info.expiration_block_number - self._block_number_to_resolve)
 
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
         info = self._transaction_id_to_transaction_info[transaction_id]
-        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
-                                           .resolve_htlc_transaction, info.expiration_block_number - 1)
+        FUNCTION_COLLECTOR_INSTANCE\
+            .append(lambda: super(LightningNodeSoftGriefing, self)
+                    .resolve_htlc_transaction, info.expiration_block_number - self._block_number_to_resolve)
+
+    def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
+        return

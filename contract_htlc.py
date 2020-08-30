@@ -29,7 +29,7 @@ class Contract_HTLC:
         assert self.is_expired
 
     def _check_is_pre_image_available(self):
-        if self._pre_image_r or self._pre_image_x:
+        if self._pre_image_r or self._pre_image_x or not self._is_valid:
             return
 
         x = BLOCKCHAIN_INSTANCE.get_pre_image_if_exists_onchain(self.hash_x)
@@ -88,17 +88,26 @@ class Contract_HTLC:
     def transfer_amount_to_payee(self):
         return self._money_to_transfer_to_payee
 
+
+    @property
+    def is_concluded(self):
+        return not self._is_valid or self.is_expired or self._pre_image_x or self._pre_image_r
+
     def invalidate(self):
         self._is_valid = False
+        self._payee.notify_of_contract_invalidation(self)
+        self._payer.notify_of_contract_invalidation(self)
 
     def report_x(self, x: str):
         assert not self.is_expired
+        assert self._is_valid
         assert self._pre_image_x is None and self._pre_image_r is None
         assert hash(x) == self.hash_x
         self._pre_image_x = x
 
     def report_r(self, r: str):
         assert not self.is_expired
+        assert self._is_valid
         assert self._pre_image_x is None and self._pre_image_r is None
         assert hash(r) == self.hash_r
         self._pre_image_r = r
@@ -139,6 +148,8 @@ class ContractCancellation(Contract_HTLC):
 
         self._money_to_transfer_to_payee = self.amount_in_wei
         self._channel_to_notify.notify_of_end_of_contract(self)
+        self.payer.notify_of_cancellation_contract_about_to_expire(self)
+        self.payee.notify_of_cancellation_contract_about_to_expire(self)
 
     def report_x(self, x: str):
         super().report_x(x)

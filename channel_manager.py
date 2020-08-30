@@ -123,17 +123,20 @@ class Channel(object):
     def close_channel(self, bad_node: Optional['ln.LightningNode'] = None):
         if not self._open:
             return
-        assert (bad_node or not self._state.htlc_contracts)
-        if self._state.htlc_contracts:
-            print("THE STRUGGLE IS REAL!!")
+        # TODO: check if indeed all money gets transferred to good node.
         for contract in self._state.htlc_contracts:
             contract.invalidate()
-            # self._handle_contract_ended(contract)
         self._state.htlc_contracts = []
 
-        BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
         self.owner1_htlc_locked_setter(0)
         self.owner2_htlc_locked_setter(0)
+
+        if bad_node:
+            owner1_balance = 0 if self._state.channel_data.owner1 == bad_node else self._state.channel_data.total_wei
+            self._update_message_state(owner1_balance)
+
+        BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
+
         self._state.channel_data.owner1.notify_of_closed_channel(self, self._state.channel_data.owner2)
         self._state.channel_data.owner2.notify_of_closed_channel(self, self._state.channel_data.owner1)
         self._open = False
@@ -173,16 +176,16 @@ class Channel(object):
         self.update_message(message_state)
 
     def notify_of_end_of_contract(self, contract: 'cn.Contract_HTLC'):
-        # assert contract in self._state.htlc_contracts TODO: this fails cause contract is not added but gets expired - fix it
-        #  by adding a "invalidate" option to contracts - the if is a fix for now
+        if contract.is_expired:
+            bad_node = contract.payer if type(contract) is cn.ContractCancellation else contract.payee
+            self.close_channel(bad_node)  # resolve on-chain
+            return
+
         self._handle_contract_ended(contract)
 
-        if contract.is_expired:
-            self.close_channel()  # resolve on-chain
-
     def _handle_contract_ended(self, contract: 'cn.Contract_HTLC'):
-        if contract not in self._state.htlc_contracts:
-            return # TODO: this is not good! fix the above todo
+        assert contract in self._state.htlc_contracts
+            # return  # TODO: this is not good! fix the above todo
         self._state.htlc_contracts.remove(contract)
 
         locked_for_owner1 = 0
