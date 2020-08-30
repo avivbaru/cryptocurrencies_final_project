@@ -41,6 +41,7 @@ STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to crea
 GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 20
 SIGMA = 0.1
+SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 
 
 def how_much_to_send():
@@ -57,7 +58,7 @@ def create_node(is_soft_griefing=False):
     return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
 
 
-def run_simulation(number_of_blocks, network):
+def run_simulation(number_of_blocks, network, use_gp_protocol):
 
     htlc_counter = 0
     while BLOCKCHAIN_INSTANCE.block_number < number_of_blocks:
@@ -73,7 +74,13 @@ def run_simulation(number_of_blocks, network):
         if receiver_node in visited_nodes_to_min_hops:
             nodes_between = path_map[receiver_node]
             METRICS_COLLECTOR_INSTANCE.average(PATH_LENGTH_AVG, len(nodes_between))
-            send_htlc_successfully = sender_node.start_transaction(receiver_node, amount_in_satoshi, nodes_between)
+            if use_gp_protocol:
+                send_htlc_successfully = sender_node.start_transaction(receiver_node, amount_in_satoshi,
+                                                                       nodes_between)
+            else:
+                send_htlc_successfully = sender_node.start_regular_htlc_transaction(receiver_node,
+                                                                                    amount_in_satoshi,
+                                                                                    nodes_between)
             if send_htlc_successfully:
                 METRICS_COLLECTOR_INSTANCE.count(SEND_SUCCESSFULLY)
             else:
@@ -168,14 +175,13 @@ def generate_network_from_snapshot(json_data, soft_griefing_percentage):
 
 
 @simulation_details
-def simulate_snapshot_network(soft_griefing_percentage=0.05, number_of_blocks=15,
-                              snapshot_path='snapshot/LN_2020.05.21-08.00.01.json'):
-    with open(snapshot_path, encoding="utf-8") as f:
+def simulate_snapshot_network(soft_griefing_percentage=0.05, number_of_blocks=15, use_gp_protocol=True):
+    with open(SNAPSHOT_PATH, encoding="utf-8") as f:
         json_data = json.load(f)
 
     network = generate_network_from_snapshot(json_data, soft_griefing_percentage)
 
-    return run_simulation(number_of_blocks, network)
+    return run_simulation(number_of_blocks, network, use_gp_protocol)
 
 
 # Redundancy network functions
@@ -198,9 +204,10 @@ def generate_redundancy_network(number_of_nodes, soft_griefing_percentage):
 
 
 @simulation_details
-def simulate_redundancy_network(number_of_nodes=1000, soft_griefing_percentage=0.05, number_of_blocks=15):
+def simulate_redundancy_network(number_of_nodes=1000, soft_griefing_percentage=0.05, number_of_blocks=15,
+                                use_gp_protocol=True):
     network = generate_redundancy_network(number_of_nodes, soft_griefing_percentage)
-    return run_simulation(number_of_blocks, network)
+    return run_simulation(number_of_blocks, network, use_gp_protocol)
 
 
 # Randomly network functions
@@ -219,12 +226,12 @@ def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel
 
 @simulation_details
 def simulate_random_network(number_of_nodes=100, soft_griefing_percentage=0.05, number_of_blocks=15,
-                            channel_per_node=10):
+                            channel_per_node=10, use_gp_protocol=True):
     network = generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node)
-    return run_simulation(number_of_blocks, network)
+    return run_simulation(number_of_blocks, network, use_gp_protocol)
 
 
-def run_multiply_simulation():
+def run_multiply_simulation(use_gp_protocol=True, network_topology='redundancy'):
     number_of_nodes = 100
     number_of_blocks = 15
     soft_griefing_percentages = [0.01, 0.05, 0.1, 0.15]
@@ -233,8 +240,17 @@ def run_multiply_simulation():
     for soft_griefing_percentage in soft_griefing_percentages:
         parameters = {"number_of_nodes": number_of_nodes,
                       "soft_griefing_percentage": soft_griefing_percentage,
-                      "number_of_blocks": number_of_blocks}
-        metrics = simulate_redundancy_network(**parameters)
+                      "number_of_blocks": number_of_blocks,
+                      "use_gp_protocol": use_gp_protocol}
+        if network_topology == 'redundancy':
+            metrics = simulate_redundancy_network(**parameters)
+        elif network_topology == 'random':
+            metrics = simulate_random_network(**parameters)
+        elif network_topology == 'snapshot':
+            metrics = simulate_snapshot_network(**parameters)
+        else:
+            raise Exception("got invalid network_topology name!")
+        parameters.update({'network_topology': network_topology})
         simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
         BLOCKCHAIN_INSTANCE.init_parameters()
         METRICS_COLLECTOR_INSTANCE.init_parameters()
@@ -243,7 +259,7 @@ def run_multiply_simulation():
     timestamp = datetime.timestamp(datetime.now())
     with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
         for s in simulation_metrics:
-            f.write(json.dumps(s) + '\n')
+            f.write(f"{json.dumps(s)}\n")
 
 
 def main():

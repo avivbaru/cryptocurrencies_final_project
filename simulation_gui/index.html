@@ -116,33 +116,41 @@
         <div itemtype="container" class="container" id="sliders">
             <div itemtype="inner" class="container">
                 <p itemtype="text">block number</p>
-<!--                <div id="slider1" itemtype="slider"></div>-->
-<!--                <div id="slider1-span" itemtype="value"></div>        -->
                 <select id="block number" name="x">
                     <option value="15">15</option>
-                    <option value="b">b</option>
-                    <option value="usa">USA</option>
                 </select>
             </div>
             <div itemtype="inner" class="container">
                 <p itemtype="text">number of nodes</p>
                 <select id="number of nodes" name="x">
                     <option value="100">100</option>
-                    <option value="b">b</option>
-                    <option value="usa">USA</option>
                 </select>
             </div>
-        </div>
-        <div itemtype="container" class="container">
             <div itemtype="inner" class="container">
                 <p itemtype="text">soft griefing rate</p>
                 <select id="soft griefing rate" name="x">
                     <option value="0.15">0.15</option>
-                    <option value="b">b</option>
-                    <option value="usa">USA</option>
+                    <option value="0.1">0.1</option>
+                    <option value="0.05">0.05</option>
+                    <option value="0.01">0.01</option>
                 </select>
             </div>
-        </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text">use gp protocol</p>
+                <select id="use gp protocol" name="x">
+                    <option value="True">True</option>
+                    <option value="False">False</option>
+                </select>
+            </div>
+                <div itemtype="inner" class="container">
+                    <p itemtype="text">network topology</p>
+                    <select id="network topology" name="x">
+                        <option value="redundancy">redundancy</option>
+                        <option value="random">random</option>
+                        <option value="snapshot">snapshot</option>
+                    </select>
+                </div>
+</div>
         <a class="button4" style="background-color:#f14e4e" onclick="changeGraph()">Get data</a>
 
         <div itemtype="container" class="container" id="values">
@@ -157,6 +165,8 @@
 var block = document.getElementById('block number');
 var nodes = document.getElementById('number of nodes');
 var griefing = document.getElementById('soft griefing rate');
+var useProtocol = document.getElementById('use gp protocol');
+var topology = document.getElementById('network topology');
 
 function readJsonFile(jsonFile) {
     var request = new XMLHttpRequest();
@@ -180,7 +190,8 @@ for (var i = 0; i < metrics.length; i++) {
 
 
 function changeGraph() {
-    const key = block.value + "_" + nodes.value + "_" + griefing.value;
+    const key = topology.value + '_' + block.value + "_" + nodes.value + "_" +
+                griefing.value + "_" + useProtocol.value;
     const run_result = all_data[key];
     console.log(run_result);
     console.log(key);
