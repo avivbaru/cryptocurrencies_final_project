@@ -52,4 +52,7 @@ class FunctionCollector:
         self._function_to_run.append((f, k))
 
     def get_max_k(self):
-        return max([k for (f, k) in self._function_to_run])
+        return max([k for (f, k) in self._function_to_run]) if self._function_to_run else None
+
+    def get_min_k(self):
+        return min([k for (f, k) in self._function_to_run])  if self._function_to_run else None
