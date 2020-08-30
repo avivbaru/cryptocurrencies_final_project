@@ -10,8 +10,6 @@ class Network:
     def __init__(self, nodes=None, edges=None):
         self.nodes: List[LightningNode] = nodes if nodes else []
         self.edges: defaultdict[LightningNode, List[LightningNode]] = edges if edges else defaultdict(list)
-        self.fees_rate_map: Dict[Tuple[LightningNode, LightningNode], float] = {}
-        self.capacity: Dict[Tuple[LightningNode, LightningNode], int] = {}
 
     def add_node(self, value):
         self.nodes.append(value)
@@ -22,32 +20,8 @@ class Network:
         channel = to_node.establish_channel(from_node, channel_starting_balance)
         from_node.add_money_to_channel(channel, channel_starting_balance)
 
-    def get_capacity_map(self) -> Dict[Tuple[LightningNode, LightningNode], int]:
-        if not self.capacity:
-            for from_node, to_nodes in self.edges.items():
-                for to_node in to_nodes:
-                    self.capacity[(from_node, to_node)] = from_node.get_capacity_left(to_node)
-        return self.capacity
-
-    def update_capacity_map(self, sender: LightningNode,
-                            nodes_between: Dict[LightningNode, List[LightningNode]]):
-        prev = sender
-        for curr in nodes_between:
-            self.capacity[(prev, curr)] = prev.get_capacity_left(curr)
-            self.capacity[(curr, prev)] = curr.get_capacity_left(prev)
-            prev = curr
-
-    def get_fees_map(self) -> Dict[Tuple[LightningNode, LightningNode], float]:
-        if not self.fees_rate_map:
-            for from_node in self.edges:
-                for to_node in self.edges[from_node]:
-                    self.fees_rate_map[(from_node, to_node)] = to_node.fee_percentage
-        return self.fees_rate_map
-
     def find_shortest_path(self, initial: LightningNode, amount_in_wei: int,
                            griefing_penalty_rate: float):
-        fee_map: Dict[Tuple[LightningNode, LightningNode], float] = self.get_fees_map()
-        capacity_map: Dict[Tuple[LightningNode, LightningNode], int] = self.get_capacity_map()
         nodes: Set[LightningNode] = set(self.nodes)
         visited: Dict[LightningNode, int] = {initial: amount_in_wei}
         first_node_in_path_map: Dict[LightningNode, LightningNode] = {}
@@ -71,18 +45,18 @@ class Network:
             current_wei = visited[min_node]
 
             for edge_node in self.edges[min_node]:
-                capacity_between = capacity_map[(min_node, edge_node)]
+                capacity_between = min_node.get_capacity_left(edge_node)
                 if capacity_between >= amount_in_wei:
-                    fee_between = int(fee_map[(min_node, edge_node)] * current_wei)
+                    fee_between = edge_node.get_fee_for_transfer_amount(current_wei)
                     capacity_left = min(capacity_left_in_path[min_node],
                                         capacity_between - amount_in_wei) - fee_between
                     new_wei = current_wei + fee_between
 
                     # check if griefing is possible
                     is_griefing_possible = True
-                    nodes_between = path[min_node] + [edge_node]
+                    nodes_between: List[LightningNode] = path[min_node] + [edge_node]
                     if griefing_penalty_rate > 0:
-                        is_griefing_possible = Network._is_griefing_possible(capacity_map, nodes_between,
+                        is_griefing_possible = Network._is_griefing_possible(nodes_between,
                                                                              fee_paid_map,
                                                                              griefing_penalty_rate,
                                                                              initial, new_wei)
@@ -98,8 +72,8 @@ class Network:
         return visited, path
 
     @staticmethod
-    def _is_griefing_possible(capacity_map, nodes_in_path, fee_paid_map, griefing_penalty_rate, initial,
-                              new_wei):
+    def _is_griefing_possible(nodes_in_path: List[LightningNode], fee_paid_map, griefing_penalty_rate,
+                              initial, new_wei):
         length = len(nodes_in_path) + 1
         prev = initial
         temp_wei = new_wei
@@ -108,7 +82,7 @@ class Network:
         for i, n in enumerate(nodes_in_path):
             griefing_penalty_sum += int(temp_wei * griefing_penalty_rate * length * 1440)
             is_griefing_possible = is_griefing_possible and \
-                                   griefing_penalty_sum <= capacity_map[(n, prev)]
+                                   griefing_penalty_sum <= n.get_capacity_left(prev)
             prev = n
             length -= 1
             temp_wei -= fee_paid_map.get(n, 0)

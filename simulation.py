@@ -10,7 +10,6 @@ from network import Network
 from singletons import METRICS_COLLECTOR_INSTANCE, FUNCTION_COLLECTOR_INSTANCE, BLOCKCHAIN_INSTANCE
 
 # metrics names
-# TODO: add metrics: number of sends,
 HONEST_NODE_BALANCE_AVG = "honest_node_balance"
 GRIEFING_NODE_BALANCE_AVG = "griefing_node_balance"
 GRIEFING_SOFT_NODE_BALANCE_AVG = "soft_griefing_node_balance"
@@ -52,9 +51,8 @@ def how_much_to_send():
 def create_node(is_soft_griefing=False):
     # divide by million to get the rate per msat
     fee_percentage = random.choices(FEE_RATE, weights=FEE_RATE_PROB, k=1)[0] / 1000000
-    base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]  # todo:use this
+    base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]
     if is_soft_griefing:
-        # TODO: change to soft
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
     return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
 
@@ -76,7 +74,6 @@ def run_simulation(number_of_blocks, network):
             nodes_between = path_map[receiver_node]
             METRICS_COLLECTOR_INSTANCE.average(PATH_LENGTH_AVG, len(nodes_between))
             send_htlc_successfully = sender_node.start_transaction(receiver_node, amount_in_satoshi, nodes_between)
-            network.update_capacity_map(sender_node, nodes_between)
             if send_htlc_successfully:
                 METRICS_COLLECTOR_INSTANCE.count(SEND_SUCCESSFULLY)
             else:
@@ -95,10 +92,11 @@ def run_simulation(number_of_blocks, network):
             print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
             FUNCTION_COLLECTOR_INSTANCE.run()
 
-    max_block = FUNCTION_COLLECTOR_INSTANCE.get_max_k()
-    while BLOCKCHAIN_INSTANCE.block_number < max_block:
-        BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
+    min_block_to_reach = FUNCTION_COLLECTOR_INSTANCE.get_min_k()
+    while min_block_to_reach and BLOCKCHAIN_INSTANCE.block_number < min_block_to_reach:
+        BLOCKCHAIN_INSTANCE.wait_k_blocks(min_block_to_reach - BLOCKCHAIN_INSTANCE.block_number)
         FUNCTION_COLLECTOR_INSTANCE.run()
+        min_block_to_reach = FUNCTION_COLLECTOR_INSTANCE.get_min_k()
     close_channel_and_log_metrics(network)
     metrics = METRICS_COLLECTOR_INSTANCE.get_metrics()
     metrics_str = '\n'.join([f'\t{k}: {v}' for k, v in metrics.items()])
@@ -159,7 +157,6 @@ def generate_network_from_snapshot(json_data, soft_griefing_percentage):
     nodes = {}
     number_of_nodes = len(json_data['nodes'])
     number_of_soft_griefing_nodes = int(soft_griefing_percentage * number_of_nodes)
-    # TODO: maybe change to randomly peek the griefing?
     for node in json_data['nodes'][:number_of_soft_griefing_nodes]:
         nodes[node['pub_key']] = create_node()
     for node in json_data['nodes'][number_of_soft_griefing_nodes:]:
@@ -183,7 +180,8 @@ def simulate_snapshot_network(soft_griefing_percentage=0.05, number_of_blocks=15
 
 # Redundancy network functions
 def generate_redundancy_network(number_of_nodes, soft_griefing_percentage):
-    # connect 2 nodes if differ by 10 modulo 100 TODO: change!
+    # connect 2 nodes if differ by 10 to the power of n(1...floor(log_10(number_of_nodes))+1)
+    #   modulo 10^floor(log_10(number_of_nodes))
     network = create_network(number_of_nodes, soft_griefing_percentage)
     n = int(math.log(number_of_nodes, 10))
     jump_indexes = [10 ** i for i in range(n+1)]
