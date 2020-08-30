@@ -2001,7 +2001,27 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \begin_inset Formula $Y$
 \end_inset
 
- ואז את שלב נעילת הכסף.
+ ואז את שלב נעילת הכסף כך שמכיוון 
+\begin_inset Formula $U_{n}$
+\end_inset
+
+ ל-
+\begin_inset Formula $U_{0}$
+\end_inset
+
+ זהו חוזה ה-
+\begin_inset Formula $Cancellation\,Contract$
+\end_inset
+
+ ומכיוון 
+\begin_inset Formula $U_{0}$
+\end_inset
+
+ ל-
+\begin_inset Formula $U_{n}$
+\end_inset
+
+ זהו החוזה הרגיל שמעביר את הכסף.
 \end_layout
 
 \begin_layout Standard
@@ -2226,14 +2246,11 @@ Soft Griefing
 \begin_inset Formula $Node$
 \end_inset
 
- הרשע ממשיך להשתתף ברגע האחרון לפני שהחוזה פג.
- כלומר הוא גורם לכסף להיות נעול במשך הזמן הכי ממושך שאפשר ועדיין לא לשלם
- את הקנס.
- זהו חיסרון של הפרוטוקול מכיוון שלא מטיל עונש שתלוי בזמן תגובה של ה-
-\begin_inset Formula $Node$
-\end_inset
-
-.
+ הרשע ממשיך את מהלך התשלום הרגיל ברגע האחרון לפני שהחוזה פג.
+ כלומר הוא גורם לכסף להיות נעול במשך הזמן הכי ממושך שאפשר, כך שהתשלום עדיין
+ עובר והוא לא צריך לשלם את הקנס.
+ זהו חיסרון של שני הפרוטוקולים מכיוון שהעונש לא פרופורציונלי לכמות הזמן
+ שהכסף נעול, אלא רק מתייחס להאם העברת הכסף בוצעה או שלא.
 \end_layout
 
 \begin_layout Standard
@@ -2307,7 +2324,8 @@ Lightning
 Python
 \lang hebrew
 .
- בחרנו לא להשתמש בספריות קיימות עקב כך שהן מסובכות וגדולות מדי לצרכים שלנו.
+ בחרנו לא להשתמש בספריות קיימות עקב כך שהן כתובות בשפות שאנחנו לא בקיעים
+ שהן, מסובכות וגדולות מדי לצרכים שלנו.
  בנוסף, הסימולציות הקיימות לא מאפשרות פתיחת ערוץ בו שני
 \family roman
 \series medium
@@ -2435,6 +2453,310 @@ Nodes
 Node
 \lang hebrew
 , אלא רק את המקרים שהפרוטוקול משפיע עליהם ישירות ברשת.
+ כלומר מימשנו התנהגות רגילה של הפרוטוקול ברשת ללא הקריפטוגרפיה ואימותה.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בחרנו להריץ את הסימולציה על 
+\begin_inset Formula $thread$
+\end_inset
+
+ יחיד כדי לפשט את הכתיבה והדיבוג.
+ סימלצנו את התקשורת הא-סנכרונית בין ה-
+\begin_inset Formula $Node$
+\end_inset
+
+-ים ע
+\begin_inset Quotes erd
+\end_inset
+
+י כך שבמקרה הצורך כל 
+\begin_inset Formula $Node$
+\end_inset
+
+ רושם פונקציה שהוא מעוניין להריץ ומתי צריך להריץ אותה )לפי הגעה למספר בלוק
+ מסוים( לסינגלטון מסוג 
+\begin_inset Formula $Function\,Collector$
+\end_inset
+
+, כך שבכל איטרציה הסימולציה מריצה את כל הפונקציות שצריך.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+מהלך הסימולציה הוא יצירת רשת ב
+\numeric on
+3
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\numeric off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+טופולוגיות אפשריות )נפרט בהמשך( של 
+\begin_inset Formula $Node$
+\end_inset
+
+-ים עם ה-
+\begin_inset Formula $channel$
+\end_inset
+
+-ים בניהם, כך שהפרמטרים לריצה נדגמו בהתפלגות שדומה לרשת 
+\begin_inset Formula $Lightning$
+\end_inset
+
+ האמיתית )אחרי ניתוח של 
+\begin_inset Formula $snapshot$
+\end_inset
+
+ של 
+\begin_inset Formula $Lightning$
+\end_inset
+
+( או שהם פרמטרים שאנחנו רוצים לבדוק על גבי מספר אפשרויות.
+\begin_inset Newline newline
+\end_inset
+
+בכל שלב נבחר 
+\begin_inset Formula $Node$
+\end_inset
+
+ אקראי לשליחת כסף, 
+\begin_inset Formula $Node$
+\end_inset
+
+ אקראי לקבלת הכסף, ואת הכמות שנרצה להעביר, ונחפש מסלול עם תשלום 
+\begin_inset Formula $fee$
+\end_inset
+
+ מינימלי בעזרת אלגוריתם דומה ל-
+\begin_inset Formula $Dijkstra$
+\end_inset
+
+.
+ כך נמשיך תוך כדי העלאת מספר הבלוק.
+ 
+\begin_inset Newline newline
+\end_inset
+
+בכל איטרציה נריץ את הפונקציות הרלוונטיות ב-
+\begin_inset Formula $Function\,Collector$
+\end_inset
+
+ כפי שהוסבר בפיסקה הקודמת.
+\begin_inset Newline newline
+\end_inset
+
+בכל הסימולציה נשתמש באובייקט סינגלטון שנקרא 
+\begin_inset Formula $Metrics\,Collector$
+\end_inset
+
+ שמכל מקום נוכל להוסיף פרמטרים נסכמים שנרצה להציג בסוף הריצה )נאסוף ממוצע,
+ סכום, ספירה וכו'(.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+טופולוגיות הרשת הן: 
+\begin_inset Newline newline
+\end_inset
+
+רשת אקראית.
+ ניצור כמות מסוימת של 
+\begin_inset Formula $Nodes$
+\end_inset
+
+ ונחבר בין שני 
+\begin_inset Formula $Node$
+\end_inset
+
+-ים בצורה אקראית כך שכל 
+\begin_inset Formula $Node$
+\end_inset
+
+ יהיה בעל כמות מוגדרת מראש של 
+\begin_inset Formula $chnnels$
+\end_inset
+
+.
+\begin_inset Newline newline
+\end_inset
+
+רשת בעלת יתירות.
+ עבור רשת בעלת 
+\begin_inset Formula $n$
+\end_inset
+
+ 
+\begin_inset Formula $node$
+\end_inset
+
+-ים, ניצור 
+\begin_inset Formula $channel$
+\end_inset
+
+ בין שניים אם המספר הסידורי שלהם שונה ב-
+\begin_inset Formula $10$
+\end_inset
+
+ בחזקת 
+\begin_inset Formula $0...\lfloor\log_{10}n\rfloor+1$
+\end_inset
+
+ מודולו 
+\begin_inset Formula $\lfloor\log_{10}n\rfloor$
+\end_inset
+
+.
+ כך ניצור רשת שהמרחק בין כל שני קודקודים לא גדול מידי.
+ )להוסיף הסבר!!( מקור: 
+\begin_inset Formula $https://hackernoon.com/simulating-a-decentralized-lightning-network-with-10-million-users-9a8b5930fa7a$
+\end_inset
+
+רשת אמיתית.
+ נעזרנו בקוד שצורף למאמר המעודכן ויצרנו רשת לפי 
+\begin_inset Formula $snapshot$
+\end_inset
+
+ של הרשת, כולל הפרטים על ה-
+\begin_inset Formula $capacity$
+\end_inset
+
+ ו-
+\begin_inset Formula $fee$
+\end_inset
+
+.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+את הפלט של הריצות שמרנו ב-
+\begin_inset Formula $json$
+\end_inset
+
+, ובעזרת 
+\begin_inset Formula $script$
+\end_inset
+
+ העברנו לפורמט נוח יותר לתצוגה.
+ 
+\begin_inset Newline newline
+\end_inset
+
+יצרנו
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\numeric on
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+2
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\numeric off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+עמודי 
+\begin_inset Formula $web$
+\end_inset
+
+ שמציגים את תוצאות הריצות.
+ העמוד הראשון )
+\begin_inset Formula $:TODO$
+\end_inset
+
+ לתת שם( מציג בהינתן נתוני ריצה את ה-
+\begin_inset Formula $metrics$
+\end_inset
+
+ של אותה ריצה )שנאספו בעזרת ה-
+\begin_inset Formula $Metrics\,Collector$
+\end_inset
+
+(.
+\begin_inset Newline newline
+\end_inset
+
+בעמוד השני )
+\begin_inset Formula $:TODO$
+\end_inset
+
+ גם לזה לתת שם!!( ניתן לבחור שני פרמטרים ולראות בעזרת גרף את הקורלציה בניהם.
 \begin_inset Newline newline
 \end_inset
 
@@ -2463,6 +2785,18 @@ Node
 \end_inset
 
 מחלקות עיקריות:
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $BlockChain$
+\end_inset
+
+: מייצג 
+\begin_inset Formula $Blockchain$
+\end_inset
+
+.
 \begin_inset Newline newline
 \end_inset
 
@@ -2791,6 +3125,22 @@ Lightning
 \begin_inset Newline newline
 \end_inset
 
+
+\lang english
+MetricsCollector
+\lang hebrew
+: אובייקט סינגלטון שאוסף נתונים על ריצת הסימולציה כדי להציגם כגרף.
+\begin_inset Newline newline
+\end_inset
+
+
+\lang english
+FunctionCollector
+\lang hebrew
+: אובייקט סינגלטון שפונקציות ואת התנאי להריץ אותם.
+\begin_inset Newline newline
+\end_inset
+
 הזכרה של כבוד למרות שזה לא מחלקה:
 \begin_inset Newline newline
 \end_inset
@@ -2800,6 +3150,14 @@ Lightning
 simulation.py
 \lang hebrew
 : שם בעצם מתבצעת כל הסימולציה שלנו לפי פרמטרים מסוימים.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
 \begin_inset Newline newline
 \end_inset
 
