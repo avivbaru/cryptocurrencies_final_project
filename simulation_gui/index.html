@@ -113,53 +113,50 @@
 <body>
 <div class="container">
     <form>
-        <div itemtype="container" class="container">
+        <div itemtype="container" class="container" id="sliders">
             <div itemtype="inner" class="container">
-                <p itemtype="text">text</p>
-                <div id="slider1" itemtype="slider"></div>
-                <div id="slider1-span" itemtype="value"></div>
+                <p itemtype="text">block number</p>
+<!--                <div id="slider1" itemtype="slider"></div>-->
+<!--                <div id="slider1-span" itemtype="value"></div>        -->
+                <select id="block number" name="x">
+                    <option value="15">15</option>
+                    <option value="b">b</option>
+                    <option value="usa">USA</option>
+                </select>
             </div>
             <div itemtype="inner" class="container">
-                <p itemtype="text">text</p>
-                <div itemtype="slider" id="slider2"></div>
-                <div itemtype="value" id="slider2-span"></div>
+                <p itemtype="text">number of nodes</p>
+                <select id="number of nodes" name="x">
+                    <option value="100">100</option>
+                    <option value="b">b</option>
+                    <option value="usa">USA</option>
+                </select>
             </div>
         </div>
         <div itemtype="container" class="container">
             <div itemtype="inner" class="container">
-                <p itemtype="text">text</p>
-                <div id="slider3" itemtype="slider"></div>
-                <div id="slider3-span" itemtype="value"></div>
-            </div>
-            <div itemtype="inner" class="container">
-                <p itemtype="text">text</p>
-                <div itemtype="slider" id="slider4"></div>
-                <div itemtype="value" id="slider4-span"></div>
+                <p itemtype="text">soft griefing rate</p>
+                <select id="soft griefing rate" name="x">
+                    <option value="0.15">0.15</option>
+                    <option value="b">b</option>
+                    <option value="usa">USA</option>
+                </select>
             </div>
         </div>
         <a class="button4" style="background-color:#f14e4e" onclick="changeGraph()">Get data</a>
 
-        <p itemtype="text" id="value1"></p>
-        <p itemtype="text" id="value2"></p>
-        <p itemtype="text" id="value3"></p>
-        <p itemtype="text" id="value4"></p>
-
+        <div itemtype="container" class="container" id="values">
+        </div>
     </form>
 </div>
 </body>
 <!--<script src="https://d3js.org/d3.v4.js"></script>-->
-<script src="https://d3js.org/d3.v3.min.js"></script>
+<!--<script src="https://d3js.org/d3.v3.min.js"></script>-->
 <script>
 
-var slider1 = document.getElementById('slider1');
-var slider2 = document.getElementById('slider2');
-var slider3 = document.getElementById('slider3');
-var slider4 = document.getElementById('slider4');
-
-var slider1Value = document.getElementById('slider1-span');
-var slider2Value = document.getElementById('slider2-span');
-var slider3Value = document.getElementById('slider3-span');
-var slider4Value = document.getElementById('slider4-span');
+var block = document.getElementById('block number');
+var nodes = document.getElementById('number of nodes');
+var griefing = document.getElementById('soft griefing rate');
 
 function readJsonFile(jsonFile) {
     var request = new XMLHttpRequest();
@@ -168,224 +165,34 @@ function readJsonFile(jsonFile) {
     return JSON.parse(request.responseText);
 }
 
-var all_data = readJsonFile("fake_data.json")
-
-function changeGraph() {
-    const key = Math.ceil(slider1Value.innerText) + "_" + Math.ceil(slider2Value.innerText) + "_" +
-        Math.ceil(slider3Value.innerText) + "_" + Math.ceil(slider4Value.innerText);
-    const run_result = all_data[key];
-    console.log(run_result);
-    console.log(key);
-    console.log(all_data);
-    document.getElementById("value1").innerText = "honest money avg: " + run_result["honest money avg"];
-    document.getElementById("value2").innerHTML = "soft griefing avg: " + run_result["soft griefing avg"];
-    document.getElementById("value3").innerHTML = "money_locked: " + run_result["money_locked"];
+// const all_data = readJsonFile("fake_data.json");
+const all_data = readJsonFile("runs.json");
+// Create metrics texts
+const metrics = Object.keys(Object.values(all_data)[0]);
+var values = document.getElementById('values');
+for (var i = 0; i < metrics.length; i++) {
+    let m = metrics[i];
+    var para = document.createElement("P");
+    para.innerText = "";
+    para.id = m;
+    values.appendChild(para);
 }
 
 
-noUiSlider.create(slider1, {
-    start: 0,
+function changeGraph() {
+    const key = block.value + "_" + nodes.value + "_" + griefing.value;
+    const run_result = all_data[key];
+    console.log(run_result);
+    console.log(key);
+    const metricsNames = Object.keys(run_result);
 
-    // Disable animation on value-setting,
-    // so the sliders respond immediately.
-    animate: true,
-    range: {
-    'min': [ 0 ],
-    '0%': [ 0, 500 ],
-    '10%': [ 500, 500 ],
-    '50%': [ 4000, 1000 ],
-    'max': [ 10000, 1000 ]
-},
-});
-
-noUiSlider.create(slider2, {
-    start: 80,
-    animate: false,
-    range: {
-        min: 50,
-        max: 100
+    for (var i = 0; i < metricsNames.length; i++) {
+        let name = metricsNames[i];
+        var para = document.getElementById(name);
+        para.innerText = name + ": " + run_result[name];
     }
-});
+}
 
-noUiSlider.create(slider3, {
-    start: 80,
-    animate: false,
-    range: {
-        min: 50,
-        max: 100
-    }
-});
 
-noUiSlider.create(slider4, {
-    start: 80,
-    animate: false,
-    range: {
-        min: 50,
-        max: 100
-    }
-});
-
-slider1.noUiSlider.on('update', function (values, handle) {
-    slider1Value.innerHTML = values[handle];
-});
-
-slider2.noUiSlider.on('update', function (values, handle) {
-    slider2Value.innerHTML = values[handle];
-    slider2.noUiSlider.value = values[handle] - 2;
-});
-
-slider3.noUiSlider.on('update', function (values, handle) {
-    slider3Value.innerHTML = values[handle];
-    slider3.noUiSlider.value = values[handle] - 2;
-});
-
-slider4.noUiSlider.on('update', function (values, handle) {
-    slider4Value.innerHTML = values[handle];
-    slider4.noUiSlider.value = values[handle] - 2;
-});
 </script>
-<!--<script>-->
-<!--    var svg = d3.select("body")-->
-<!--        .append("svg")-->
-<!--        .append("g")-->
-
-<!--    svg.append("g")-->
-<!--        .attr("class", "slices");-->
-<!--    svg.append("g")-->
-<!--        .attr("class", "labels");-->
-<!--    svg.append("g")-->
-<!--        .attr("class", "lines");-->
-
-<!--    var width = 960,-->
-<!--        height = 450,-->
-<!--        radius = Math.min(width, height) / 2;-->
-
-<!--    var pie = d3.layout.pie()-->
-<!--        .sort(null)-->
-<!--        .value(function(d) {-->
-<!--            return d.value;-->
-<!--        });-->
-
-<!--    var arc = d3.svg.arc()-->
-<!--        .outerRadius(radius * 0.8)-->
-<!--        .innerRadius(radius * 0.4);-->
-
-<!--    var outerArc = d3.svg.arc()-->
-<!--        .innerRadius(radius * 0.9)-->
-<!--        .outerRadius(radius * 0.9);-->
-
-<!--    svg.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");-->
-
-<!--    var key = function(d){ return d.data.label; };-->
-
-<!--    var color = d3.scale.ordinal()-->
-<!--        .domain(["Lorem ipsum", "dolor sit", "amet", "consectetur", "adipisicing", "elit", "sed", "do", "eiusmod", "tempor", "incididunt"])-->
-<!--        .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);-->
-
-<!--    function randomData (){-->
-<!--        var labels = color.domain();-->
-<!--        return labels.map(function(label){-->
-<!--            return { label: label, value: Math.random() }-->
-<!--        });-->
-<!--    }-->
-
-<!--    change(randomData());-->
-
-<!--    d3.select(".randomize")-->
-<!--        .on("click", function(){-->
-<!--            change(randomData());-->
-<!--        });-->
-
-
-<!--    function change(data) {-->
-
-<!--        /* -&#45;&#45;&#45;&#45;&#45;&#45; PIE SLICES -&#45;&#45;&#45;&#45;&#45;&#45;*/-->
-<!--        var slice = svg.select(".slices").selectAll("path.slice")-->
-<!--            .data(pie(data), key);-->
-
-<!--        slice.enter()-->
-<!--            .insert("path")-->
-<!--            .style("fill", function(d) { return color(d.data.label); })-->
-<!--            .attr("class", "slice");-->
-
-<!--        slice-->
-<!--            .transition().duration(1000)-->
-<!--            .attrTween("d", function(d) {-->
-<!--                this._current = this._current || d;-->
-<!--                var interpolate = d3.interpolate(this._current, d);-->
-<!--                this._current = interpolate(0);-->
-<!--                return function(t) {-->
-<!--                    return arc(interpolate(t));-->
-<!--                };-->
-<!--            })-->
-
-<!--        slice.exit()-->
-<!--            .remove();-->
-
-<!--        /* -&#45;&#45;&#45;&#45;&#45;&#45; TEXT LABELS -&#45;&#45;&#45;&#45;&#45;&#45;*/-->
-
-<!--        var text = svg.select(".labels").selectAll("text")-->
-<!--            .data(pie(data), key);-->
-
-<!--        text.enter()-->
-<!--            .append("text")-->
-<!--            .attr("dy", ".35em")-->
-<!--            .text(function(d) {-->
-<!--                return d.data.label;-->
-<!--            });-->
-
-<!--        function midAngle(d){-->
-<!--            return d.startAngle + (d.endAngle - d.startAngle)/2;-->
-<!--        }-->
-
-<!--        text.transition().duration(1000)-->
-<!--            .attrTween("transform", function(d) {-->
-<!--                this._current = this._current || d;-->
-<!--                var interpolate = d3.interpolate(this._current, d);-->
-<!--                this._current = interpolate(0);-->
-<!--                return function(t) {-->
-<!--                    var d2 = interpolate(t);-->
-<!--                    var pos = outerArc.centroid(d2);-->
-<!--                    pos[0] = radius * (midAngle(d2) < Math.PI ? 1 : -1);-->
-<!--                    return "translate("+ pos +")";-->
-<!--                };-->
-<!--            })-->
-<!--            .styleTween("text-anchor", function(d){-->
-<!--                this._current = this._current || d;-->
-<!--                var interpolate = d3.interpolate(this._current, d);-->
-<!--                this._current = interpolate(0);-->
-<!--                return function(t) {-->
-<!--                    var d2 = interpolate(t);-->
-<!--                    return midAngle(d2) < Math.PI ? "start":"end";-->
-<!--                };-->
-<!--            });-->
-
-<!--        text.exit()-->
-<!--            .remove();-->
-
-<!--        /* -&#45;&#45;&#45;&#45;&#45;&#45; SLICE TO TEXT POLYLINES -&#45;&#45;&#45;&#45;&#45;&#45;*/-->
-
-<!--        var polyline = svg.select(".lines").selectAll("polyline")-->
-<!--            .data(pie(data), key);-->
-
-<!--        polyline.enter()-->
-<!--            .append("polyline");-->
-
-<!--        polyline.transition().duration(1000)-->
-<!--            .attrTween("points", function(d){-->
-<!--                this._current = this._current || d;-->
-<!--                var interpolate = d3.interpolate(this._current, d);-->
-<!--                this._current = interpolate(0);-->
-<!--                return function(t) {-->
-<!--                    var d2 = interpolate(t);-->
-<!--                    var pos = outerArc.centroid(d2);-->
-<!--                    pos[0] = radius * 0.95 * (midAngle(d2) < Math.PI ? 1 : -1);-->
-<!--                    return [arc.centroid(d2), outerArc.centroid(d2), pos];-->
-<!--                };-->
-<!--            });-->
-
-<!--        polyline.exit()-->
-<!--            .remove();-->
-<!--    }-->
-<!--</script>-->
 </html>

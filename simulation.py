@@ -207,6 +207,7 @@ def simulate_redundancy_network(number_of_nodes=1000, soft_griefing_percentage=0
 def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node):
     network = create_network(number_of_nodes, soft_griefing_percentage)
     for node in network.nodes:
+        # TODO: what if i already connect with those nodes?
         nodes_to_connect = random.sample(network.nodes, channel_per_node)
         nodes_to_connect.remove(node)
         for node_to_connect in nodes_to_connect:
@@ -240,7 +241,7 @@ def run_multiply_simulation():
         FUNCTION_COLLECTOR_INSTANCE.init_parameters()
     print(simulation_metrics)
     timestamp = datetime.timestamp(datetime.now())
-    with open(f"simulation_results/{timestamp}.json", 'w') as f:
+    with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
         for s in simulation_metrics:
             f.write(json.dumps(s) + '\n')
 
