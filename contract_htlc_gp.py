@@ -16,7 +16,7 @@ class Contract_HTLC_GP(Contract_HTLC):
         return self._penalty
 
     def additional_delta_for_locked_funds(self, owner: 'lc.LightningNode') -> int:
-        if owner.address == super().receiver:
+        if owner.address == super().payee:
             return self._penalty
         return 0
 
