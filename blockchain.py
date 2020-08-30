@@ -20,12 +20,17 @@ class BlockChain:
     def block_number(self):
         return self._block_number
 
-    def get_balance_for_node(self, node):
-        return self._nodes_addresses_to_balances.get(node.address)
+    @property
+    def total_balance(self) -> int:
+        return int(sum(self._nodes_addresses_to_balances.values()))  # TODO: maybe don't calculate for all nodes each time -
+        # but keep an updating variable
 
     @property
     def fee(self):
         return self._fee
+
+    def get_balance_for_node(self, node):
+        return self._nodes_addresses_to_balances.get(node.address)
 
     def wait_k_blocks(self, k):
         self._block_number += 1

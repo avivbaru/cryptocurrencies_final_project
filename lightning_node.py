@@ -24,8 +24,8 @@ def random_delay_node(f):
 
 class TransactionInfo:
     def __init__(self, transaction_id: int, amount_in_wei: int, penalty: int, hash_x: int, hash_r: int,
-                 expiration_block_number: int, delta_wait_time: int, previous_node: 'LightningNode' = None,
-                 next_node: 'LightningNode' = None, delta: int = None):
+                 expiration_block_number: int, delta_wait_time: int, starting_block: int, previous_node: 'LightningNode' = None,
+                 next_node: 'LightningNode' = None):
         """
 
         :param transaction_id:
@@ -37,7 +37,6 @@ class TransactionInfo:
         :param delta_wait_time:
         :param previous_node:
         :param next_node:
-        :param delta:
         """
         # TODO: delta is a safe measure - do we need it?
         assert amount_in_wei >= 0
@@ -49,10 +48,10 @@ class TransactionInfo:
         self._hash_x = hash_x
         self._hash_r = hash_r
         self._expiration_block_number = expiration_block_number
-        self._delta = delta
         self._delta_wait_time = delta_wait_time
         self._previous_node = previous_node
         self._next_node = next_node
+        self._starting_block = starting_block
 
     @property
     def hash_x(self):
@@ -83,12 +82,16 @@ class TransactionInfo:
         return self._delta_wait_time
 
     @property
-    def previous_node(self):
+    def previous_node(self) -> 'LightningNode':
         return self._previous_node
 
     @property
-    def next_node(self):
+    def next_node(self) -> 'LightningNode':
         return self._next_node
+
+    @property
+    def starting_block(self) -> int:
+        return self._starting_block
 
     @staticmethod
     def generate_id() -> int:
@@ -105,7 +108,7 @@ class LightningNode:
         self._hash_image_r_to_preimage: Dict[int, str] = {}
         self._channels: Dict[str, cm.Channel] = {}
         self._locked_funds: int = 0
-        self._balance = balance
+        self._balance = balance  # TODO: should remove balance?
         self._base_fee = base_fee
         self._fee_percentage = fee_percentage
         self._griefing_penalty_rate = griefing_penalty_rate
@@ -182,7 +185,8 @@ class LightningNode:
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
         # griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, delta_waiting_time)
         info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, hash_r,
-                               BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time, delta_waiting_time, next_node=node_to_send)
+                               BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time, delta_waiting_time,
+                               BLOCKCHAIN_INSTANCE.block_number, next_node=node_to_send)
         self._transaction_id_to_transaction_info[id] = info
         self.send_transaction_information(node_to_send, info, nodes_between[1:])
 
@@ -190,8 +194,8 @@ class LightningNode:
     def _calculate_fee_for_route(path_nodes: List['LightningNode'], amount_in_wei: int) -> int:
         transfer_amount = amount_in_wei
         for node in reversed(path_nodes):
-            transfer_amount += node.get_fee_for_transfer_amount(transfer_amount)
-        return int(transfer_amount) - amount_in_wei
+            transfer_amount = (transfer_amount + node.base_fee) / (1 - node.fee_percentage)
+        return int(round(transfer_amount) - amount_in_wei)
 
     def _calculate_griefing_penalty(self, amount_in_wei: int, waiting_time):
         return int(self._griefing_penalty_rate * amount_in_wei * waiting_time * 10)
@@ -213,13 +217,13 @@ class LightningNode:
             node_to_send = nodes_between[0]
             info = TransactionInfo(previous_transaction_info.id, amount_in_wei, griefing_penalty,
                                    previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
-                                   delta_waiting_time, sender, node_to_send)
+                                   delta_waiting_time, previous_transaction_info.starting_block, sender, node_to_send)
             self._transaction_id_to_transaction_info[previous_transaction_info.id] = info
             self.send_transaction_information(node_to_send, info, nodes_between[1:])
         else:
             info = TransactionInfo(previous_transaction_info.id, 0, griefing_penalty,
                                    previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
-                                   delta_waiting_time, sender)
+                                   delta_waiting_time, previous_transaction_info.starting_block, sender)
             # TODO: see that info is constructed the right way
             self._transaction_id_to_transaction_info[info.id] = info
             self.send_cancellation_contract(info.id)
@@ -306,6 +310,8 @@ class LightningNode:
 
         if info.previous_node is None:
             METRICS_COLLECTOR_INSTANCE.count("Transactions successful")
+            METRICS_COLLECTOR_INSTANCE.average("Transactions waiting time before completing",
+                                               BLOCKCHAIN_INSTANCE.block_number - info.starting_block)
             return
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
@@ -350,7 +356,7 @@ class LightningNode:
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * 144)
         info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, 0, BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time,
-                               delta_waiting_time, next_node=node_to_send)
+                               delta_waiting_time, BLOCKCHAIN_INSTANCE.block_number, next_node=node_to_send)
         self._transaction_id_to_transaction_info[id] = info
         self.send_regular_htlc(info, nodes_between[1:])
 
@@ -369,11 +375,11 @@ class LightningNode:
         delta_waiting_time = previous_transaction_info.delta_wait_time - BLOCKS_IN_DAY
         new_info = TransactionInfo(previous_transaction_info.id, amount_in_wei, 0, previous_transaction_info.hash_x, 0,
                                    previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY, delta_waiting_time,
-                                   sender, node_to_send)
+                                   previous_transaction_info.starting_block, sender, node_to_send)
 
         self._transaction_id_to_transaction_info[new_info.id] = previous_transaction_info  # TODO: check info handling is right
         self._transaction_id_to_htlc_contracts[new_info.id] = contract
-        if contract.attached_channel.add_contract(contract):
+        if not contract.attached_channel.add_contract(contract):
             return
 
         if nodes_between:
@@ -394,7 +400,9 @@ class LightningNode:
                 return
             contract.report_x(x)
         else:
-            # print("Transaction (regular htlc) ended!")
+            METRICS_COLLECTOR_INSTANCE.count("Transactions (htlc) successful")
+            METRICS_COLLECTOR_INSTANCE.average("Transactions (htlc) waiting time before completing",
+                                               BLOCKCHAIN_INSTANCE.block_number - info.starting_block)
             return
 
         info.previous_node.resolve_htlc_transaction(transaction_id, x)
