@@ -20,14 +20,11 @@ class Network:
         channel = to_node.establish_channel(from_node, channel_starting_balance)
         from_node.add_money_to_channel(channel, channel_starting_balance)
 
-    def find_shortest_path(self, initial: LightningNode, amount_in_wei: int,
-                           griefing_penalty_rate: float):
+    def find_shortest_path(self, last_node: LightningNode, initial_node: LightningNode, amount_in_msat: int,
+                           griefing_penalty_rate: float, is_gp_protocol: bool):
         nodes: Set[LightningNode] = set(self.nodes)
-        visited: Dict[LightningNode, int] = {initial: amount_in_wei}
-        first_node_in_path_map: Dict[LightningNode, LightningNode] = {}
-        capacity_left_in_path: Dict[LightningNode, int] = {initial: float('inf')}
-        fee_paid_map: Dict[LightningNode, int] = {initial: 0}
-        path: Dict[LightningNode, List[LightningNode]] = {initial: []}
+        visited: Dict[LightningNode, int] = {last_node: amount_in_msat}
+        path: Dict[LightningNode, List[LightningNode]] = {last_node: []}
 
         while nodes:
             min_node = None
@@ -45,45 +42,35 @@ class Network:
             current_wei = visited[min_node]
 
             for edge_node in self.edges[min_node]:
-                capacity_between = min_node.get_capacity_left(edge_node)
-                if capacity_between >= amount_in_wei:
-                    fee_between = edge_node.get_fee_for_transfer_amount(current_wei)
-                    capacity_left = min(capacity_left_in_path[min_node],
-                                        capacity_between - amount_in_wei) - fee_between
-                    new_wei = current_wei + fee_between
-
+                capacity_between = edge_node.get_capacity_left(min_node)
+                new_wei = (current_wei + edge_node.base_fee) / (1 - edge_node.fee_percentage) if \
+                    edge_node != initial_node else current_wei
+                if capacity_between >= new_wei:
                     # check if griefing is possible
                     is_griefing_possible = True
-                    nodes_between: List[LightningNode] = path[min_node] + [edge_node]
-                    if griefing_penalty_rate > 0:
-                        is_griefing_possible = Network._is_griefing_possible(nodes_between,
-                                                                             fee_paid_map,
-                                                                             griefing_penalty_rate,
-                                                                             initial, new_wei)
+                    if is_gp_protocol and griefing_penalty_rate > 0:
+                        is_griefing_possible = Network._is_griefing_possible(path[min_node], edge_node,
+                                                                             visited,
+                                                                             griefing_penalty_rate, new_wei)
 
-                    if (edge_node not in visited or new_wei < visited[edge_node]) \
-                            and capacity_left >= 0 and is_griefing_possible:
+                    if (edge_node not in visited or new_wei < visited[edge_node]) and is_griefing_possible:
                         visited[edge_node] = new_wei
-                        first_node_in_path_map[edge_node] = min_node
-                        path[edge_node] = nodes_between
-                        capacity_left_in_path[edge_node] = capacity_left
-                        fee_paid_map[edge_node] = fee_between
+                        path[edge_node] = path[min_node] + [edge_node]
 
         return visited, path
 
     @staticmethod
-    def _is_griefing_possible(nodes_in_path: List[LightningNode], fee_paid_map, griefing_penalty_rate,
-                              initial, new_wei):
+    def _is_griefing_possible(nodes_in_path: List[LightningNode], final_node, visited, griefing_penalty_rate,
+                              new_wei):
         length = len(nodes_in_path) + 1
-        prev = initial
-        temp_wei = new_wei
-        is_griefing_possible = True
+        reversed_nodes_in_path = list(reversed(nodes_in_path))
+        prev = final_node
         griefing_penalty_sum = 0
-        for i, n in enumerate(nodes_in_path):
-            griefing_penalty_sum += int(temp_wei * griefing_penalty_rate * length * 1440)
-            is_griefing_possible = is_griefing_possible and \
-                                   griefing_penalty_sum <= n.get_capacity_left(prev)
+        for n in reversed_nodes_in_path:
+            amount_to_send = visited.get(prev, new_wei)
+            griefing_penalty_sum += int(amount_to_send * griefing_penalty_rate * length * 1440)
+            if griefing_penalty_sum > n.get_capacity_left(prev):
+                return False
             prev = n
             length -= 1
-            temp_wei -= fee_paid_map.get(n, 0)
-        return is_griefing_possible
+        return True

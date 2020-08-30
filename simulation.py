@@ -69,10 +69,13 @@ def run_simulation(number_of_blocks, network, use_gp_protocol):
             receiver_node = random.choice(network.nodes)
 
         amount_in_satoshi = how_much_to_send()
-        visited_nodes_to_min_hops, path_map = network.find_shortest_path(sender_node, amount_in_satoshi,
-                                                                         GRIEFING_PENALTY_RATE)
-        if receiver_node in visited_nodes_to_min_hops:
-            nodes_between = path_map[receiver_node]
+        visited_nodes_to_min_hops, path_map = network.find_shortest_path(receiver_node, sender_node,
+                                                                         amount_in_satoshi,
+                                                                         GRIEFING_PENALTY_RATE,
+                                                                         use_gp_protocol)
+        if sender_node in visited_nodes_to_min_hops:
+            nodes_between = list(reversed(path_map[sender_node]))[1:]
+            nodes_between.append(receiver_node)
             METRICS_COLLECTOR_INSTANCE.average(PATH_LENGTH_AVG, len(nodes_between))
             if use_gp_protocol:
                 send_htlc_successfully = sender_node.start_transaction(receiver_node, amount_in_satoshi,
