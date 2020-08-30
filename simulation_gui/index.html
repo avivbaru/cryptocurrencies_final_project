@@ -199,18 +199,24 @@ function readJsonFile(jsonFile) {
 // const all_data = readJsonFile("fake_data.json");
 const all_data = readJsonFile("runs.json");
 // Create metrics texts
-const metrics = Object.keys(Object.values(all_data)[0]);
+let metrics = new Set();
+const jsons = Object.values(all_data);
+for (var i = 0; i < jsons.length; i++) {
+    let jsonValue = jsons[i];
+    Object.keys(jsonValue).forEach(metrics.add, metrics)
+}
+metrics = Array.from(metrics);
 var values = document.getElementById('values');
 var tbody = document.getElementById('tbody');
 for (var i = 0; i < metrics.length; i++) {
-    let m = metrics[i];
-    var tr = document.createElement("tr");
-    var tb = document.createElement("td");
-    tb.innerText = m;
+    let metric = metrics[i];
+    const tr = document.createElement("tr");
+    const tb = document.createElement("td");
+    tb.innerText = metric;
     tr.appendChild(tb)
-    var tbValue = document.createElement("td");
+    const tbValue = document.createElement("td");
     tbValue.innerText = "";
-    tbValue.id = m;
+    tbValue.id = metric;
     tr.appendChild(tbValue)
     tbody.appendChild(tr);
 }
@@ -220,10 +226,12 @@ function changeGraph() {
     const key = topology.value + '_' + block.value + "_" + nodes.value + "_" +
                 griefing.value + "_" + useProtocol.value;
     const run_result = all_data[key];
-    console.log(run_result);
-    console.log(key);
     const metricsNames = Object.keys(run_result);
 
+    for (var i = 0; i < metrics.length; i++) {
+        var t = document.getElementById(metrics[i]);
+        t.innerText = "";
+    }
     for (var i = 0; i < metricsNames.length; i++) {
         let name = metricsNames[i];
         var para = document.getElementById(name);

@@ -298,6 +298,8 @@ class LightningNode:
 
     @random_delay_node
     def resolve_transaction(self, transaction_id: int, x: str):
+        if transaction_id not in self._transaction_id_to_transaction_info:
+            return # might get terminated beforehand
         info = self._transaction_id_to_transaction_info[transaction_id]
         del self._transaction_id_to_transaction_info[transaction_id]
 
@@ -309,8 +311,8 @@ class LightningNode:
             forward_contract.report_x(x)
 
         if info.previous_node is None:
-            METRICS_COLLECTOR_INSTANCE.count("Transactions successful")
-            METRICS_COLLECTOR_INSTANCE.average("Transactions waiting time before completing",
+            METRICS_COLLECTOR_INSTANCE.count(TRANSACTION_SUCCESSFUL)
+            METRICS_COLLECTOR_INSTANCE.average(TRANSACTION_WAITING_TIME_BEFORE_COMPLETING,
                                                BLOCKCHAIN_INSTANCE.block_number - info.starting_block)
             return
 
@@ -391,6 +393,8 @@ class LightningNode:
 
     @random_delay_node
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
+        if transaction_id not in self._transaction_id_to_transaction_info:
+            return
         info = self._transaction_id_to_transaction_info[transaction_id]
         del self._transaction_id_to_transaction_info[transaction_id]
 
@@ -400,8 +404,8 @@ class LightningNode:
                 return
             contract.report_x(x)
         else:
-            METRICS_COLLECTOR_INSTANCE.count("Transactions (htlc) successful")
-            METRICS_COLLECTOR_INSTANCE.average("Transactions (htlc) waiting time before completing",
+            METRICS_COLLECTOR_INSTANCE.count(TRANSACTION_SUCCESSFUL)
+            METRICS_COLLECTOR_INSTANCE.average(TRANSACTION_WAITING_TIME_BEFORE_COMPLETING,
                                                BLOCKCHAIN_INSTANCE.block_number - info.starting_block)
             return
 
@@ -468,11 +472,15 @@ class LightningNodeSoftGriefing(LightningNode):
         self._block_number_to_resolve = 20
 
     def resolve_transaction(self, transaction_id: int, x: str):
+        if transaction_id not in self._transaction_id_to_transaction_info:
+            return
         info = self._transaction_id_to_transaction_info[transaction_id]
         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
                                            .resolve_transaction, info.expiration_block_number - self._block_number_to_resolve)
 
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
+        if transaction_id not in self._transaction_id_to_transaction_info:
+            return
         info = self._transaction_id_to_transaction_info[transaction_id]
         FUNCTION_COLLECTOR_INSTANCE\
             .append(lambda: super(LightningNodeSoftGriefing, self)
