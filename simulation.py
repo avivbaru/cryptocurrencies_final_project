@@ -46,7 +46,9 @@ SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 
 def how_much_to_send():
     mu = random.choice(MSAT_AMOUNTS_TO_SEND)
-    return int(min(max(random.gauss(mu, SIGMA), MIN_TO_SEND), MAX_TO_SEND))
+    amount = int(min(max(random.gauss(mu, SIGMA), MIN_TO_SEND), MAX_TO_SEND))
+    METRICS_COLLECTOR_INSTANCE.average("Transaction amount", amount)
+    return amount
 
 
 def create_node(is_soft_griefing=False):
@@ -55,6 +57,8 @@ def create_node(is_soft_griefing=False):
     base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]
     if is_soft_griefing:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
+    METRICS_COLLECTOR_INSTANCE.average("Base fee", base_fee)
+    METRICS_COLLECTOR_INSTANCE.average("Fee percentage", fee_percentage)
     return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
 
 
@@ -99,6 +103,7 @@ def run_simulation(number_of_blocks, network, use_gp_protocol):
             for node in network.nodes:
                 total_locked_fund += node.locked_funds
             METRICS_COLLECTOR_INSTANCE.average(BLOCK_LOCKED_FUND, total_locked_fund)
+            METRICS_COLLECTOR_INSTANCE.average("Total current balance", BLOCKCHAIN_INSTANCE.total_balance)
             print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
             FUNCTION_COLLECTOR_INSTANCE.run()
 
@@ -202,12 +207,13 @@ def generate_redundancy_network(number_of_nodes, soft_griefing_percentage):
             if next_index != i:
                 channel_starting_balance = random.choices(MSAT_CHANNEL_CAPACITY,
                                                           weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)[0]
+                METRICS_COLLECTOR_INSTANCE.average("Channel starting balance", channel_starting_balance)
                 network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
     return network
 
 
 @simulation_details
-def simulate_redundancy_network(number_of_nodes=1000, soft_griefing_percentage=0.05, number_of_blocks=15,
+def simulate_redundancy_network(number_of_nodes=100, soft_griefing_percentage=0.05, number_of_blocks=15,
                                 use_gp_protocol=True):
     network = generate_redundancy_network(number_of_nodes, soft_griefing_percentage)
     return run_simulation(number_of_blocks, network, use_gp_protocol)
@@ -223,6 +229,7 @@ def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel
         for node_to_connect in nodes_to_connect:
             channel_starting_balance = random.choices(MSAT_CHANNEL_CAPACITY,
                                                       weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)[0]
+            METRICS_COLLECTOR_INSTANCE.average("Channel starting balance", channel_starting_balance)
             network.add_edge(node, node_to_connect, channel_starting_balance)
     return network
 
@@ -272,6 +279,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
 

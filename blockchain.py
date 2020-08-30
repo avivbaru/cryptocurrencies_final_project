@@ -20,12 +20,17 @@ class BlockChain:
     def block_number(self):
         return self._block_number
 
-    def get_balance_for_node(self, node):
-        return self._nodes_addresses_to_balances.get(node.address)
+    @property
+    def total_balance(self) -> int:
+        return int(sum(self._nodes_addresses_to_balances.values()))  # TODO: maybe don't calculate for all nodes each time -
+        # but keep an updating variable
 
     @property
     def fee(self):
         return self._fee
+
+    def get_balance_for_node(self, node):
+        return self._nodes_addresses_to_balances.get(node.address)
 
     def wait_k_blocks(self, k):
         self._block_number += 1
@@ -55,16 +60,6 @@ class BlockChain:
             return
 
         self._nodes_addresses_to_balances[node.address] = balance
-
-    # def resolve_htlc_contract(self, contract: 'cn.Contract_HTLC'):
-    #     owner1 = contract.attached_channel.channel_state.channel_data.owner1
-    #     owner2 = contract.attached_channel.channel_state.channel_data.owner2
-    #     balance_delta = contract.owner1_balance_delta
-    #
-    #     self._nodes_addresses_to_balances[owner1] += balance_delta
-    #     self._nodes_addresses_to_balances[owner2] -= balance_delta
-
-        # self._channels_to_htlcs[contract.attached_channel.channel_state.channel_data.address] = contract
 
     def get_pre_image_if_exists_onchain(self, hash_image: int) -> Optional[str]:
         if hash_image in self._hash_image_to_pre_images:
