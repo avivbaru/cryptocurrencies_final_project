@@ -18,7 +18,8 @@ class Contract_HTLC:
         self._pre_image_r = None
         self._payer = payer
         self._payee = payee  # TODO: change to payer and payee
-        self._is_valid = True
+        self._is_valid = False
+        self._was_accepted = False
 
         self._money_to_transfer_to_payee = 0
 
@@ -75,15 +76,16 @@ class Contract_HTLC:
     def transfer_amount_to_payee(self):
         return self._money_to_transfer_to_payee
 
-
     @property
     def is_concluded(self):
         return not self._is_valid or self.is_expired or self._pre_image_x or self._pre_image_r
 
+    @property
+    def is_valid(self):
+        return self._is_valid
+
     def invalidate(self):
         self._is_valid = False
-        self._payee.notify_of_contract_invalidation(self)
-        self._payer.notify_of_contract_invalidation(self)
 
     def report_x(self, x: str):
         assert not self.is_expired
@@ -98,6 +100,12 @@ class Contract_HTLC:
         assert self._pre_image_x is None and self._pre_image_r is None
         assert hash(r) == self.hash_r
         self._pre_image_r = r
+
+    def accept_contract(self):
+        if self._was_accepted:
+            return
+        self._was_accepted = True
+        self._is_valid = True
 
 
 class ContractForward(Contract_HTLC):

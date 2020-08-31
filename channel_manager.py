@@ -207,6 +207,13 @@ class Channel(object):
         elif contract.pre_image_r:
             BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_r, contract.pre_image_r)
 
-    def pay_amount_to_owner(self, owner: 'ln.LightningNode', amount_in_wei: int):
-        owner1_new_balance_delta = amount_in_wei if self.is_owner1(owner) else -amount_in_wei
+    def pay_amount_to_owner(self, owner: 'ln.LightningNode', contract: 'cn.ContractCancellation'):
+        owner1_new_balance_delta = contract.amount_in_wei
+        if self.is_owner1(owner):
+            self.owner2_htlc_locked_setter(int(self._owner2_htlc_locked - contract.amount_in_wei))
+        else:
+            self.owner1_htlc_locked_setter(int(self._owner1_htlc_locked - contract.amount_in_wei))
+            owner1_new_balance_delta = -contract.amount_in_wei
         self._update_message_state(self._state.message_state.owner1_balance + owner1_new_balance_delta)
+        contract.invalidate()
+        self._state.htlc_contracts.remove(contract)

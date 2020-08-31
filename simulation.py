@@ -215,7 +215,7 @@ def generate_redundancy_network(number_of_nodes, soft_griefing_percentage, delta
 
 
 @simulation_details
-def simulate_redundancy_network(number_of_nodes=100, soft_griefing_percentage=0.05, number_of_blocks=15,
+def simulate_redundancy_network(number_of_nodes=100, soft_griefing_percentage=0.20, number_of_blocks=1500,
                                 use_gp_protocol=True, delta=40, max_number_of_block_to_respond=5):
     network = generate_redundancy_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond)
     return run_simulation(number_of_blocks, network, use_gp_protocol)

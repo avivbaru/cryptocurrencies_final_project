@@ -248,7 +248,9 @@ class LightningNode:
         info = self._transaction_id_to_transaction_info[transaction_id]
 
         if not contract.attached_channel.add_contract(contract):
+            contract.invalidate()
             return
+        contract.accept_contract()
 
         if info.previous_node is not None:
             self.send_cancellation_contract(transaction_id)
@@ -284,10 +286,14 @@ class LightningNode:
         info.next_node.receive_forward_contract(transaction_id, forward_contract)
 
     def receive_forward_contract(self, transaction_id: int, contract: 'cn.ContractForward'):
+        if transaction_id not in self._transaction_id_to_transaction_info:
+            return
         info = self._transaction_id_to_transaction_info[transaction_id]
 
         if not contract.attached_channel.add_contract(contract):
+            contract.invalidate()
             return
+        contract.accept_contract()
 
         if info.next_node is not None:
             self.send_forward_contract(transaction_id)
@@ -316,6 +322,8 @@ class LightningNode:
                                                BLOCKCHAIN_INSTANCE.block_number - info.starting_block)
             return
 
+        if transaction_id not in self._transaction_id_to_cancellation_contracts:
+            return
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
         del self._transaction_id_to_cancellation_contracts[transaction_id]
         if cancellation_contract.is_expired:
@@ -327,15 +335,15 @@ class LightningNode:
         info.previous_node.resolve_transaction(transaction_id, x)
 
     def terminate_transaction(self, transaction_id: int, r: str):
-        if transaction_id not in self._transaction_id_to_forward_contracts:
+        if transaction_id not in self._transaction_id_to_transaction_info:
             return
 
         info = self._transaction_id_to_transaction_info[transaction_id]
 
-        if info.next_node is not None:
+        if transaction_id in self._transaction_id_to_forward_contracts:
             forward_contract = self._transaction_id_to_forward_contracts[transaction_id]
             del self._transaction_id_to_forward_contracts[transaction_id]
-            if forward_contract.is_expired:
+            if forward_contract.is_expired or not forward_contract.is_valid:
                 return
             forward_contract.report_r(r)
 
@@ -344,7 +352,7 @@ class LightningNode:
 
         cancellation_contract = self._transaction_id_to_cancellation_contracts[transaction_id]
         del self._transaction_id_to_cancellation_contracts[transaction_id]
-        if cancellation_contract.is_expired:
+        if cancellation_contract.is_expired or not cancellation_contract.is_valid:
             return
         cancellation_contract.report_r(r)
 
@@ -384,7 +392,9 @@ class LightningNode:
         self._transaction_id_to_transaction_info[new_info.id] = previous_transaction_info  # TODO: check info handling is right
         self._transaction_id_to_htlc_contracts[new_info.id] = contract
         if not contract.attached_channel.add_contract(contract):
+            contract.invalidate()
             return
+        contract.accept_contract()
 
         if nodes_between:
             self.send_regular_htlc(new_info, nodes_between[1:])
@@ -459,21 +469,14 @@ class LightningNode:
         # penalty_to_claim = self._calculate_griefing_penalty(info.amount_in_wei, info.delta_wait_time)
         channel = self._other_nodes_to_channels[previous_node.address]
 
-        channel.pay_amount_to_owner(previous_node, info.penalty)
         if info.id not in self._transaction_id_to_cancellation_contracts:
             return
         previous_contract = self._transaction_id_to_cancellation_contracts[info.id]
-        assert previous_contract != contract
+        if not previous_contract.is_valid:
+            return  # TODO: see if gets here alot
+        channel.pay_amount_to_owner(previous_node, previous_contract)
         contract.invalidate()
         previous_node.notify_of_cancellation_contract_payment(previous_contract)
-
-    def notify_of_contract_invalidation(self, contract: 'cn.Contract_HTLC'):
-        if contract.transaction_id in self._transaction_id_to_forward_contracts:
-            del self._transaction_id_to_forward_contracts[contract.transaction_id]
-        if contract.transaction_id in self._transaction_id_to_cancellation_contracts:
-            del self._transaction_id_to_cancellation_contracts[contract.transaction_id]
-        if contract.transaction_id in self._transaction_id_to_transaction_info:
-            del self._transaction_id_to_transaction_info[contract.transaction_id]
 
     def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
         contract.invalidate()  # TODO: see if needed
