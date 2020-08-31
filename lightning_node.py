@@ -465,8 +465,6 @@ class LightningNode:
         if previous_node is None:
             return
 
-        # penalty_received = info.penalty
-        # penalty_to_claim = self._calculate_griefing_penalty(info.amount_in_wei, info.delta_wait_time)
         channel = self._other_nodes_to_channels[previous_node.address]
 
         if info.id not in self._transaction_id_to_cancellation_contracts:
@@ -522,20 +520,18 @@ class LightningNodeSoftGriefing(LightningNode):
 
 
 class LightningNodeGriefing(LightningNode):
-    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
-        super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
-        self._block_number_to_resolve = 20
+    def __init__(self, *args):
+        super().__init__(*args)
+        self._block_number_to_resolve = self._delta + 20
+        self._probability_to_soft_griefing = 0.5  # TODO: get probability from outside?
 
     def resolve_transaction(self, transaction_id: int, x: str):
-        info = self._transaction_id_to_transaction_info[transaction_id]
-        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeGriefing, self)
-                                           .resolve_transaction, info.expiration_block_number - self._block_number_to_resolve)
+        if random.uniform(0, 1) < self._probability_to_soft_griefing:
+            super(LightningNodeGriefing, self).resolve_transaction(transaction_id, x)
 
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
-        info = self._transaction_id_to_transaction_info[transaction_id]
-        FUNCTION_COLLECTOR_INSTANCE\
-            .append(lambda: super(LightningNodeGriefing, self)
-                    .resolve_htlc_transaction, info.expiration_block_number - self._block_number_to_resolve)
+        if random.uniform(0, 1) < self._probability_to_soft_griefing:
+            super(LightningNodeGriefing, self).resolve_htlc_transaction(transaction_id, x)
 
     def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
         return

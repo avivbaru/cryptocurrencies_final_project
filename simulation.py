@@ -1,6 +1,8 @@
 import random
 import time
 import math
+from enum import Enum
+
 import fire
 import json
 import inspect
@@ -48,6 +50,11 @@ SIGMA = 0.1
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 
 
+class NodeType(Enum):
+    SOFT_GRIEFING = 1
+    GRIEFING = 2
+
+
 def how_much_to_send():
     mu = random.choice(MSAT_AMOUNTS_TO_SEND)
     amount = int(min(max(random.gauss(mu, SIGMA), MIN_TO_SEND), MAX_TO_SEND))
@@ -55,16 +62,21 @@ def how_much_to_send():
     return amount
 
 
-def create_node(delta, max_number_of_block_to_respond, is_soft_griefing=False):
+def create_node(delta, max_number_of_block_to_respond, griefing_type: NodeType = None):
     # divide by million to get the rate per msat
     fee_percentage = random.choices(FEE_RATE, weights=FEE_RATE_PROB, k=1)[0] / 1000000
     base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]
     METRICS_COLLECTOR_INSTANCE.average(BASE_FEE_LOG, base_fee)
     METRICS_COLLECTOR_INSTANCE.average(FEE_PERCENTAGE, fee_percentage)
-    if is_soft_griefing:
-        return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
+    if griefing_type:
+        if NodeType.SOFT_GRIEFING == griefing_type:
+            return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
+                                                            GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
+        if NodeType.GRIEFING == griefing_type:
+            return lightning_node.LightningNodeGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
-    return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
+    return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE, delta,
+                                        max_number_of_block_to_respond)
 
 
 def run_simulation(number_of_blocks, network, use_gp_protocol):
@@ -73,23 +85,21 @@ def run_simulation(number_of_blocks, network, use_gp_protocol):
     while BLOCKCHAIN_INSTANCE.block_number < number_of_blocks:
         sender_node = random.choice(network.nodes)
         # find receiver node
-        receiver_node = sender_node
+        receiver_node = random.choice(network.nodes)
         while receiver_node == sender_node:
             receiver_node = random.choice(network.nodes)
 
-        amount_in_satoshi = how_much_to_send()
-        visited_nodes_to_min_hops, path_map = network.find_shortest_path(receiver_node, sender_node,
-                                                                         amount_in_satoshi,
-                                                                         GRIEFING_PENALTY_RATE,
-                                                                         use_gp_protocol)
-        if sender_node in visited_nodes_to_min_hops:
-            nodes_between = list(reversed(path_map[sender_node]))[1:]
+        amount_in_msat = how_much_to_send()
+        node_to_min_to_send, node_to_path = network.find_shortest_path(receiver_node, sender_node, amount_in_msat,
+                                                                       GRIEFING_PENALTY_RATE, use_gp_protocol)
+        if sender_node in node_to_min_to_send:
+            nodes_between = list(reversed(node_to_path[sender_node]))[1:]
             nodes_between.append(receiver_node)
             METRICS_COLLECTOR_INSTANCE.average(PATH_LENGTH_AVG, len(nodes_between))
             if use_gp_protocol:
-                sender_node.start_transaction(receiver_node, amount_in_satoshi, nodes_between)
+                sender_node.start_transaction(receiver_node, amount_in_msat, nodes_between)
             else:
-                sender_node.start_regular_htlc_transaction(receiver_node, amount_in_satoshi, nodes_between)
+                sender_node.start_regular_htlc_transaction(receiver_node, amount_in_msat, nodes_between)
 
             METRICS_COLLECTOR_INSTANCE.count(SEND_TRANSACTION)
         else:
@@ -127,14 +137,11 @@ def close_channel_and_log_metrics(network):
             node.close_channel(other_node)
 
         if type(node) is lightning_node.LightningNodeSoftGriefing:
-            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG,
-                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
         elif type(node) is lightning_node.LightningNode:
-            METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG,
-                                               BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        # if type(node) is lightning_node.LightningNodeGriefing:
-        #     METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG,
-        #                                        BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+            METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        elif type(node) is lightning_node.LightningNodeGriefing:
+            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
 
 
 def simulation_details(func):
@@ -156,17 +163,21 @@ def simulation_details(func):
     return wrapper
 
 
-def create_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond):
+def create_network(number_of_nodes, soft_griefing_percentage, griefing_percentage, delta, max_number_of_block_to_respond):
     network = Network()
     number_of_soft_griefing_nodes = int(soft_griefing_percentage * number_of_nodes)
-    for _ in range(number_of_nodes - number_of_soft_griefing_nodes):
+    number_of_griefing_nodes = int(griefing_percentage * number_of_nodes)
+    for _ in range(number_of_nodes - number_of_soft_griefing_nodes - number_of_griefing_nodes):
         network.add_node(create_node(delta, max_number_of_block_to_respond))
     for _ in range(number_of_soft_griefing_nodes):
-        network.add_node(create_node(delta, max_number_of_block_to_respond, True))
+        network.add_node(create_node(delta, max_number_of_block_to_respond, NodeType.SOFT_GRIEFING))
+    for _ in range(number_of_griefing_nodes):
+        network.add_node(create_node(delta, max_number_of_block_to_respond, NodeType.GRIEFING))
+    random.shuffle(network.nodes)
     return network
 
 
-def generate_network_from_snapshot(json_data, soft_griefing_percentage):
+def generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing_percentage=0.05):
     json_data['edges'] = list(filter(lambda x: x['node1_policy'] and x['node2_policy'], json_data['edges']))
     json_data['edges'] = list(filter(lambda x: not (x['node1_policy']['disabled'] or
                                                     x['node2_policy']['disabled']), json_data['edges']))
@@ -195,10 +206,11 @@ def simulate_snapshot_network(soft_griefing_percentage=0.05, number_of_blocks=15
 
 
 # Redundancy network functions
-def generate_redundancy_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond):
+def generate_redundancy_network(number_of_nodes, soft_griefing_percentage, griefing_percentage, delta, max_number_of_block_to_respond):
     # connect 2 nodes if differ by 10 to the power of n(1...floor(log_10(number_of_nodes))+1)
     #   modulo 10^floor(log_10(number_of_nodes))
-    network = create_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond)
+    network = create_network(number_of_nodes, soft_griefing_percentage, griefing_percentage, delta,
+                             max_number_of_block_to_respond)
     n = int(math.log(number_of_nodes, 10))
     jump_indexes = [10 ** i for i in range(n+1)]
     for i in range(number_of_nodes):
@@ -215,15 +227,18 @@ def generate_redundancy_network(number_of_nodes, soft_griefing_percentage, delta
 
 
 @simulation_details
-def simulate_redundancy_network(number_of_nodes=100, soft_griefing_percentage=0.20, number_of_blocks=1500,
+def simulate_redundancy_network(number_of_nodes=100, soft_griefing_percentage=0.20, griefing_percentage=0.05, number_of_blocks=1500,
                                 use_gp_protocol=True, delta=40, max_number_of_block_to_respond=5):
-    network = generate_redundancy_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond)
+    network = generate_redundancy_network(number_of_nodes, soft_griefing_percentage, griefing_percentage, delta,
+                                          max_number_of_block_to_respond)
     return run_simulation(number_of_blocks, network, use_gp_protocol)
 
 
 # Randomly network functions
-def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node, delta, max_number_of_block_to_respond):
-    network = create_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond)
+def generate_network_randomly(number_of_nodes, soft_griefing_percentage, griefing_percentage, channel_per_node, delta,
+                              max_number_of_block_to_respond):
+    network = create_network(number_of_nodes, soft_griefing_percentage, griefing_percentage, delta,
+                             max_number_of_block_to_respond)
     for node in network.nodes:
         # TODO: what if i already connect with those nodes?
         nodes_to_connect = random.sample(network.nodes, channel_per_node)
@@ -237,46 +252,52 @@ def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel
 
 
 @simulation_details
-def simulate_random_network(number_of_nodes=100, soft_griefing_percentage=0.05, number_of_blocks=15,
-                            channel_per_node=10, use_gp_protocol=True, delta=40,
-                            max_number_of_block_to_respond=5):
-    network = generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node, delta, max_number_of_block_to_respond)
+def simulate_random_network(number_of_nodes=100, soft_griefing_percentage=0.05, griefing_percentage=0.05, number_of_blocks=15,
+                            channel_per_node=10, use_gp_protocol=True, delta=40, max_number_of_block_to_respond=5):
+    network = generate_network_randomly(number_of_nodes, soft_griefing_percentage, griefing_percentage, channel_per_node, delta,
+                                        max_number_of_block_to_respond)
     return run_simulation(number_of_blocks, network, use_gp_protocol)
 
 
-def run_multiple_simulation():
+def run_multiple_simulation(is_soft_griefing=True):
     number_of_nodes = 500
-    number_of_blocks = 440
-    soft_griefing_percentages = [0.01, 0.05, 0.1, 0.15]
+    number_of_blocks = 15 * 144
+    soft_griefing_percentages = [0.01, 0.05, 0.15]
+    griefing_percentages = [0]
+    if not is_soft_griefing:
+        soft_griefing_percentages = [0]
+        griefing_percentages = [0.01, 0.05, 0.15]
     use_gp_protocol_options = [True, False]
     network_topologies = ['redundancy']
-    deltas = [40, 80, 120]
-    max_numbers_of_block_to_respond = [2, 6, 10]
+    deltas = [40, 100]
+    max_numbers_of_block_to_respond = [2, 8]
     simulation_metrics = []
-    for delta in deltas:
-        for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
-            for network_topology in network_topologies:
-                for use_gp_protocol in use_gp_protocol_options:
-                    for soft_griefing_percentage in soft_griefing_percentages:
-                        parameters = {"number_of_nodes": number_of_nodes,
-                                      "soft_griefing_percentage": soft_griefing_percentage,
-                                      "number_of_blocks": number_of_blocks,
-                                      "use_gp_protocol": use_gp_protocol,
-                                      "delta": delta,
-                                      "max_number_of_block_to_respond": max_number_of_block_to_respond}
-                        if network_topology == 'redundancy':
-                            metrics = simulate_redundancy_network(**parameters)
-                        elif network_topology == 'random':
-                            metrics = simulate_random_network(**parameters)
-                        elif network_topology == 'snapshot':
-                            metrics = simulate_snapshot_network(**parameters)
-                        else:
-                            raise Exception("got invalid network_topology name!")
-                        parameters.update({'network_topology': network_topology})
-                        simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
-                        BLOCKCHAIN_INSTANCE.init_parameters()
-                        METRICS_COLLECTOR_INSTANCE.init_parameters()
-                        FUNCTION_COLLECTOR_INSTANCE.init_parameters()
+    for griefing_percentage in griefing_percentages:
+        for delta in deltas:
+            for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
+                for network_topology in network_topologies:
+                    for use_gp_protocol in use_gp_protocol_options:
+                        for soft_griefing_percentage in soft_griefing_percentages:
+                            parameters = {"number_of_nodes": number_of_nodes,
+                                          "soft_griefing_percentage": soft_griefing_percentage,
+                                          "griefing_percentage": griefing_percentage,
+                                          "number_of_blocks": number_of_blocks,
+                                          "use_gp_protocol": use_gp_protocol,
+                                          "delta": delta,
+                                          "max_number_of_block_to_respond": max_number_of_block_to_respond}
+                            if network_topology == 'redundancy':
+                                metrics = simulate_redundancy_network(**parameters)
+                            elif network_topology == 'random':
+                                metrics = simulate_random_network(**parameters)
+                            elif network_topology == 'snapshot':
+                                metrics = simulate_snapshot_network(**parameters)
+                            else:
+                                raise Exception("got invalid network_topology name!")
+                            parameters.update({'network_topology': network_topology})
+                            simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
+                            BLOCKCHAIN_INSTANCE.init_parameters()
+                            METRICS_COLLECTOR_INSTANCE.init_parameters()
+                            FUNCTION_COLLECTOR_INSTANCE.init_parameters()
     print(simulation_metrics)
     timestamp = datetime.timestamp(datetime.now())
     with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
