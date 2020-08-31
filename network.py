@@ -41,8 +41,13 @@ class Network:
             nodes.remove(min_node)
             current_wei = visited[min_node]
 
-            for edge_node in self.edges[min_node]:
+            neighbors = self.edges[min_node].copy()
+            for edge_node in neighbors:
                 capacity_between = edge_node.get_capacity_left(min_node)
+                if capacity_between is None:
+                    self.edges[min_node].remove(edge_node)
+                    self.edges[edge_node].remove(min_node)
+                    continue
                 new_wei = (current_wei + edge_node.base_fee) / (1 - edge_node.fee_percentage) if \
                     edge_node != initial_node else current_wei
                 if capacity_between >= new_wei:
