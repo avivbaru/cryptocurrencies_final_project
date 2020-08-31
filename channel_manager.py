@@ -48,6 +48,7 @@ class Channel(object):
                                                       self._state.message_state.owner1_balance)
 
         BLOCKCHAIN_INSTANCE.add_channel(self)
+        self._removed = []
 
     def owner1_htlc_locked_setter(self, owner1_htlc_locked: int):
         assert owner1_htlc_locked >= 0
@@ -176,16 +177,12 @@ class Channel(object):
         self.update_message(message_state)
 
     def notify_of_end_of_contract(self, contract: 'cn.Contract_HTLC'):
-        # if contract.is_expired:
-        #     bad_node = contract.payer if type(contract) is cn.ContractCancellation else contract.payee
-        #     self.close_channel(bad_node)  # resolve on-chain
-        #     return
-
         self._handle_contract_ended(contract)
 
     def _handle_contract_ended(self, contract: 'cn.Contract_HTLC'):
         assert contract in self._state.htlc_contracts
             # return  # TODO: this is not good! fix the above todo
+        self._removed.append(contract)
         self._state.htlc_contracts.remove(contract)
 
         locked_for_owner1 = 0
