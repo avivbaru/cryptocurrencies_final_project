@@ -177,7 +177,8 @@ def create_network(number_of_nodes, soft_griefing_percentage, griefing_percentag
     return network
 
 
-def generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing_percentage=0.05):
+def generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing_percentage, delta,
+                                   max_number_of_block_to_respond):
     json_data['edges'] = list(filter(lambda x: x['node1_policy'] and x['node2_policy'], json_data['edges']))
     json_data['edges'] = list(filter(lambda x: not (x['node1_policy']['disabled'] or
                                                     x['node2_policy']['disabled']), json_data['edges']))
@@ -185,10 +186,13 @@ def generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing
     nodes = {}
     number_of_nodes = len(json_data['nodes'])
     number_of_soft_griefing_nodes = int(soft_griefing_percentage * number_of_nodes)
+    number_of_griefing_nodes = int(griefing_percentage * number_of_nodes)
     for node in json_data['nodes'][:number_of_soft_griefing_nodes]:
-        nodes[node['pub_key']] = create_node()
-    for node in json_data['nodes'][number_of_soft_griefing_nodes:]:
-        nodes[node['pub_key']] = create_node(True)
+        nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond, NodeType.SOFT_GRIEFING)
+    for node in json_data['nodes'][number_of_soft_griefing_nodes:number_of_griefing_nodes + number_of_soft_griefing_nodes]:
+        nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond, NodeType.GRIEFING)
+    for node in json_data['nodes'][number_of_griefing_nodes + number_of_soft_griefing_nodes:]:
+        nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
     network = Network(list(nodes.values()))
     for edge in json_data['edges']:
         network.add_edge(nodes[edge['node1_pub']], nodes[edge['node2_pub']], int(int(edge['capacity']) / 2))
@@ -196,11 +200,14 @@ def generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing
 
 
 @simulation_details
-def simulate_snapshot_network(soft_griefing_percentage=0.05, number_of_blocks=15, use_gp_protocol=True):
+def simulate_snapshot_network(soft_griefing_percentage=0.05, griefing_percentage=0.05, delta=40,
+                              max_number_of_block_to_respond=2, number_of_blocks=15,
+                              use_gp_protocol=True, number_of_nodes=None):
     with open(SNAPSHOT_PATH, encoding="utf-8") as f:
         json_data = json.load(f)
 
-    network = generate_network_from_snapshot(json_data, soft_griefing_percentage)
+    network = generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing_percentage, delta,
+                                             max_number_of_block_to_respond)
 
     return run_simulation(number_of_blocks, network, use_gp_protocol)
 
@@ -268,7 +275,7 @@ def run_multiple_simulation(is_soft_griefing=True):
         soft_griefing_percentages = [0]
         griefing_percentages = [0.01, 0.05, 0.15]
     use_gp_protocol_options = [True, False]
-    network_topologies = ['redundancy']
+    network_topologies = ['snapshot', 'redundancy']
     deltas = [40, 100]
     max_numbers_of_block_to_respond = [2, 8]
     try:

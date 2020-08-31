@@ -17,7 +17,7 @@ class Contract_HTLC:
         self._pre_image_x = None
         self._pre_image_r = None
         self._payer = payer
-        self._payee = payee  # TODO: change to payer and payee
+        self._payee = payee
         self._is_valid = False
         self._was_accepted = False
 

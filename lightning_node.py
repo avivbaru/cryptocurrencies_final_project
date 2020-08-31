@@ -17,7 +17,7 @@ def random_delay_node(f):
     def wrapper(self, *args):
         if random.uniform(0, 1) <= self._probability_to_not_respond_immediately:
             number_of_block_to_wait = random.randint(1, self._max_number_of_block_to_respond)
-            FUNCTION_COLLECTOR_INSTANCE.append(lambda: f(self, *args), BLOCKCHAIN_INSTANCE.block_number + 1)
+            FUNCTION_COLLECTOR_INSTANCE.append(lambda: f(self, *args), BLOCKCHAIN_INSTANCE.block_number + number_of_block_to_wait)
         else:
             return f(self, *args)
     return wrapper
@@ -39,7 +39,6 @@ class TransactionInfo:
         :param previous_node:
         :param next_node:
         """
-        # TODO: delta is a safe measure - do we need it?
         assert amount_in_wei >= 0
         assert penalty >= 0
 
@@ -185,7 +184,6 @@ class LightningNode:
 
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
-        # griefing_penalty = self._calculate_griefing_penalty(amount_in_wei + total_fee, delta_waiting_time)
         info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, hash_r,
                                BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time, delta_waiting_time,
                                BLOCKCHAIN_INSTANCE.block_number, next_node=node_to_send)
@@ -228,11 +226,11 @@ class LightningNode:
                                    delta_waiting_time, previous_transaction_info.starting_block, sender)
             # TODO: see that info is constructed the right way
             self._transaction_id_to_transaction_info[info.id] = info
-            self.send_cancellation_contract(info.id)
             r = self._hash_image_r_to_preimage[info.hash_r]
             del self._hash_image_r_to_preimage[info.hash_r]
             FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._handle_cancellation_is_about_to_expire(info.id, r),
                                                waiting_time - self._delta)
+            self.send_cancellation_contract(info.id)
 
     def send_cancellation_contract(self, transaction_id: int):
         assert transaction_id in self._transaction_id_to_transaction_info
@@ -248,16 +246,17 @@ class LightningNode:
         info = self._transaction_id_to_transaction_info[transaction_id]
 
         if not contract.attached_channel.add_contract(contract):
-            contract.invalidate()
-            return
+            return  # TODO (Aviv): add metric
         contract.accept_contract()
 
         if info.previous_node is not None:
             self.send_cancellation_contract(transaction_id)
         else:
             self.send_forward_contract(transaction_id)
-            FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._check_if_forward_contract_is_available(transaction_id),
-                                               info.expiration_block_number - self._delta)
+            # FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._check_if_forward_contract_is_available(transaction_id),
+            #                                    info.expiration_block_number - self._delta)
+            # TODO: (Aviv) - check why Yakir put this commented out code here (check relation of
+            #  _check_if_forward_contract_is_available and _handle_cancellation_is_about_to_expire)
 
     def _check_if_forward_contract_is_available(self, transaction_id: int):
         if transaction_id not in self._transaction_id_to_cancellation_contracts or \

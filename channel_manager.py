@@ -1,7 +1,7 @@
 import lightning_node as ln
 import random
 import string
-from typing import Optional
+from typing import Optional, List
 import contract_htlc as cn
 from singletons import *
 
@@ -48,7 +48,6 @@ class Channel(object):
                                                       self._state.message_state.owner1_balance)
 
         BLOCKCHAIN_INSTANCE.add_channel(self)
-        self._removed = []
 
     def owner1_htlc_locked_setter(self, owner1_htlc_locked: int):
         assert owner1_htlc_locked >= 0
@@ -146,7 +145,7 @@ class Channel(object):
         if self.is_owner1(contract.payer):
             if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_wei:
                 contract.invalidate()
-                return False
+                return False  # TODO: decide where to invalidate
             self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_wei)
         else:
             if self.amount_owner2_can_transfer_to_owner1 < contract.amount_in_wei:
@@ -156,24 +155,10 @@ class Channel(object):
         self._state.htlc_contracts.append(contract)
         return True
 
-    # def resolve_htlc(self, contract: 'cn.Contract_HTLC'):
-    #     if contract not in self._state.htlc_contracts:
-    #         return
-    #
-    #     self._state.htlc_contracts.remove(contract)
-    #     self._unlock_funds_from_contract(contract)
-    #     self._update_message_state_with_contract(contract)
-
-    # def _unlock_funds_from_contract(self, contract: 'cn.Contract_HTLC'):
-    #     if contract.owner1_balance_delta <= 0:
-    #         self.owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.owner1_balance_delta)
-    #     else:
-    #         self.owner2_htlc_locked_setter(self._owner2_htlc_locked - contract.owner1_balance_delta)
-
     def _update_message_state(self, new_owner1_balance: int):
         current_message_state = self._state.message_state
         message_state = MessageState(new_owner1_balance, current_message_state.serial_number + 1,
-                                        self._state.channel_data.address)
+                                     self._state.channel_data.address)
         self.update_message(message_state)
 
     def notify_of_end_of_contract(self, contract: 'cn.Contract_HTLC'):
@@ -181,8 +166,7 @@ class Channel(object):
 
     def _handle_contract_ended(self, contract: 'cn.Contract_HTLC'):
         assert contract in self._state.htlc_contracts
-            # return  # TODO: this is not good! fix the above todo
-        self._removed.append(contract)
+
         self._state.htlc_contracts.remove(contract)
 
         locked_for_owner1 = 0
@@ -207,7 +191,8 @@ class Channel(object):
         elif contract.pre_image_r:
             BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_r, contract.pre_image_r)
 
-    def pay_amount_to_owner(self, owner: 'ln.LightningNode', contract: 'cn.ContractCancellation'):
+    def pay_amount_to_owner(self, owner: 'ln.LightningNode', contract: 'cn.ContractCancellation'):  # TODO: maybe give up owner
+        # and just use contract.payer and payee
         owner1_new_balance_delta = contract.amount_in_wei
         if self.is_owner1(owner):
             self.owner2_htlc_locked_setter(int(self._owner2_htlc_locked - contract.amount_in_wei))
