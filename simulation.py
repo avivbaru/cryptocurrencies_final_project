@@ -260,7 +260,7 @@ def simulate_random_network(number_of_nodes=100, soft_griefing_percentage=0.05, 
 
 
 def run_multiple_simulation(is_soft_griefing=True):
-    number_of_nodes = 500
+    number_of_nodes = 100
     number_of_blocks = 15 * 144
     soft_griefing_percentages = [0.01, 0.05, 0.15]
     griefing_percentages = [0]
@@ -271,38 +271,38 @@ def run_multiple_simulation(is_soft_griefing=True):
     network_topologies = ['redundancy']
     deltas = [40, 100]
     max_numbers_of_block_to_respond = [2, 8]
-    simulation_metrics = []
-    for griefing_percentage in griefing_percentages:
-        for delta in deltas:
-            for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
-                for network_topology in network_topologies:
-                    for use_gp_protocol in use_gp_protocol_options:
-                        for soft_griefing_percentage in soft_griefing_percentages:
-                            parameters = {"number_of_nodes": number_of_nodes,
-                                          "soft_griefing_percentage": soft_griefing_percentage,
-                                          "griefing_percentage": griefing_percentage,
-                                          "number_of_blocks": number_of_blocks,
-                                          "use_gp_protocol": use_gp_protocol,
-                                          "delta": delta,
-                                          "max_number_of_block_to_respond": max_number_of_block_to_respond}
-                            if network_topology == 'redundancy':
-                                metrics = simulate_redundancy_network(**parameters)
-                            elif network_topology == 'random':
-                                metrics = simulate_random_network(**parameters)
-                            elif network_topology == 'snapshot':
-                                metrics = simulate_snapshot_network(**parameters)
-                            else:
-                                raise Exception("got invalid network_topology name!")
-                            parameters.update({'network_topology': network_topology})
-                            simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
-                            BLOCKCHAIN_INSTANCE.init_parameters()
-                            METRICS_COLLECTOR_INSTANCE.init_parameters()
-                            FUNCTION_COLLECTOR_INSTANCE.init_parameters()
-    print(simulation_metrics)
-    timestamp = datetime.timestamp(datetime.now())
-    with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
-        for s in simulation_metrics:
-            f.write(f"{json.dumps(s)}\n")
+    try:
+        timestamp = datetime.timestamp(datetime.now())
+        with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
+            for griefing_percentage in griefing_percentages:
+                for delta in deltas:
+                    for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
+                        for network_topology in network_topologies:
+                            for use_gp_protocol in use_gp_protocol_options:
+                                for soft_griefing_percentage in soft_griefing_percentages:
+                                    parameters = {"number_of_nodes": number_of_nodes,
+                                                  "soft_griefing_percentage": soft_griefing_percentage,
+                                                  "griefing_percentage": griefing_percentage,
+                                                  "number_of_blocks": number_of_blocks,
+                                                  "use_gp_protocol": use_gp_protocol,
+                                                  "delta": delta,
+                                                  "max_number_of_block_to_respond": max_number_of_block_to_respond}
+                                    if network_topology == 'redundancy':
+                                        metrics = simulate_redundancy_network(**parameters)
+                                    elif network_topology == 'random':
+                                        metrics = simulate_random_network(**parameters)
+                                    elif network_topology == 'snapshot':
+                                        metrics = simulate_snapshot_network(**parameters)
+                                    else:
+                                        raise Exception("got invalid network_topology name!")
+                                    parameters.update({'network_topology': network_topology})
+                                    f.write(f"{json.dumps({'metrics': metrics, 'parameters': parameters})}\n")
+                                    f.flush()
+                                    BLOCKCHAIN_INSTANCE.init_parameters()
+                                    METRICS_COLLECTOR_INSTANCE.init_parameters()
+                                    FUNCTION_COLLECTOR_INSTANCE.init_parameters()
+    finally:
+        f.close()
 
 
 def main():

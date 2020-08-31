@@ -114,6 +114,7 @@
         text-align: left;
     }
 
+
 </style>
 <head>
     <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/pure-min.css" integrity="sha384-cg6SkqEOCV1NbJoCu11+bm0NvBRc8IYLRGXkmNrqUBfTjmMYwNKPWBTIKyw9mHNJ" crossorigin="anonymous">
@@ -132,8 +133,10 @@
             </div>
             <div itemtype="inner" class="container">
                 <p itemtype="text">X axis</p>
-                <select id="x" name="x">
+                <select id="x" name="x" onchange="changeSelectX()">
                     <option id="x soft griefing" value="soft griefing rate">soft griefing rate</option>
+                    <option id="x busy network" value="busy network">busy network</option>
+                    <option id="x delta" value="delta">delta</option>
                 </select>
             </div>
         </div>
@@ -154,6 +157,7 @@
             <div itemtype="inner" class="container">
                 <p itemtype="text" >soft griefing rate</p>
                 <select id="soft griefing rate" name="x">
+                    <option value="Average">Average</option>
                     <option value="0.01">0.01</option>
                     <option value="0.05">0.05</option>
                     <option value="0.1">0.1</option>
@@ -166,6 +170,22 @@
                     <option value="redundancy">redundancy</option>
                     <option value="random">random</option>
                     <option value="snapshot">snapshot</option>
+                </select>
+            </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text">delta</p>
+                <select id="delta" name="delta">
+                    <option value="Average">Average</option>
+                    <option value="40">40</option>
+                    <option value="80">80</option>
+                </select>
+            </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text">busy network</p>
+                <select id="busy network" name="busy network">
+                    <option value="Average">Average</option>
+                    <option value="2">2</option>
+                    <option value="6">6</option>
                 </select>
             </div>
             <div itemtype="container" class="container">
@@ -183,24 +203,30 @@
 <script>
 
     var block = document.getElementById('block number');
+    block.onchange = changeGraph;
     var nodes = document.getElementById('number of nodes');
+    nodes.onchange = changeGraph;
     var griefing = document.getElementById('soft griefing rate');
-    var useProtocol = document.getElementById('use gp protocol');
+    griefing.onchange = changeGraph;
     var topology = document.getElementById('network topology');
+    topology.onchange = changeGraph;
+    var busyNetwork = document.getElementById('busy network');
+    busyNetwork.onchange = changeGraph;
+    var delta = document.getElementById('delta');
+    delta.onchange = changeGraph;
     var yAxisOptions = document.getElementById('y');
     var xAxisOptions = document.getElementById('x');
     var myChart = document.getElementById("myChart");
-    var xAxisSoftGriefing = document.getElementById("x soft griefing");
 
     function changeSelectX() {
-        // change!
-        console.log(xAxisSoftGriefing.selected)
-        griefing.disabled = true;
-        // changeGraph()
+        console.log("test");
+        griefing.disabled = false;
+        delta.disabled = false;
+        busyNetwork.disabled = false;
+        var chosen = document.getElementById(xAxisOptions.value);
+        chosen.disabled = true;
+        changeGraph();
     }
-
-    xAxisOptions.onselect = changeSelectX();
-
     function readJsonFile(jsonFile) {
         var request = new XMLHttpRequest();
         request.open("GET", jsonFile, false);
@@ -222,16 +248,6 @@
     var tbody = document.getElementById('tbody');
     for (var i = 0; i < metrics.length; i++) {
         let metric = metrics[i];
-        // const tr = document.createElement("tr");
-        // const tb = document.createElement("td");
-        // tb.innerText = metric;
-        // tr.appendChild(tb)
-        // const tbValue = document.createElement("td");
-        // tbValue.innerText = "";
-        // tbValue.id = metric;
-        // tr.appendChild(tbValue)
-        // tbody.appendChild(tr);
-
         const option = document.createElement("option");
         option.innerHTML = metric;
         option.value = metric;
@@ -240,17 +256,20 @@
 
 
     function changeGraph() {
-        // check what is the x?
-        xAxisOptions.value
-        var xAxis = griefing;
+        var xAxis = document.getElementById(xAxisOptions.value);
         var graphDataUseGp = [];
         var graphDataNotUseGp = [];
         var labels = [];
         for (var i = 0; i < xAxis.options.length; i++) {
-            const keyUseGp = topology.value + '_' + block.value + "_" + nodes.value + "_" +
-                xAxis.options[i].value + "_True";
-            const keyNotUseGp = topology.value + '_' + block.value + "_" + nodes.value + "_" +
-                xAxis.options[i].value + "_False";
+            var deltaV = delta.isEqualNode(xAxis) ? xAxis.options[i].value : delta.value;
+            var busyNetworkV = busyNetwork.isEqualNode(xAxis) ? xAxis.options[i].value : busyNetwork.value;
+            var griefingV = griefing.isEqualNode(xAxis) ? xAxis.options[i].value : griefing.value;
+            const keyUseGp = deltaV + '_' + busyNetworkV + '_' + topology.value + '_' +
+                block.value + "_" + nodes.value + "_" + griefingV + "_True";
+            const keyNotUseGp = deltaV + '_' + busyNetworkV + '_' + topology.value + '_' +
+                block.value + "_" + nodes.value + "_" + griefingV + "_False";
+            console.log("keyUseGp: " + keyUseGp);
+            console.log("keyNotUseGp: " + keyNotUseGp);
             graphDataUseGp.push(all_data[keyUseGp][yAxisOptions.value]);
             graphDataNotUseGp.push(all_data[keyNotUseGp][yAxisOptions.value]);
             labels.push(xAxis.options[i].value);
@@ -260,21 +279,44 @@
                 type: "line",
                 data: {
                     labels: labels,
-                    datasets:[{label:"Use GP Pr otocol",data:graphDataUseGp,
-                        fill:false,
-                        borderColor:"rgb(3, 148, 252)",
-                        lineTension:0.1},
-                        {label:"Not Use GP Protocol",data:graphDataNotUseGp,
-                        fill:false,
-                        borderColor:"rgb(252, 186, 3)",
-                        lineTension:0.1}]
+                    datasets:[
+                        {
+                            label: "Use GP Pr otocol",
+                            data:graphDataUseGp,
+                            fill:false,
+                            borderColor:"rgb(3, 148, 252)",
+                            lineTension:0.1
+                        },
+                        {
+                            label: "Not Use GP Protocol",
+                            data:graphDataNotUseGp,
+                            fill:false,
+                            borderColor:"rgb(252, 186, 3)",
+                            lineTension:0.1
+                        }]
                 },
-                options: {}
+                options: {
+                    scales: {
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: yAxisOptions.value
+                            }
+                        }],
+                        xAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: xAxisOptions.value
+                            }
+                        }]
+                    }
+                }
             });
 
         myChart.hidden = false;
     }
 
-    changeGraph();
+    changeSelectX();
+    // changeGraph();
 </script>
 </html>
