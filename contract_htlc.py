@@ -23,22 +23,9 @@ class Contract_HTLC:
         self._money_to_transfer_to_payee = 0
 
         FUNCTION_COLLECTOR_INSTANCE.append(self._on_expired, expiration_block_number)
-        FUNCTION_COLLECTOR_INSTANCE.append(self._check_is_pre_image_available, expiration_block_number - 1)
 
     def _on_expired(self):
         assert self.is_expired
-
-    def _check_is_pre_image_available(self):
-        if self._pre_image_r or self._pre_image_x or not self._is_valid:
-            return
-
-        x = BLOCKCHAIN_INSTANCE.get_pre_image_if_exists_onchain(self.hash_x)
-        if x:
-            self.report_x(x)
-            return
-        r = BLOCKCHAIN_INSTANCE.get_pre_image_if_exists_onchain(self.hash_r)
-        if r:
-            self.report_r(r)
 
     @property
     def is_expired(self):
@@ -147,11 +134,9 @@ class ContractCancellation(Contract_HTLC):
 
         self._money_to_transfer_to_payee = self.amount_in_wei
         self._channel_to_notify.notify_of_end_of_contract(self)
-        self.payer.notify_of_cancellation_contract_about_to_expire(self)
-        self.payee.notify_of_cancellation_contract_about_to_expire(self)
+        self.payee.notify_of_cancellation_contract_payment(self)
 
     def report_x(self, x: str):
-
         super().report_x(x)
         self.attached_channel.notify_of_end_of_contract(self)
 
