@@ -231,7 +231,8 @@ class LightningNode:
             self.send_cancellation_contract(info.id)
             r = self._hash_image_r_to_preimage[info.hash_r]
             del self._hash_image_r_to_preimage[info.hash_r]
-            FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._handle_cancellation_is_about_to_expire(info.id, r), waiting_time - 1)
+            FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._handle_cancellation_is_about_to_expire(info.id, r),
+                                               waiting_time - self._delta)
 
     def send_cancellation_contract(self, transaction_id: int):
         assert transaction_id in self._transaction_id_to_transaction_info
@@ -264,8 +265,6 @@ class LightningNode:
         info = self._transaction_id_to_transaction_info[transaction_id]
         r = self._hash_image_r_to_preimage[info.hash_r]
         self.terminate_transaction(transaction_id, r)
-
-
 
     def _handle_cancellation_is_about_to_expire(self, transaction_id: int, r: str):
         if transaction_id not in self._transaction_id_to_cancellation_contracts:
@@ -301,9 +300,8 @@ class LightningNode:
     @random_delay_node
     def resolve_transaction(self, transaction_id: int, x: str):
         if transaction_id not in self._transaction_id_to_transaction_info:
-            return # might get terminated beforehand
+            return  # might get terminated beforehand
         info = self._transaction_id_to_transaction_info[transaction_id]
-        del self._transaction_id_to_transaction_info[transaction_id]
 
         if info.next_node is not None and transaction_id in self._transaction_id_to_forward_contracts:
             forward_contract = self._transaction_id_to_forward_contracts[transaction_id]
@@ -324,6 +322,8 @@ class LightningNode:
             return
         cancellation_contract.report_x(x)
 
+        if transaction_id in self._transaction_id_to_transaction_info:
+            del self._transaction_id_to_transaction_info[transaction_id]
         info.previous_node.resolve_transaction(transaction_id, x)
 
     def terminate_transaction(self, transaction_id: int, r: str):
@@ -331,7 +331,6 @@ class LightningNode:
             return
 
         info = self._transaction_id_to_transaction_info[transaction_id]
-        del self._transaction_id_to_transaction_info[transaction_id]
 
         if info.next_node is not None:
             forward_contract = self._transaction_id_to_forward_contracts[transaction_id]
@@ -349,6 +348,7 @@ class LightningNode:
             return
         cancellation_contract.report_r(r)
 
+        del self._transaction_id_to_transaction_info[transaction_id]
         info.previous_node.terminate_transaction(transaction_id, r)
 
     def start_regular_htlc_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
@@ -448,13 +448,22 @@ class LightningNode:
         if other_node.address in self._other_nodes_to_channels:
             del self._other_nodes_to_channels[other_node.address]
 
-    def notify_of_cancellation_contract_about_to_expire(self, contract: 'cn.ContractCancellation'):
-        if contract.hash_r not in self._hash_image_r_to_preimage:
-            return
-        r = self._hash_image_r_to_preimage[contract.hash_r]
-        contract.report_r(r)
+    def notify_of_cancellation_contract_payment(self, contract: 'cn.ContractCancellation'):
         info = self._transaction_id_to_transaction_info[contract.transaction_id]
-        info.previous_node.terminate_transaction(info.id, r)
+
+        previous_node = info.previous_node
+        if previous_node is None:
+            return
+
+        # penalty_received = info.penalty
+        # penalty_to_claim = self._calculate_griefing_penalty(info.amount_in_wei, info.delta_wait_time)
+        channel = self._other_nodes_to_channels[previous_node.address]
+
+        channel.pay_amount_to_owner(previous_node, info.penalty)
+        previous_contract = self._transaction_id_to_cancellation_contracts[info.id]
+        assert previous_contract != contract
+        contract.invalidate()
+        previous_node.notify_of_cancellation_contract_payment(previous_contract)
 
     def notify_of_contract_invalidation(self, contract: 'cn.Contract_HTLC'):
         if contract.transaction_id in self._transaction_id_to_forward_contracts:
@@ -505,3 +514,23 @@ class LightningNodeSoftGriefing(LightningNode):
                 .append(lambda: super(LightningNodeSoftGriefing, self)
                         .receive_cancellation_contract(transaction_id, contract),
                         info.expiration_block_number - self._block_number_to_resolve)
+
+
+class LightningNodeGriefing(LightningNode):
+    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
+        super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
+        self._block_number_to_resolve = 20
+
+    def resolve_transaction(self, transaction_id: int, x: str):
+        info = self._transaction_id_to_transaction_info[transaction_id]
+        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeGriefing, self)
+                                           .resolve_transaction, info.expiration_block_number - self._block_number_to_resolve)
+
+    def resolve_htlc_transaction(self, transaction_id: int, x: str):
+        info = self._transaction_id_to_transaction_info[transaction_id]
+        FUNCTION_COLLECTOR_INSTANCE\
+            .append(lambda: super(LightningNodeGriefing, self)
+                    .resolve_htlc_transaction, info.expiration_block_number - self._block_number_to_resolve)
+
+    def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
+        return
