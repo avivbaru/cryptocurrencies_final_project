@@ -460,6 +460,8 @@ class LightningNode:
         channel = self._other_nodes_to_channels[previous_node.address]
 
         channel.pay_amount_to_owner(previous_node, info.penalty)
+        if info.id not in self._transaction_id_to_cancellation_contracts:
+            return
         previous_contract = self._transaction_id_to_cancellation_contracts[info.id]
         assert previous_contract != contract
         contract.invalidate()

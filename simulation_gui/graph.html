@@ -30,7 +30,7 @@
     }
 
     div[itemtype=slider] {
-        max-width: 30%;
+        max-width: 80%;
     }
 
     div[itemtype=value] {
@@ -45,8 +45,7 @@
     a.button4{
         display:inline-block;
         padding:0.3em 1.2em;
-        margin:3em 0.1em 0.1em 0;
-        /*padding-left: 30em;*/
+        margin:0 0.1em 0.1em 0;
         border:0.16em solid rgba(255,255,255,0);
         border-radius:2em;
         box-sizing: border-box;
@@ -65,7 +64,7 @@
          a.button4{
             display:block;
             margin:0.2em auto;
-            }
+        }
     }
 
     .container {
@@ -74,45 +73,134 @@
         padding: 20px;
     }
 
-    #my_dataviz {
+    body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        width: 80%;
+        background-color: #f2f2f2;
+        height: 500px;
+        position: relative;
+    }
+
+    svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    path.slice{
+        stroke-width:2px;
+    }
+
+    polyline{
+        opacity: .3;
+        stroke: black;
+        stroke-width: 2px;
+        fill: none;
+    }
+    div[itemtype=container] {
         width: 100%;
     }
+    div[itemtype=inner] {
+        width: 40%;
+        /*display: inline-block;*/
+        display: inline-block;
+    }
+    table {
+        border-collapse: collapse;
+    }
+
+    td, th {
+        border: 1px solid #999;
+        padding: 0.5rem;
+        text-align: left;
+    }
+
 </style>
 <head>
+    <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/pure-min.css" integrity="sha384-cg6SkqEOCV1NbJoCu11+bm0NvBRc8IYLRGXkmNrqUBfTjmMYwNKPWBTIKyw9mHNJ" crossorigin="anonymous">
     <link href="nouislider.css" rel="stylesheet">
     <script src="nouislider.js"></script>
 </head>
 <body>
-<div class="container">
+<div itemtype="container-all" class="container">
     <form>
-        <p itemtype="text">X axis</p>
-        <select id="x" name="x">
-            <option value="a">a</option>
-            <option value="b">b</option>
-            <option value="usa">USA</option>
-        </select>
-
-        <p itemtype="text">Y axis</p>
-        <select id="y" name="y">
-            <option value="b">b</option>
-            <option value="a">a</option>
-            <option value="usa">USA</option>
-        </select>
-
-        <a class="button4" style="background-color:#f14e4e" onclick="changeGraph()">Show Graph</a>
-        <div hidden=true id="my_dataviz"></div>
+        <div itemtype="container" class="container" id="axis">
+            <div itemtype="inner" class="container">
+                <p itemtype="text">Y axis</p>
+                <select id="y" name="y" onchange="changeGraph()">
+<!--                    <option value="t">t</option>-->
+                </select>
+            </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text">X axis</p>
+                <select id="x" name="x">
+                    <option id="x soft griefing" value="soft griefing rate">soft griefing rate</option>
+                </select>
+            </div>
+        </div>
+        <hr>
+        <div itemtype="container" class="container" id="sliders">
+            <div itemtype="inner" class="container">
+                <p itemtype="text">block number</p>
+                <select id="block number" name="x">
+                    <option value="15">15</option>
+                </select>
+            </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text">number of nodes</p>
+                <select id="number of nodes" name="x">
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text" >soft griefing rate</p>
+                <select id="soft griefing rate" name="x">
+                    <option value="0.01">0.01</option>
+                    <option value="0.05">0.05</option>
+                    <option value="0.1">0.1</option>
+                    <option value="0.15">0.15</option>
+                </select>
+            </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text">network topology</p>
+                <select id="network topology" name="x">
+                    <option value="redundancy">redundancy</option>
+                    <option value="random">random</option>
+                    <option value="snapshot">snapshot</option>
+                </select>
+            </div>
+            <div itemtype="container" class="container">
+                <a class="button4" style="background-color:#f14e4e" onclick="changeGraph()">Show Graph</a>
+            </div>
+        </div>
+        <canvas id="myChart" width=50% height=20%></canvas>
 
     </form>
 </div>
 </body>
-<script src="https://d3js.org/d3.v4.js"></script>
+<!--<script src="https://d3js.org/d3.v4.js"></script>-->
+<!--<script src="https://d3js.org/d3.v3.min.js"></script>-->
+<script src="Chart.js"></script>
 <script>
 
+    var block = document.getElementById('block number');
+    var nodes = document.getElementById('number of nodes');
+    var griefing = document.getElementById('soft griefing rate');
+    var useProtocol = document.getElementById('use gp protocol');
+    var topology = document.getElementById('network topology');
+    var yAxisOptions = document.getElementById('y');
+    var xAxisOptions = document.getElementById('x');
+    var myChart = document.getElementById("myChart");
+    var xAxisSoftGriefing = document.getElementById("x soft griefing");
 
+    function changeSelectX() {
+        // change!
+        console.log(xAxisSoftGriefing.selected)
+        griefing.disabled = true;
+        // changeGraph()
+    }
 
+    xAxisOptions.onselect = changeSelectX();
 
-</script>
-<script>
     function readJsonFile(jsonFile) {
         var request = new XMLHttpRequest();
         request.open("GET", jsonFile, false);
@@ -120,141 +208,73 @@
         return JSON.parse(request.responseText);
     }
 
-    const all_data = readJsonFile("graph_fake_data.json");
+    // const all_data = readJsonFile("fake_data.json");
+    const all_data = readJsonFile("runs.json");
+    // Create metrics texts
+    let metrics = new Set();
+    const jsons = Object.values(all_data);
+    for (var i = 0; i < jsons.length; i++) {
+        let jsonValue = jsons[i];
+        Object.keys(jsonValue).forEach(metrics.add, metrics)
+    }
+    metrics = Array.from(metrics);
+    var values = document.getElementById('values');
+    var tbody = document.getElementById('tbody');
+    for (var i = 0; i < metrics.length; i++) {
+        let metric = metrics[i];
+        // const tr = document.createElement("tr");
+        // const tb = document.createElement("td");
+        // tb.innerText = metric;
+        // tr.appendChild(tb)
+        // const tbValue = document.createElement("td");
+        // tbValue.innerText = "";
+        // tbValue.id = metric;
+        // tr.appendChild(tbValue)
+        // tbody.appendChild(tr);
+
+        const option = document.createElement("option");
+        option.innerHTML = metric;
+        option.value = metric;
+        yAxisOptions.appendChild(option);
+    }
+
 
     function changeGraph() {
-        d3.select("svg").remove();
-        document.getElementById("my_dataviz").hidden = false;
-        let y = document.getElementById("y").value;
-        let x = document.getElementById("x").value;
-        setGraphData(x,y)
-    }
-
-    // set the dimensions and margins of the graph
-    var margin = {top: 10, right: 30, bottom: 30, left: 40},
-        width = 900 - margin.left - margin.right,
-        height = 400 - margin.top - margin.bottom;
-
-    // append the svg object to the body of the page
-
-
-
-
-    function setGraphData(x_name,y_name) {
-        // create graph
-        var svg = d3.select("#my_dataviz")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
-        const k = x_name + "_" + y_name;
-
-        let data_to_present = []
-        for (i = 0; i < all_data["graph"][k][0].length; i++) {
-            // let temp_arr = [];
-            for (j = 0; j < all_data["graph"][k].length; j++) {
-                // temp_arr.push(all_data["graph"][k][j][i]);
-                data_to_present.push({
-                    "x": all_data["parameters_data"][x_name][i],
-                    "y": all_data["graph"][k][j][i],
-                })
-            }
-
+        // check what is the x?
+        xAxisOptions.value
+        var xAxis = griefing;
+        var graphDataUseGp = [];
+        var graphDataNotUseGp = [];
+        var labels = [];
+        for (var i = 0; i < xAxis.options.length; i++) {
+            const keyUseGp = topology.value + '_' + block.value + "_" + nodes.value + "_" +
+                xAxis.options[i].value + "_True";
+            const keyNotUseGp = topology.value + '_' + block.value + "_" + nodes.value + "_" +
+                xAxis.options[i].value + "_False";
+            graphDataUseGp.push(all_data[keyUseGp][yAxisOptions.value]);
+            graphDataNotUseGp.push(all_data[keyNotUseGp][yAxisOptions.value]);
+            labels.push(xAxis.options[i].value);
         }
+        new Chart(myChart,
+            {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets:[{label:"Use GP Pr otocol",data:graphDataUseGp,
+                        fill:false,
+                        borderColor:"rgb(3, 148, 252)",
+                        lineTension:0.1},
+                        {label:"Not Use GP Protocol",data:graphDataNotUseGp,
+                        fill:false,
+                        borderColor:"rgb(252, 186, 3)",
+                        lineTension:0.1}]
+                },
+                options: {}
+            });
 
-        // Compute quartiles, median, inter quantile range min and max --> these info are then used to draw the box.
-        var sumstat = d3.nest() // nest function allows to group the calculation per level of a factor
-            .key(function(d) { return d.x;})
-            .rollup(function(d) {
-                q1 = d3.quantile(d.map(function(g) { return g.y;}).sort(d3.ascending),.25)
-                median = d3.quantile(d.map(function(g) { return g.y;}).sort(d3.ascending),.5)
-                q3 = d3.quantile(d.map(function(g) { return g.y;}).sort(d3.ascending),.75)
-                interQuantileRange = q3 - q1
-                min = q1 - 1.5 * interQuantileRange
-                max = q3 + 1.5 * interQuantileRange
-                return({q1: q1, median: median, q3: q3, interQuantileRange: interQuantileRange, min: min, max: max})
-            })
-            .entries(data_to_present)
-
-
-        var chosen = all_data["parameters_min"][k];
-        console.log(all_data["parameters_data"][x_name]);
-        // Show the X scale
-        var x = d3.scaleBand()
-            .range([ 0, width ])
-            .domain(all_data["parameters_data"][x_name] )
-            .paddingInner(1)
-            .paddingOuter(.5)
-        svg.append("g")
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x))
-
-        // Show the Y scale
-        var y = d3.scaleLinear()
-            .domain([all_data["parameters_min"][y_name], all_data["parameters_max"][y_name]])
-            .range([height, 0])
-        svg.append("g").call(d3.axisLeft(y))
-
-        // Show the main vertical line
-        svg
-            .selectAll("vertLines")
-            .data(sumstat)
-            .enter()
-            .append("line")
-            .attr("x1", function(d){return(x(d.key))})
-            .attr("x2", function(d){return(x(d.key))})
-            .attr("y1", function(d){return(y(d.value.min))})
-            .attr("y2", function(d){return(y(d.value.max))})
-            .attr("stroke", "black")
-            .style("width", 40)
-
-        // rectangle for the main box
-        var boxWidth = 100
-        svg
-            .selectAll("boxes")
-            .data(sumstat)
-            .enter()
-            .append("rect")
-            .attr("x", function(d){return(x(d.key)-boxWidth/2)})
-            .attr("y", function(d){return(y(d.value.q3))})
-            .attr("height", function(d){return(y(d.value.q1)-y(d.value.q3))})
-            .attr("width", boxWidth )
-            .attr("stroke", "black")
-            .style("fill", "#69b3a2")
-
-        // Show the median
-        svg
-            .selectAll("medianLines")
-            .data(sumstat)
-            .enter()
-            .append("line")
-            .attr("x1", function(d){return(x(d.key)-boxWidth/2) })
-            .attr("x2", function(d){return(x(d.key)+boxWidth/2) })
-            .attr("y1", function(d){return(y(d.value.median))})
-            .attr("y2", function(d){return(y(d.value.median))})
-            .attr("stroke", "black")
-            .style("width", 80)
-
-        // Add individual points with jitter
-        var jitterWidth = 50
-        svg
-            .selectAll("indPoints")
-            .data(data_to_present)
-            .enter()
-            .append("circle")
-            .attr("cx", function(d){
-                console.log(d["x"]);
-                return(x(d["x"]) )})
-            .attr("cy", function(d){return(y(d["y"]))})
-            .attr("r", 4)
-            .style("fill", "white")
-            .attr("stroke", "black")
+        myChart.hidden = false;
     }
-    // Read the data and compute summary statistics for each specie
-    // d3.csv("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/iris.csv", )
 
-
+    changeGraph();
 </script>
 </html>
