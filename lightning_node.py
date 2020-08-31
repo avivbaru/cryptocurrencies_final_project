@@ -16,6 +16,7 @@ STARTING_SERIAL = 0  # first serial number
 def random_delay_node(f):
     def wrapper(self, *args):
         if random.uniform(0, 1) <= self._probability_to_not_respond_immediately:
+            number_of_block_to_wait = random.randint(1, self._max_number_of_block_to_respond)
             FUNCTION_COLLECTOR_INSTANCE.append(lambda: f(self, *args), BLOCKCHAIN_INSTANCE.block_number + 1)
         else:
             return f(self, *args)
@@ -101,7 +102,7 @@ class TransactionInfo:
 
 class LightningNode:
     def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01,
-                 delta: int = 40):
+                 delta: int = 40, max_number_of_block_to_respond: int = 4):
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self._other_nodes_to_channels: Dict[str, cm.Channel] = {}
         self._hash_image_x_to_preimage: Dict[int, str] = {}
@@ -118,6 +119,7 @@ class LightningNode:
         self._transaction_id_to_htlc_contracts: Dict[int, 'cn.Contract_HTLC'] = {}
         self._probability_to_not_respond_immediately = 1
         self._delta = delta
+        self._max_number_of_block_to_respond = max_number_of_block_to_respond
 
         BLOCKCHAIN_INSTANCE.add_node(self, balance)
 
@@ -467,24 +469,39 @@ class LightningNode:
 
 
 class LightningNodeSoftGriefing(LightningNode):
-    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
-        super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
-        self._block_number_to_resolve = 20
+    def __init__(self, *args):
+        super().__init__(*args)
+        self._block_number_to_resolve = self._delta + 20
+        self._probability_to_soft_griefing = 0.5
 
-    def resolve_transaction(self, transaction_id: int, x: str):
-        if transaction_id not in self._transaction_id_to_transaction_info:
-            return
-        info = self._transaction_id_to_transaction_info[transaction_id]
-        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
-                                           .resolve_transaction, info.expiration_block_number - self._block_number_to_resolve)
+    # def resolve_transaction(self, transaction_id: int, x: str):
+    #     if transaction_id not in self._transaction_id_to_transaction_info:
+    #         return
+    #     info = self._transaction_id_to_transaction_info[transaction_id]
+    #     FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
+    #                                        .resolve_transaction(transaction_id, x),
+    #                                        info.expiration_block_number - self._block_number_to_resolve)
+    #
+    # def resolve_htlc_transaction(self, transaction_id: int, x: str):
+    #     if transaction_id not in self._transaction_id_to_transaction_info:
+    #         return
+    #     info = self._transaction_id_to_transaction_info[transaction_id]
+    #     FUNCTION_COLLECTOR_INSTANCE\
+    #         .append(lambda: super(LightningNodeSoftGriefing, self)
+    #                 .resolve_htlc_transaction(transaction_id, x),
+    #                 info.expiration_block_number - self._block_number_to_resolve)
+    #
+    # def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
+    #     return
 
-    def resolve_htlc_transaction(self, transaction_id: int, x: str):
-        if transaction_id not in self._transaction_id_to_transaction_info:
-            return
-        info = self._transaction_id_to_transaction_info[transaction_id]
-        FUNCTION_COLLECTOR_INSTANCE\
-            .append(lambda: super(LightningNodeSoftGriefing, self)
-                    .resolve_htlc_transaction, info.expiration_block_number - self._block_number_to_resolve)
-
-    def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
-        return
+    def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
+        if random.uniform(0, 1) < self._probability_to_soft_griefing:
+            super(LightningNodeSoftGriefing, self).receive_cancellation_contract(transaction_id, contract)
+        else:
+            if transaction_id not in self._transaction_id_to_transaction_info:
+                return
+            info = self._transaction_id_to_transaction_info[transaction_id]
+            FUNCTION_COLLECTOR_INSTANCE\
+                .append(lambda: super(LightningNodeSoftGriefing, self)
+                        .receive_cancellation_contract(transaction_id, contract),
+                        info.expiration_block_number - self._block_number_to_resolve)

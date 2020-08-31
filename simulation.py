@@ -18,7 +18,7 @@ HONEST_NODE_BALANCE_AVG = "honest_node_balance"
 GRIEFING_NODE_BALANCE_AVG = "griefing_node_balance"
 GRIEFING_SOFT_NODE_BALANCE_AVG = "soft_griefing_node_balance"
 BLOCK_LOCKED_FUND = "block_locked_fund"
-SEND_SUCCESSFULLY = "send_successfully"
+SEND_TRANSACTION = "Send Transaction"
 PATH_LENGTH_AVG = "path_length"
 NO_PATH_FOUND = "no_path_found"
 SEND_FAILED = "send_failed"
@@ -43,7 +43,7 @@ FEE_RATE_PROB = [0.066, 0.597, 0.007, 0.002, 0.006, 0.002, 0.046, 0.002, 0.004, 
                  0.002, 0.001, 0.012, 0.003, 0.041, 0.003, 0.022, 0.002, 0.005, 0.021, 0.002, 0.007]
 STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to create all channels
 GRIEFING_PENALTY_RATE = 0.001
-HTLCS_PER_BLOCK = 20
+HTLCS_PER_BLOCK = 1
 SIGMA = 0.1
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 
@@ -55,15 +55,16 @@ def how_much_to_send():
     return amount
 
 
-def create_node(is_soft_griefing=False):
+def create_node(delta, max_number_of_block_to_respond, is_soft_griefing=False):
     # divide by million to get the rate per msat
     fee_percentage = random.choices(FEE_RATE, weights=FEE_RATE_PROB, k=1)[0] / 1000000
     base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]
-    if is_soft_griefing:
-        return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
     METRICS_COLLECTOR_INSTANCE.average(BASE_FEE_LOG, base_fee)
     METRICS_COLLECTOR_INSTANCE.average(FEE_PERCENTAGE, fee_percentage)
-    return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE)
+    if is_soft_griefing:
+        return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
+                                                        GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
+    return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
 
 
 def run_simulation(number_of_blocks, network, use_gp_protocol):
@@ -86,35 +87,26 @@ def run_simulation(number_of_blocks, network, use_gp_protocol):
             nodes_between.append(receiver_node)
             METRICS_COLLECTOR_INSTANCE.average(PATH_LENGTH_AVG, len(nodes_between))
             if use_gp_protocol:
-                send_htlc_successfully = sender_node.start_transaction(receiver_node, amount_in_satoshi,
-                                                                       nodes_between)
+                sender_node.start_transaction(receiver_node, amount_in_satoshi, nodes_between)
             else:
-                send_htlc_successfully = sender_node.start_regular_htlc_transaction(receiver_node,
-                                                                                    amount_in_satoshi,
-                                                                                    nodes_between)
-            if send_htlc_successfully:
-                METRICS_COLLECTOR_INSTANCE.count(SEND_SUCCESSFULLY)
-            else:
-                METRICS_COLLECTOR_INSTANCE.count(SEND_FAILED)
+                sender_node.start_regular_htlc_transaction(receiver_node, amount_in_satoshi, nodes_between)
+
+            METRICS_COLLECTOR_INSTANCE.count(SEND_TRANSACTION)
         else:
             METRICS_COLLECTOR_INSTANCE.count(NO_PATH_FOUND)
 
-        BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
-        FUNCTION_COLLECTOR_INSTANCE.run()
         counter += 1
-        if counter == 20:
-            print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
+        if counter == HTLCS_PER_BLOCK:
             counter = 0
-            for _ in range(20):
-                BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
-                FUNCTION_COLLECTOR_INSTANCE.run()
-        print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
-            # total_locked_fund = 0
-            # for node in network.nodes:
-            #     total_locked_fund += node.locked_funds
-            # METRICS_COLLECTOR_INSTANCE.average(BLOCK_LOCKED_FUND, total_locked_fund)
-            # METRICS_COLLECTOR_INSTANCE.average(TOTAL_CURRENT_BALANCE, BLOCKCHAIN_INSTANCE.total_balance)
-            # print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
+            total_locked_fund = 0
+            for node in network.nodes:
+                total_locked_fund += node.locked_funds
+            METRICS_COLLECTOR_INSTANCE.average(BLOCK_LOCKED_FUND, total_locked_fund)
+            METRICS_COLLECTOR_INSTANCE.average(TOTAL_CURRENT_BALANCE, BLOCKCHAIN_INSTANCE.total_balance)
+            BLOCKCHAIN_INSTANCE.wait_k_blocks(1)
+            FUNCTION_COLLECTOR_INSTANCE.run()
+            if BLOCKCHAIN_INSTANCE.block_number % 144 == 0:
+                print(f"increase block number. current is {BLOCKCHAIN_INSTANCE.block_number}")
 
     min_block_to_reach = FUNCTION_COLLECTOR_INSTANCE.get_min_k()
     while min_block_to_reach and BLOCKCHAIN_INSTANCE.block_number < min_block_to_reach:
@@ -155,21 +147,22 @@ def simulation_details(func):
         try:
             res = func(*args, **kwargs)
         except Exception as e:
+            raise e
+        finally:
             time_took = time.time() - starting_time
             print(f"Finish the run in {int(time_took)}s.")
-            raise e
         return res
 
     return wrapper
 
 
-def create_network(number_of_nodes, soft_griefing_percentage):
+def create_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond):
     network = Network()
     number_of_soft_griefing_nodes = int(soft_griefing_percentage * number_of_nodes)
     for _ in range(number_of_nodes - number_of_soft_griefing_nodes):
-        network.add_node(create_node())
+        network.add_node(create_node(delta, max_number_of_block_to_respond))
     for _ in range(number_of_soft_griefing_nodes):
-        network.add_node(create_node(True))
+        network.add_node(create_node(delta, max_number_of_block_to_respond, True))
     return network
 
 
@@ -202,10 +195,10 @@ def simulate_snapshot_network(soft_griefing_percentage=0.05, number_of_blocks=15
 
 
 # Redundancy network functions
-def generate_redundancy_network(number_of_nodes, soft_griefing_percentage):
+def generate_redundancy_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond):
     # connect 2 nodes if differ by 10 to the power of n(1...floor(log_10(number_of_nodes))+1)
     #   modulo 10^floor(log_10(number_of_nodes))
-    network = create_network(number_of_nodes, soft_griefing_percentage)
+    network = create_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond)
     n = int(math.log(number_of_nodes, 10))
     jump_indexes = [10 ** i for i in range(n+1)]
     for i in range(number_of_nodes):
@@ -223,14 +216,14 @@ def generate_redundancy_network(number_of_nodes, soft_griefing_percentage):
 
 @simulation_details
 def simulate_redundancy_network(number_of_nodes=100, soft_griefing_percentage=0.05, number_of_blocks=15,
-                                use_gp_protocol=True):
-    network = generate_redundancy_network(number_of_nodes, soft_griefing_percentage)
+                                use_gp_protocol=True, delta=40, max_number_of_block_to_respond=5):
+    network = generate_redundancy_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond)
     return run_simulation(number_of_blocks, network, use_gp_protocol)
 
 
 # Randomly network functions
-def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node):
-    network = create_network(number_of_nodes, soft_griefing_percentage)
+def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node, delta, max_number_of_block_to_respond):
+    network = create_network(number_of_nodes, soft_griefing_percentage, delta, max_number_of_block_to_respond)
     for node in network.nodes:
         # TODO: what if i already connect with those nodes?
         nodes_to_connect = random.sample(network.nodes, channel_per_node)
@@ -245,38 +238,45 @@ def generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel
 
 @simulation_details
 def simulate_random_network(number_of_nodes=100, soft_griefing_percentage=0.05, number_of_blocks=15,
-                            channel_per_node=10, use_gp_protocol=True):
-    network = generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node)
+                            channel_per_node=10, use_gp_protocol=True, delta=40,
+                            max_number_of_block_to_respond=5):
+    network = generate_network_randomly(number_of_nodes, soft_griefing_percentage, channel_per_node, delta, max_number_of_block_to_respond)
     return run_simulation(number_of_blocks, network, use_gp_protocol)
 
 
 def run_multiple_simulation():
-    number_of_nodes = 100
-    number_of_blocks = 1000
+    number_of_nodes = 500
+    number_of_blocks = 440
     soft_griefing_percentages = [0.01, 0.05, 0.1, 0.15]
     use_gp_protocol_options = [True, False]
     network_topologies = ['redundancy']
+    deltas = [40, 80, 120]
+    max_numbers_of_block_to_respond = [2, 6, 10]
     simulation_metrics = []
-    for network_topology in network_topologies:
-        for use_gp_protocol in use_gp_protocol_options:
-            for soft_griefing_percentage in soft_griefing_percentages:
-                parameters = {"number_of_nodes": number_of_nodes,
-                              "soft_griefing_percentage": soft_griefing_percentage,
-                              "number_of_blocks": number_of_blocks,
-                              "use_gp_protocol": use_gp_protocol}
-                if network_topology == 'redundancy':
-                    metrics = simulate_redundancy_network(**parameters)
-                elif network_topology == 'random':
-                    metrics = simulate_random_network(**parameters)
-                elif network_topology == 'snapshot':
-                    metrics = simulate_snapshot_network(**parameters)
-                else:
-                    raise Exception("got invalid network_topology name!")
-                parameters.update({'network_topology': network_topology})
-                simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
-                BLOCKCHAIN_INSTANCE.init_parameters()
-                METRICS_COLLECTOR_INSTANCE.init_parameters()
-                FUNCTION_COLLECTOR_INSTANCE.init_parameters()
+    for delta in deltas:
+        for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
+            for network_topology in network_topologies:
+                for use_gp_protocol in use_gp_protocol_options:
+                    for soft_griefing_percentage in soft_griefing_percentages:
+                        parameters = {"number_of_nodes": number_of_nodes,
+                                      "soft_griefing_percentage": soft_griefing_percentage,
+                                      "number_of_blocks": number_of_blocks,
+                                      "use_gp_protocol": use_gp_protocol,
+                                      "delta": delta,
+                                      "max_number_of_block_to_respond": max_number_of_block_to_respond}
+                        if network_topology == 'redundancy':
+                            metrics = simulate_redundancy_network(**parameters)
+                        elif network_topology == 'random':
+                            metrics = simulate_random_network(**parameters)
+                        elif network_topology == 'snapshot':
+                            metrics = simulate_snapshot_network(**parameters)
+                        else:
+                            raise Exception("got invalid network_topology name!")
+                        parameters.update({'network_topology': network_topology})
+                        simulation_metrics.append({'metrics': metrics, 'parameters': parameters})
+                        BLOCKCHAIN_INSTANCE.init_parameters()
+                        METRICS_COLLECTOR_INSTANCE.init_parameters()
+                        FUNCTION_COLLECTOR_INSTANCE.init_parameters()
     print(simulation_metrics)
     timestamp = datetime.timestamp(datetime.now())
     with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
