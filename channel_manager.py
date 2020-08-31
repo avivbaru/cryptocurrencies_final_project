@@ -176,10 +176,10 @@ class Channel(object):
         self.update_message(message_state)
 
     def notify_of_end_of_contract(self, contract: 'cn.Contract_HTLC'):
-        if contract.is_expired:
-            bad_node = contract.payer if type(contract) is cn.ContractCancellation else contract.payee
-            self.close_channel(bad_node)  # resolve on-chain
-            return
+        # if contract.is_expired:
+        #     bad_node = contract.payer if type(contract) is cn.ContractCancellation else contract.payee
+        #     self.close_channel(bad_node)  # resolve on-chain
+        #     return
 
         self._handle_contract_ended(contract)
 
@@ -209,4 +209,5 @@ class Channel(object):
             BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_x, contract.pre_image_x)
         elif contract.pre_image_r:
             BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_r, contract.pre_image_r)
-            # TODO: what to do with active contracts when channel is closing
+
+        contract.invalidate()

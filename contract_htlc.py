@@ -141,8 +141,7 @@ class ContractCancellation(Contract_HTLC):
         super().__init__(transaction_id, amount_in_wei, hash_x, hash_r, expiration_block_number, attached_channel, payer, payee)
 
     def _on_expired(self):
-        if self._pre_image_r or self._pre_image_x or not self._channel_to_notify.is_open or not \
-                self._is_valid:
+        if self._pre_image_r or self._pre_image_x or not self._channel_to_notify.is_open or not self._is_valid:
             return
         super()._on_expired()
 
@@ -152,6 +151,7 @@ class ContractCancellation(Contract_HTLC):
         self.payee.notify_of_cancellation_contract_about_to_expire(self)
 
     def report_x(self, x: str):
+
         super().report_x(x)
         self.attached_channel.notify_of_end_of_contract(self)
 

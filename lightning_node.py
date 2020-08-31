@@ -465,6 +465,7 @@ class LightningNode:
 class LightningNodeSoftGriefing(LightningNode):
     def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
         super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
+        # TODO: get probability from init
         self._block_number_to_resolve = 20
 
     def resolve_transaction(self, transaction_id: int, x: str):
@@ -476,6 +477,26 @@ class LightningNodeSoftGriefing(LightningNode):
         info = self._transaction_id_to_transaction_info[transaction_id]
         FUNCTION_COLLECTOR_INSTANCE\
             .append(lambda: super(LightningNodeSoftGriefing, self)
+                    .resolve_htlc_transaction, info.expiration_block_number - self._block_number_to_resolve)
+
+    def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
+        return
+
+
+class LightningNodeGriefing(LightningNode):
+    def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01):
+        super().__init__(balance, base_fee, fee_percentage, griefing_penalty_rate)
+        self._block_number_to_resolve = 20
+
+    def resolve_transaction(self, transaction_id: int, x: str):
+        info = self._transaction_id_to_transaction_info[transaction_id]
+        FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeGriefing, self)
+                                           .resolve_transaction, info.expiration_block_number - self._block_number_to_resolve)
+
+    def resolve_htlc_transaction(self, transaction_id: int, x: str):
+        info = self._transaction_id_to_transaction_info[transaction_id]
+        FUNCTION_COLLECTOR_INSTANCE\
+            .append(lambda: super(LightningNodeGriefing, self)
                     .resolve_htlc_transaction, info.expiration_block_number - self._block_number_to_resolve)
 
     def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
