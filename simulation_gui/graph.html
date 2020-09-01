@@ -142,25 +142,24 @@
         </div>
         <hr>
         <div itemtype="container" class="container" id="sliders">
-            <div itemtype="inner" class="container">
-                <p itemtype="text">block number</p>
-                <select id="block number" name="x">
-                    <option value="15">15</option>
-                </select>
-            </div>
-            <div itemtype="inner" class="container">
-                <p itemtype="text">number of nodes</p>
-                <select id="number of nodes" name="x">
-                    <option value="100">100</option>
-                </select>
-            </div>
+<!--            <div itemtype="inner" class="container">-->
+<!--                <p itemtype="text">block number</p>-->
+<!--                <select id="block number" name="x">-->
+<!--                    <option value="2160">2160</option>-->
+<!--                </select>-->
+<!--            </div>-->
+<!--            <div itemtype="inner" class="container">-->
+<!--                <p itemtype="text">number of nodes</p>-->
+<!--                <select id="number of nodes" name="x">-->
+<!--                    <option value="100">100</option>-->
+<!--                </select>-->
+<!--            </div>-->
             <div itemtype="inner" class="container">
                 <p itemtype="text" >soft griefing rate</p>
                 <select id="soft griefing rate" name="x">
                     <option value="Average">Average</option>
-                    <option value="0.01">0.01</option>
+                    <option value="0">0</option>
                     <option value="0.05">0.05</option>
-                    <option value="0.1">0.1</option>
                     <option value="0.15">0.15</option>
                 </select>
             </div>
@@ -177,7 +176,7 @@
                 <select id="delta" name="delta">
                     <option value="Average">Average</option>
                     <option value="40">40</option>
-                    <option value="80">80</option>
+                    <option value="100">100</option>
                 </select>
             </div>
             <div itemtype="inner" class="container">
@@ -185,7 +184,7 @@
                 <select id="busy network" name="busy network">
                     <option value="Average">Average</option>
                     <option value="2">2</option>
-                    <option value="6">6</option>
+                    <option value="8">8</option>
                 </select>
             </div>
             <div itemtype="container" class="container">
@@ -202,12 +201,12 @@
 <script src="Chart.js"></script>
 <script>
 
-    var block = document.getElementById('block number');
-    block.onchange = changeGraph;
-    var nodes = document.getElementById('number of nodes');
-    nodes.onchange = changeGraph;
-    var griefing = document.getElementById('soft griefing rate');
-    griefing.onchange = changeGraph;
+    // var block = document.getElementById('block number');
+    // block.onchange = changeGraph;
+    // var nodes = document.getElementById('number of nodes');
+    // nodes.onchange = changeGraph;
+    var softGriefing = document.getElementById('soft griefing rate');
+    softGriefing.onchange = changeGraph;
     var topology = document.getElementById('network topology');
     topology.onchange = changeGraph;
     var busyNetwork = document.getElementById('busy network');
@@ -220,7 +219,7 @@
 
     function changeSelectX() {
         console.log("test");
-        griefing.disabled = false;
+        softGriefing.disabled = false;
         delta.disabled = false;
         busyNetwork.disabled = false;
         var chosen = document.getElementById(xAxisOptions.value);
@@ -261,13 +260,15 @@
         var graphDataNotUseGp = [];
         var labels = [];
         for (var i = 0; i < xAxis.options.length; i++) {
+            var val = xAxis.options[i].value;
+            if (val === "Average") {
+                continue;
+            }
             var deltaV = delta.isEqualNode(xAxis) ? xAxis.options[i].value : delta.value;
             var busyNetworkV = busyNetwork.isEqualNode(xAxis) ? xAxis.options[i].value : busyNetwork.value;
-            var griefingV = griefing.isEqualNode(xAxis) ? xAxis.options[i].value : griefing.value;
-            const keyUseGp = deltaV + '_' + busyNetworkV + '_' + topology.value + '_' +
-                block.value + "_" + nodes.value + "_" + griefingV + "_True";
-            const keyNotUseGp = deltaV + '_' + busyNetworkV + '_' + topology.value + '_' +
-                block.value + "_" + nodes.value + "_" + griefingV + "_False";
+            var softGriefingV = softGriefing.isEqualNode(xAxis) ? xAxis.options[i].value : softGriefing.value;
+            const keyUseGp = deltaV + '_0_' + busyNetworkV + '_' + topology.value + '_' + softGriefingV + "_True";
+            const keyNotUseGp = deltaV + '_0_' + busyNetworkV + '_' + topology.value + "_" + softGriefingV + "_False";
             console.log("keyUseGp: " + keyUseGp);
             console.log("keyNotUseGp: " + keyNotUseGp);
             graphDataUseGp.push(all_data[keyUseGp][yAxisOptions.value]);

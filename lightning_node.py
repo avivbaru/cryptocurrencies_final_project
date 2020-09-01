@@ -7,8 +7,6 @@ from singletons import *
 
 BLOCKS_IN_DAY = 144
 
-BLOCK_IN_DAY = 5
-
 APPEAL_PERIOD = 3  # the appeal period in blocks.
 STARTING_SERIAL = 0  # first serial number
 
@@ -108,6 +106,7 @@ class LightningNode:
         self._hash_image_r_to_preimage: Dict[int, str] = {}
         self._channels: Dict[str, cm.Channel] = {}
         self._locked_funds: int = 0
+        self._locked_funds_since_block: int = 0
         self._balance = balance  # TODO: should remove balance?
         self._base_fee = base_fee
         self._fee_percentage = fee_percentage
@@ -182,6 +181,7 @@ class LightningNode:
 
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
+        METRICS_COLLECTOR_INSTANCE.average("total fee", total_fee)
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
         info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, hash_r,
@@ -363,9 +363,10 @@ class LightningNode:
         assert nodes_between
         node_to_send = nodes_between[0]
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
+        METRICS_COLLECTOR_INSTANCE.average("total fee", total_fee)
 
         id = TransactionInfo.generate_id()
-        delta_waiting_time = ((len(nodes_between) + 1) * 144)
+        delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
         info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, 0, BLOCKCHAIN_INSTANCE.block_number + delta_waiting_time,
                                delta_waiting_time, BLOCKCHAIN_INSTANCE.block_number, next_node=node_to_send)
         self._transaction_id_to_transaction_info[id] = info
@@ -374,7 +375,7 @@ class LightningNode:
     def send_regular_htlc(self, transaction_info: TransactionInfo, nodes_between: List['LightningNode']):
         channel = self._other_nodes_to_channels[transaction_info.next_node.address]
 
-        contract = cn.Contract_HTLC(transaction_info.id, transaction_info.amount_in_wei, transaction_info.hash_x, 0,
+        contract = cn.ContractForward(transaction_info.id, transaction_info.amount_in_wei, transaction_info.hash_x, 0,
                                     transaction_info.expiration_block_number, channel, self, transaction_info.next_node)
         transaction_info.next_node.receive_regular_htlc(self, transaction_info, contract, nodes_between)
 
@@ -388,7 +389,7 @@ class LightningNode:
                                    previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY, delta_waiting_time,
                                    previous_transaction_info.starting_block, sender, node_to_send)
 
-        self._transaction_id_to_transaction_info[new_info.id] = previous_transaction_info  # TODO: check info handling is right
+        self._transaction_id_to_transaction_info[new_info.id] = new_info
         self._transaction_id_to_htlc_contracts[new_info.id] = contract
         if not contract.attached_channel.add_contract(contract):
             contract.invalidate()
@@ -398,7 +399,6 @@ class LightningNode:
         if nodes_between:
             self.send_regular_htlc(new_info, nodes_between[1:])
         else:
-            # print("Transaction regular htlc contracts construction successful!")
             x = self._hash_image_x_to_preimage[new_info.hash_x]
             self.resolve_htlc_transaction(new_info.id, x)
 
@@ -411,6 +411,7 @@ class LightningNode:
 
         if info.previous_node is not None:
             contract = self._transaction_id_to_htlc_contracts[transaction_id]
+            del self._transaction_id_to_htlc_contracts[transaction_id]
             if contract.is_expired:
                 return
             contract.report_x(x)
@@ -447,7 +448,15 @@ class LightningNode:
         del self._channels[channel.channel_state.channel_data.address]
 
     def notify_of_change_in_locked_funds(self, locked_fund):
+        total_last_locked_fund = self._locked_funds * (BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
+        if total_last_locked_fund > 0:
+            METRICS_COLLECTOR_INSTANCE.average("locked fund duration in blocks", BLOCKCHAIN_INSTANCE.block_number -
+                                                                                 self._locked_funds_since_block)
+
+            METRICS_COLLECTOR_INSTANCE.average("locked fund (amount * duration) per transaction", total_last_locked_fund)
+            METRICS_COLLECTOR_INSTANCE.sum(TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, total_last_locked_fund)
         self._locked_funds += locked_fund
+        self._locked_funds_since_block = BLOCKCHAIN_INSTANCE.block_number
 
     def notify_of_closed_channel(self, channel: 'cm.Channel', other_node: 'LightningNode'):
         if channel.channel_state.channel_data.address not in self._channels:
@@ -483,7 +492,7 @@ class LightningNodeSoftGriefing(LightningNode):
     def __init__(self, *args):
         super().__init__(*args)
         self._block_number_to_resolve = self._delta + 20
-        self._probability_to_soft_griefing = 0.5
+        self._probability_to_soft_griefing = 1 # TODO: change?
 
     # def resolve_transaction(self, transaction_id: int, x: str):
     #     if transaction_id not in self._transaction_id_to_transaction_info:
@@ -506,7 +515,7 @@ class LightningNodeSoftGriefing(LightningNode):
     #     return
 
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
-        if random.uniform(0, 1) < self._probability_to_soft_griefing:
+        if random.uniform(0, 1) <= self._probability_to_soft_griefing:
             super(LightningNodeSoftGriefing, self).receive_cancellation_contract(transaction_id, contract)
         else:
             if transaction_id not in self._transaction_id_to_transaction_info:
