@@ -15,6 +15,8 @@ def random_delay_node(f):
     def wrapper(self, *args):
         if random.uniform(0, 1) <= self._probability_to_not_respond_immediately:
             number_of_block_to_wait = random.randint(1, self._max_number_of_block_to_respond)
+            METRICS_COLLECTOR_INSTANCE.count(DELAYED_RUN_FUNCTION)
+            METRICS_COLLECTOR_INSTANCE.average(DELAYED_RUN_FUNCTION_AVG, number_of_block_to_wait)
             FUNCTION_COLLECTOR_INSTANCE.append(lambda: f(self, *args), BLOCKCHAIN_INSTANCE.block_number + number_of_block_to_wait)
         else:
             return f(self, *args)
@@ -181,7 +183,7 @@ class LightningNode:
 
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
 
-        METRICS_COLLECTOR_INSTANCE.average("total fee", total_fee)
+        METRICS_COLLECTOR_INSTANCE.average(TOTAL_FEE, total_fee)
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
         info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, hash_r,
@@ -246,19 +248,16 @@ class LightningNode:
         info = self._transaction_id_to_transaction_info[transaction_id]
 
         if not contract.attached_channel.add_contract(contract):
-            return  # TODO (Aviv): add metric
+            METRICS_COLLECTOR_INSTANCE.count(ADD_CANCELLATION_CONTRACT_FAILED)
+            return
         contract.accept_contract()
 
         if info.previous_node is not None:
             self.send_cancellation_contract(transaction_id)
         else:
             self.send_forward_contract(transaction_id)
-            # FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._check_if_forward_contract_is_available(transaction_id),
-            #                                    info.expiration_block_number - self._delta)
-            # TODO: (Aviv) - check why Yakir put this commented out code here (check relation of
-            #  _check_if_forward_contract_is_available and _handle_cancellation_is_about_to_expire)
 
-    def _check_if_forward_contract_is_available(self, transaction_id: int):
+    def _check_if_forward_contract_is_available(self, transaction_id: int): # TODO: check if can remove
         if transaction_id not in self._transaction_id_to_cancellation_contracts or \
                 transaction_id in self._transaction_id_to_forward_contracts:
             return
@@ -291,6 +290,7 @@ class LightningNode:
 
         if not contract.attached_channel.add_contract(contract):
             contract.invalidate()
+            METRICS_COLLECTOR_INSTANCE.count(ADD_FORWARD_CONTRACT_FAILED)
             return
         contract.accept_contract()
 
@@ -336,7 +336,7 @@ class LightningNode:
     def terminate_transaction(self, transaction_id: int, r: str):
         if transaction_id not in self._transaction_id_to_transaction_info:
             return
-
+        METRICS_COLLECTOR_INSTANCE.count(TERMINATE_TRANSACTION) # TODO: is it ok to log here??
         info = self._transaction_id_to_transaction_info[transaction_id]
 
         if transaction_id in self._transaction_id_to_forward_contracts:
@@ -363,7 +363,7 @@ class LightningNode:
         assert nodes_between
         node_to_send = nodes_between[0]
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
-        METRICS_COLLECTOR_INSTANCE.average("total fee", total_fee)
+        METRICS_COLLECTOR_INSTANCE.average(TOTAL_FEE, total_fee)
 
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
@@ -441,19 +441,19 @@ class LightningNode:
 
         channel = self._other_nodes_to_channels[node.address]
         del self._other_nodes_to_channels[node.address]
-        if channel not in self._channels:
+        if channel.channel_state.channel_data.address not in self._channels:
             return
         channel.close_channel()
         self._balance += channel.owner1_balance if channel.is_owner1(self) else channel.owner2_balance
-        del self._channels[channel.channel_state.channel_data.address]
+        # del self._channels[channel.channel_state.channel_data.address] # TODO: is it ok ro remove??
 
     def notify_of_change_in_locked_funds(self, locked_fund):
         total_last_locked_fund = self._locked_funds * (BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
         if total_last_locked_fund > 0:
-            METRICS_COLLECTOR_INSTANCE.average("locked fund duration in blocks", BLOCKCHAIN_INSTANCE.block_number -
-                                                                                 self._locked_funds_since_block)
+            METRICS_COLLECTOR_INSTANCE.average(DURATION_OF_LUCKED_FUND_IN_BLOCKS,
+                                               BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
 
-            METRICS_COLLECTOR_INSTANCE.average("locked fund (amount * duration) per transaction", total_last_locked_fund)
+            METRICS_COLLECTOR_INSTANCE.average(LOCKED_FUND_PER_TRANSACTION, total_last_locked_fund)
             METRICS_COLLECTOR_INSTANCE.sum(TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, total_last_locked_fund)
         self._locked_funds += locked_fund
         self._locked_funds_since_block = BLOCKCHAIN_INSTANCE.block_number
@@ -489,10 +489,10 @@ class LightningNode:
 
 
 class LightningNodeSoftGriefing(LightningNode):
-    def __init__(self, *args):
+    def __init__(self, *args, probability_to_soft_griefing):
         super().__init__(*args)
         self._block_number_to_resolve = self._delta + 20
-        self._probability_to_soft_griefing = 1 # TODO: change?
+        self._probability_to_soft_griefing = probability_to_soft_griefing
 
     # def resolve_transaction(self, transaction_id: int, x: str):
     #     if transaction_id not in self._transaction_id_to_transaction_info:
@@ -516,6 +516,7 @@ class LightningNodeSoftGriefing(LightningNode):
 
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
         if random.uniform(0, 1) <= self._probability_to_soft_griefing:
+            METRICS_COLLECTOR_INSTANCE.count(PERFORM_SOFT_GRIEFING)
             super(LightningNodeSoftGriefing, self).receive_cancellation_contract(transaction_id, contract)
         else:
             if transaction_id not in self._transaction_id_to_transaction_info:
@@ -528,10 +529,10 @@ class LightningNodeSoftGriefing(LightningNode):
 
 
 class LightningNodeGriefing(LightningNode):
-    def __init__(self, *args):
+    def __init__(self, *args, probability_to_griefing):
         super().__init__(*args)
         self._block_number_to_resolve = self._delta + 20
-        self._probability_to_soft_griefing = 0.5  # TODO: get probability from outside?
+        self._probability_to_soft_griefing = probability_to_griefing
 
     def resolve_transaction(self, transaction_id: int, x: str):
         if random.uniform(0, 1) < self._probability_to_soft_griefing:

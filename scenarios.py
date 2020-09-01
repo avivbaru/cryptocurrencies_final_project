@@ -6,6 +6,7 @@ import simulation
 def init_scenario():
     network = simulation.Network()
     type_node = simulation.NodeType.SOFT_GRIEFING
+    type_node = None
     wait = 1
     network.add_node(simulation.create_node(40, wait))
     network.add_node(simulation.create_node(40, wait))
@@ -14,11 +15,11 @@ def init_scenario():
     network.add_node(simulation.create_node(40, wait))
     network.add_node(simulation.create_node(40, wait))
     network.add_node(simulation.create_node(40, wait))
-    network.add_node(simulation.create_node(40, wait, type_node))
     network.add_node(simulation.create_node(40, wait))
     network.add_node(simulation.create_node(40, wait))
     network.add_node(simulation.create_node(40, wait))
-    network.add_node(simulation.create_node(40, wait, type_node))
+    network.add_node(simulation.create_node(40, wait))
+    network.add_node(simulation.create_node(40, wait))
     network.add_edge(network.nodes[0], network.nodes[1], 1000000)
     network.add_edge(network.nodes[1], network.nodes[2], 1000000)
     network.add_edge(network.nodes[3], network.nodes[2], 1000000)
@@ -37,7 +38,7 @@ def init_scenario():
 
 def scenario1():
     network = init_scenario()
-    simulation.run_simulation(network, False)
+    simulation.run_simulation(network, True)
     metrics = simulation.METRICS_COLLECTOR_INSTANCE.get_metrics()
     print(f"{metrics.get('Total locked fund in every blocks') / metrics.get('Transactions successful'):,}")
 

@@ -59,7 +59,7 @@ class BlockChain:
         if node.address in self._nodes_addresses_to_balances:
             return
 
-        self._nodes_addresses_to_balances[node.address] = balance
+        self._nodes_addresses_to_balances[node.address] = balance # TODO: check if remove
 
     def get_pre_image_if_exists_onchain(self, hash_image: int) -> Optional[str]:
         if hash_image in self._hash_image_to_pre_images:
