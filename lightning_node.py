@@ -14,6 +14,10 @@ STARTING_SERIAL = 0  # first serial number
 
 
 def random_delay_node(f):
+    """
+    Wrapper for delaying a given function's execution in order to simulate an internet connection delays.
+    :param f: The function to delay.
+    """
     def wrapper(self, *args):
         if random.uniform(0, 1) <= self._probability_to_not_respond_immediately:
             number_of_block_to_wait = random.randint(1, self._max_number_of_block_to_respond)
@@ -24,20 +28,22 @@ def random_delay_node(f):
 
 
 class TransactionInfo:
+    """
+    Holds all the information regrading a specific transaction.
+    """
     def __init__(self, transaction_id: int, amount_in_wei: int, penalty: int, hash_x: int, hash_r: int,
                  expiration_block_number: int, delta_wait_time: int, starting_block: int, previous_node: 'LightningNode' = None,
                  next_node: 'LightningNode' = None):
         """
-
-        :param transaction_id:
-        :param amount_in_wei: amount to transfer in transaction
-        :param penalty: amount to pay upon griefing
-        :param hash_x:
-        :param hash_r:
-        :param expiration_block_number:
-        :param delta_wait_time:
-        :param previous_node:
-        :param next_node:
+        :param transaction_id: The id of the transaction.
+        :param amount_in_wei: amount to transfer in transaction.
+        :param penalty: amount to pay upon griefing.
+        :param hash_x: the hash of the transaction's secret for accepting it.
+        :param hash_r: the hash of the transaction's secret for terminating it.
+        :param expiration_block_number: Block number this transaction will be expired.
+        :param delta_wait_time: waiting time to expire.
+        :param previous_node: the previous node in the transaction chain.
+        :param next_node: the next node in the transaction chain.
         """
         assert amount_in_wei >= 0
         assert penalty >= 0
@@ -100,6 +106,9 @@ class TransactionInfo:
 
 
 class LightningNode:
+    """
+    Represents an honest node in the network.
+    """
     def __init__(self, balance: int, base_fee: int, fee_percentage: float = 0.01, griefing_penalty_rate: float = 0.01,
                  delta: int = 40, max_number_of_block_to_respond: int = 4):
         self._address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -145,15 +154,24 @@ class LightningNode:
         return self._base_fee
 
     def get_capacity_left(self, other_node):
+        """
+        returns the capacity left in the channel between `self` and `other_node`.
+        """
         if other_node.address in self._other_nodes_to_channels:
             channel = self._other_nodes_to_channels[other_node.address]
             return channel.amount_owner1_can_transfer_to_owner2 if channel.is_owner1(self) else \
                 channel.amount_owner2_can_transfer_to_owner1
 
     def get_fee_for_transfer_amount(self, amount_in_wei: int) -> int:
+        """
+        returns the fee this node will consume for the given amount.
+        """
         return self.base_fee + int(self._fee_percentage * amount_in_wei)
 
     def establish_channel(self, other_node: 'LightningNode', amount_in_wei: int) -> cm.Channel:
+        """
+        establishes a channel between this node and `other_node` and puts in the given amount.
+        """
         channel_data = cm.ChannelData(self, other_node)
         default_split = cm.MessageState(amount_in_wei, 0)
         channel = other_node.notify_of_channel(channel_data, default_split)
@@ -164,6 +182,9 @@ class LightningNode:
         return channel
 
     def notify_of_channel(self, channel_data: cm.ChannelData, default_split: cm.MessageState) -> cm.Channel:
+        """
+        Used for notifying this node of a channel being created.
+        """
         assert self._balance >= channel_data.total_wei
         channel = cm.Channel(channel_data, default_split)
         self._other_nodes_to_channels[channel_data.owner1.address] = channel
@@ -171,11 +192,20 @@ class LightningNode:
         return channel
 
     def add_money_to_channel(self, channel: cm.Channel, amount_in_wei: int):
+        """
+        Used to enable owner2 to add funds to a given channel.
+        """
         assert self._balance >= amount_in_wei
         channel.owner2_add_funds(amount_in_wei)
         self._balance -= amount_in_wei
 
     def start_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
+        """
+        Start a transaction between this node and `final_node`.
+        :param final_node: The node to send the money to.
+        :param amount_in_wei: The amount to send.
+        :param nodes_between: The path to take during the transaction.
+        """
         hash_x, hash_r = final_node.generate_secret_x_hash(), final_node.generate_secret_r_hash()
         assert nodes_between
         node_to_send = nodes_between[0]
@@ -202,11 +232,18 @@ class LightningNode:
 
     def send_transaction_information(self, node_to_send: 'LightningNode', transaction_info: TransactionInfo,
                                      nodes_between: List['LightningNode']):
-        # TODO: not much logic here... maybe we should give up this function
+        """
+        Sends a transaction information `transaction_info` to the next node `node_to_send` in the path `nodes_between`.
+        """
         node_to_send.receive_transaction_information(self, transaction_info, nodes_between)
 
     def receive_transaction_information(self, sender: 'LightningNode', previous_transaction_info: TransactionInfo,
                                         nodes_between: List['LightningNode']):
+        """
+        Receives a transaction information `previous_transaction_info`, deduces it's own `TransactionInfo` from it and
+        sends information (via `send_transaction_information`) to the next node in the path `nodes_between` if exists, otherwise
+        starts sending cancellation contracts backwards in the path.
+        """
         fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
         amount_in_wei = previous_transaction_info.amount_in_wei - fee
         waiting_time = previous_transaction_info.expiration_block_number - BLOCKS_IN_DAY
@@ -224,7 +261,6 @@ class LightningNode:
             info = TransactionInfo(previous_transaction_info.id, 0, griefing_penalty,
                                    previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
                                    delta_waiting_time, previous_transaction_info.starting_block, sender)
-            # TODO: see that info is constructed the right way
             self._transaction_id_to_transaction_info[info.id] = info
             r = self._hash_image_r_to_preimage[info.hash_r]
             del self._hash_image_r_to_preimage[info.hash_r]
@@ -233,6 +269,11 @@ class LightningNode:
             self.send_cancellation_contract(info.id)
 
     def send_cancellation_contract(self, transaction_id: int):
+        """
+        Sends a cancellation contract to the previous node in the path of the transaction. All needed information is in the
+        transaction information this node got when received it in `receive_transaction_information`, which corresponds to
+        `transaction_id`.
+        """
         assert transaction_id in self._transaction_id_to_transaction_info
         info = self._transaction_id_to_transaction_info[transaction_id]
         channel = self._other_nodes_to_channels[info.previous_node.address]
@@ -243,6 +284,11 @@ class LightningNode:
         info.previous_node.receive_cancellation_contract(transaction_id, cancellation_contract)
 
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
+        """
+        Receives the cancellation contract `contract` and accepts it if can be accepted. Uses the information that corresponds to
+        `transaction_id` for calling the previous node in the transaction's path if exists, otherwise starts sending a forward
+        contract.
+        """
         info = self._transaction_id_to_transaction_info[transaction_id]
 
         if not contract.attached_channel.add_contract(contract):
@@ -274,6 +320,11 @@ class LightningNode:
         self.terminate_transaction(transaction_id, r)
 
     def send_forward_contract(self, transaction_id: int):
+        """
+        Sends a forward contract to the next node in the path of the transaction. All needed information is in the
+        transaction information this node got when received it in `receive_transaction_information`, which corresponds to
+        `transaction_id`.
+        """
         assert transaction_id in self._transaction_id_to_transaction_info
 
         info = self._transaction_id_to_transaction_info[transaction_id]
@@ -285,6 +336,11 @@ class LightningNode:
         info.next_node.receive_forward_contract(transaction_id, forward_contract)
 
     def receive_forward_contract(self, transaction_id: int, contract: 'cn.ContractForward'):
+        """
+        Receives the forward contract `contract` and accepts it if can be accepted. Uses the information that corresponds to
+        `transaction_id` for calling the next node in the transaction's path if exists, otherwise starts resolving the
+        transaction with the previous node in the path.
+        """
         if transaction_id not in self._transaction_id_to_transaction_info:
             return
         info = self._transaction_id_to_transaction_info[transaction_id]
@@ -304,6 +360,10 @@ class LightningNode:
 
     @random_delay_node
     def resolve_transaction(self, transaction_id: int, x: str):
+        """
+        Settles the contracts that correspond to the given `transaction_id` with the given pre image `x` and calls
+        `resolve_transaction` on the previous node in the transaction path if exists.
+        """
         if transaction_id not in self._transaction_id_to_transaction_info:
             return  # might get terminated beforehand
         info = self._transaction_id_to_transaction_info[transaction_id]
@@ -334,6 +394,10 @@ class LightningNode:
         info.previous_node.resolve_transaction(transaction_id, x)
 
     def terminate_transaction(self, transaction_id: int, r: str):
+        """
+        Terminates the contracts that correspond to the given `transaction_id` with the given pre image `r` and calls
+        `resolve_transaction` on the previous node in the transaction path if exists.
+        """
         if transaction_id not in self._transaction_id_to_transaction_info:
             return
 
@@ -475,9 +539,6 @@ class LightningNode:
         contract.invalidate()
         previous_node.notify_of_cancellation_contract_payment(previous_contract)
 
-    def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
-        contract.invalidate()  # TODO: see if needed
-
 
 class LightningNodeSoftGriefing(LightningNode):
     def __init__(self, *args):
@@ -532,5 +593,3 @@ class LightningNodeGriefing(LightningNode):
         if random.uniform(0, 1) < self._probability_to_soft_griefing:
             super(LightningNodeGriefing, self).resolve_htlc_transaction(transaction_id, x)
 
-    def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
-        return

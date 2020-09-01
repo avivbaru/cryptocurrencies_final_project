@@ -120,7 +120,7 @@ class Channel(object):
         self._compute_amount_owner2_can_transfer_to_owner1()
         BLOCKCHAIN_INSTANCE.apply_transaction(self.channel_state.channel_data.owner2, owner2_amount_in_wei)
 
-    def close_channel(self, bad_node: Optional['ln.LightningNode'] = None):
+    def close_channel(self):
         if not self._open:
             return
         # TODO: check if indeed all money gets transferred to good node.
@@ -130,10 +130,6 @@ class Channel(object):
 
         self.owner1_htlc_locked_setter(0)
         self.owner2_htlc_locked_setter(0)
-
-        if bad_node:
-            owner1_balance = 0 if self._state.channel_data.owner1 == bad_node else self._state.channel_data.total_wei
-            self._update_message_state(owner1_balance)
 
         BLOCKCHAIN_INSTANCE.close_channel(self._state.message_state)
 
