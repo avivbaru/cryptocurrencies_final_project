@@ -35,71 +35,74 @@ STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to crea
 GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 1
 SIGMA = 0.1
-NUMBER_OF_NODES = 200
-NUMBER_OF_BLOCKS = 5 * 144
+NUMBER_OF_NODES = 300
+NUMBER_OF_BLOCKS = 10 * 144
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 SOFT_GRIEFING_PROBABILITY = 0.5
 GRIEFING_PROBABILITY = 0.5
-SOFT_GRIEFING_PERCENTAGE_DEFAULT = 0
-GRIEFING_PERCENTAGE_DEFAULT = 0
-DELTA_DEFAULT = 60
-MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT = 4
+ATTACK_PERCENTAGE_DEFAULT = 0
+DELTA_DEFAULT = 70
+MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT = 6
 
 
-class NodeType(Enum):
-    SOFT_GRIEFING = 1
-    GRIEFING = 2
-    SOFT_GRIEFING_DOS_ATTACK = 3
+class NodeType(str, Enum):
+    SOFT_GRIEFING = "soft griefing"
+    GRIEFING = "griefing"
+    SOFT_GRIEFING_DOS_ATTACK = "soft griefing dos attack"
+
+
+class NetworkType(str, Enum):
+    REDUNDANCY = "redundancy"
+    SNAPSHOT = "snapshot"
 
 
 def how_much_to_send():
-    mu = random.choice(MSAT_AMOUNTS_TO_SEND) # TODO: remove the divide
+    mu = random.choice(MSAT_AMOUNTS_TO_SEND)
     amount = int(min(max(random.gauss(mu, SIGMA), MIN_TO_SEND), MAX_TO_SEND))
     METRICS_COLLECTOR_INSTANCE.average(TRANSACTION_AMOUNT_AVG, amount)
     return amount
 
 
-def create_node(delta, max_number_of_block_to_respond, griefing_type: NodeType = None):
+def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
     # divide by million to get the rate per msat
     fee_percentage = random.choices(FEE_RATE, weights=FEE_RATE_PROB, k=1)[0] / 1000000
+    METRICS_COLLECTOR_INSTANCE.average(FEE_PERCENTAGE, fee_percentage)
     base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]
     METRICS_COLLECTOR_INSTANCE.average(BASE_FEE_LOG, base_fee)
-    METRICS_COLLECTOR_INSTANCE.average(FEE_PERCENTAGE, fee_percentage)
-    if griefing_type:
-        if NodeType.SOFT_GRIEFING == griefing_type:
-            return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
-                                                            GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                            probability_to_soft_griefing=SOFT_GRIEFING_PROBABILITY)
-        if NodeType.GRIEFING == griefing_type:
-            return lightning_node.LightningNodeGriefing(STARTING_BALANCE, base_fee, fee_percentage,
+    if NodeType.SOFT_GRIEFING == attacker_node_type:
+        return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                        probability_to_griefing=GRIEFING_PROBABILITY)
-        if NodeType.SOFT_GRIEFING_DOS_ATTACK == griefing_type:
-            return lightning_node.LightningNodeSoftGriefingDosAttack(STARTING_BALANCE, base_fee, fee_percentage,
-                                                                     GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
+                                                        probability_to_soft_griefing=SOFT_GRIEFING_PROBABILITY)
+    if NodeType.GRIEFING == attacker_node_type:
+        return lightning_node.LightningNodeGriefing(STARTING_BALANCE, base_fee, fee_percentage,
+                                                    GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
+                                                    probability_to_griefing=GRIEFING_PROBABILITY)
+    if NodeType.SOFT_GRIEFING_DOS_ATTACK == attacker_node_type:
+        return lightning_node.LightningNodeSoftGriefingDosAttack(STARTING_BALANCE, base_fee, fee_percentage,
+                                                                 GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
     return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE, delta,
                                         max_number_of_block_to_respond)
 
 
-def run_simulation(network, use_gp_protocol, dos_attack=False):
-    attacker_node, victim_node = None, None
-    if dos_attack:
-        attacker_node = random.choice([node for node in network.nodes
-                                       if type(node) is lightning_node.LightningNodeSoftGriefingDosAttack])
-        victim_node = random.choice(network.nodes)
-        while victim_node == attacker_node:
-            victim_node = random.choice(network.nodes)
-        attacker_node.set_victim(victim_node)
+def run_simulation(network, use_gp_protocol, simulate_attack):
+    attackers_node, victims_node = [], []
+    if simulate_attack:
+        attackers_node = [node for node in network.nodes if type(node) is not lightning_node.LightningNode]
+        victims_node = random.choices([node for node in network.nodes if node not in attackers_node], k=len(attackers_node))
+        for attacker, victim in zip(attackers_node, victims_node):
+            attacker.set_victim(victim)
     counter = 0
+    nodes_to_simulate = [node for node in network.nodes if node not in attackers_node and node not in victims_node]
     while BLOCKCHAIN_INSTANCE.block_number < NUMBER_OF_BLOCKS:
-        sender_node = random.choice(network.nodes)
+        sender_node = random.choice(nodes_to_simulate)
         # find receiver node
-        receiver_node = random.choice(network.nodes)
+        receiver_node = random.choice(nodes_to_simulate)
         while receiver_node == sender_node:
-            receiver_node = random.choice(network.nodes)
+            receiver_node = random.choice(nodes_to_simulate)
 
-        if dos_attack:
-            send_transaction(network, victim_node, attacker_node, use_gp_protocol)
+        if simulate_attack:
+            send_transaction(network, victims_node, attackers_node, use_gp_protocol, 1000) # TODO: change to choose the amount
+                                                                                            # in the node itself
         if send_transaction(network, receiver_node, sender_node, use_gp_protocol):
             METRICS_COLLECTOR_INSTANCE.count(SEND_TRANSACTION)
         else:
@@ -114,15 +117,15 @@ def run_simulation(network, use_gp_protocol, dos_attack=False):
 
     increase_block(FUNCTION_COLLECTOR_INSTANCE.get_max_k())
     print(f"Final block number is {BLOCKCHAIN_INSTANCE.block_number}")
-    close_channel_and_log_metrics(network, dos_attack, attacker_node, victim_node)
+    close_channel_and_log_metrics(network, attackers_node, victims_node)
     metrics = METRICS_COLLECTOR_INSTANCE.get_metrics()
     metrics_str = '\n'.join([f'\t{k}: {v:,}' for k, v in metrics.items()])
     print(f"Metrics of this run: \n{metrics_str}")
     return metrics
 
 
-def send_transaction(network, receiver_node, sender_node, use_gp_protocol):
-    amount_in_msat = how_much_to_send()
+def send_transaction(network, receiver_node, sender_node, use_gp_protocol, amount_in_msat_to_send=None):
+    amount_in_msat = how_much_to_send() if not amount_in_msat_to_send else amount_in_msat_to_send
     node_to_min_to_send, node_to_path = network.find_shortest_path(receiver_node, sender_node, amount_in_msat,
                                                                    GRIEFING_PENALTY_RATE, use_gp_protocol)
     if sender_node in node_to_min_to_send:
@@ -147,22 +150,18 @@ def increase_block(block_number_to_increase):
         FUNCTION_COLLECTOR_INSTANCE.run()
 
 
-def close_channel_and_log_metrics(network, dos_attack, attacker_node, victim_node):
+def close_channel_and_log_metrics(network, attacker_nodes, victim_nodes):
     for node in network.nodes:
         for other_node in network.edges[node]:
             node.close_channel(other_node)
 
-        if dos_attack and node == victim_node:
-            METRICS_COLLECTOR_INSTANCE.average("Victim node balance", BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        elif dos_attack and node == attacker_node:
-            METRICS_COLLECTOR_INSTANCE.average("Attacker node balance", BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        elif type(node) is lightning_node.LightningNodeSoftGriefing or type(node) is \
-                lightning_node.LightningNodeSoftGriefingDosAttack:
-            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_SOFT_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        if node in victim_nodes:
+            METRICS_COLLECTOR_INSTANCE.average("Victim node balance avg", BLOCKCHAIN_INSTANCE.get_balance_for_node(node)) #
+            # TODO: move to singleton
+        elif node in attacker_nodes:
+            METRICS_COLLECTOR_INSTANCE.average("Attacker node balance avg", BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
         elif type(node) is lightning_node.LightningNode:
             METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        elif type(node) is lightning_node.LightningNodeGriefing:
-            METRICS_COLLECTOR_INSTANCE.average(GRIEFING_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
 
 
 def add_more_metrics(metrics):
@@ -189,67 +188,49 @@ def simulation_details(func):
     return wrapper
 
 
-def create_network(soft_griefing_percentage, griefing_percentage, delta, max_number_of_block_to_respond, dos_attack):
+def create_network(attacker_percentage, attacker_node_type, delta, max_number_of_block_to_respond):
     network = Network()
-    number_of_nodes = NUMBER_OF_NODES - 1 if dos_attack else NUMBER_OF_NODES
-    number_of_soft_griefing_nodes = int(soft_griefing_percentage * number_of_nodes)
-    number_of_griefing_nodes = int(griefing_percentage * number_of_nodes)
-    if dos_attack:
-        network.add_node(create_node(delta, max_number_of_block_to_respond, NodeType.SOFT_GRIEFING_DOS_ATTACK))
-    for _ in range(number_of_nodes - number_of_soft_griefing_nodes - number_of_griefing_nodes):
+    number_of_attacker_nodes = int(attacker_percentage * NUMBER_OF_NODES)
+    for _ in range(NUMBER_OF_NODES - number_of_attacker_nodes):
         network.add_node(create_node(delta, max_number_of_block_to_respond))
-    for _ in range(number_of_soft_griefing_nodes):
-        network.add_node(create_node(delta, max_number_of_block_to_respond, NodeType.SOFT_GRIEFING))
-    for _ in range(number_of_griefing_nodes):
-        network.add_node(create_node(delta, max_number_of_block_to_respond, NodeType.GRIEFING))
+    for _ in range(number_of_attacker_nodes):
+        network.add_node(create_node(delta, max_number_of_block_to_respond, attacker_node_type))
     random.shuffle(network.nodes)
     return network
 
 
-def generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing_percentage, delta,
+def generate_network_from_snapshot(json_data, attacker_percentage, attacker_node_type, delta,
                                    max_number_of_block_to_respond):
     json_data['edges'] = list(filter(lambda x: x['node1_policy'] and x['node2_policy'], json_data['edges']))
     json_data['edges'] = list(filter(lambda x: not (x['node1_policy']['disabled'] or
                                                     x['node2_policy']['disabled']), json_data['edges']))
 
     nodes = {}
-    nodes_potential_to_be_attak = ['0227230b7b685f1742b944bfc5d79ddc8c5a90b68499775ee10895f87307d8d22e',
-                                   '02ad6fb8d693dc1e4569bcedefadf5f72a931ae027dc0f0c544b34c1c6f3b9a02b',
-                                   '03bf7441842433a304a1027abfb75f399cfcf62f75339f15b6c27c24d69100ee50',
-                                   '0242a4ae0c5bef18048fbecf995094b74bfb0f7391418d71ed394784373f41e4f3',
-                                   '03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f',
-                                   '0279c22ed7a068d10dc1a38ae66d2d6461e269226c60258c021b1ddcdfe4b00bc4',
-                                   '0217890e3aad8d35bc054f43acc00084b25229ecff0ab68debd82883ad65ee8266',
-                                   '03abf6f44c355dec0d5aa155bdbdd6e0c8fefe318eff402de65c6eb2e1be55dc3e',
-                                   '03bb88ccc444534da7b5b64b4f7b15e1eccb18e102db0e400d4b9cfe93763aa26d',
-                                   '0292052c3ab594f7b5e997099f66e8ed51b4342126dcb5c3caa76b38adb725dcdb']
-    nodes_potential_to_soft_grief = [edge['node1_pub'] if edge['node2_pub'] in nodes_potential_to_be_attak else edge[
-        'node2_pub'] for edge in json_data['edges'] if edge['node1_pub'] in nodes_potential_to_be_attak or edge['node2_pub'] in
-                                     nodes_potential_to_be_attak]
-    nodes_potential_to_soft_grief = set([pub for pub in nodes_potential_to_soft_grief if pub not in nodes_potential_to_be_attak])
+    # nodes_potential_to_be_attack = ['0227230b7b685f1742b944bfc5d79ddc8c5a90b68499775ee10895f87307d8d22e',
+    #                                '02ad6fb8d693dc1e4569bcedefadf5f72a931ae027dc0f0c544b34c1c6f3b9a02b',
+    #                                '03bf7441842433a304a1027abfb75f399cfcf62f75339f15b6c27c24d69100ee50',
+    #                                '0242a4ae0c5bef18048fbecf995094b74bfb0f7391418d71ed394784373f41e4f3',
+    #                                '03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f',
+    #                                '0279c22ed7a068d10dc1a38ae66d2d6461e269226c60258c021b1ddcdfe4b00bc4',
+    #                                '0217890e3aad8d35bc054f43acc00084b25229ecff0ab68debd82883ad65ee8266',
+    #                                '03abf6f44c355dec0d5aa155bdbdd6e0c8fefe318eff402de65c6eb2e1be55dc3e',
+    #                                '03bb88ccc444534da7b5b64b4f7b15e1eccb18e102db0e400d4b9cfe93763aa26d',
+    #                                '0292052c3ab594f7b5e997099f66e8ed51b4342126dcb5c3caa76b38adb725dcdb']
+    # nodes_potential_to_soft_grief = [edge['node1_pub'] if edge['node2_pub'] in nodes_potential_to_be_attack else edge[
+    #     'node2_pub'] for edge in json_data['edges'] if edge['node1_pub'] in nodes_potential_to_be_attack or edge['node2_pub'] in
+    #                                  nodes_potential_to_be_attack]
+    # nodes_potential_to_soft_grief = set([pub for pub in nodes_potential_to_soft_grief if pub not in nodes_potential_to_be_attack])
+
+
     number_of_nodes = len(json_data['nodes'])
-    # number_of_soft_griefing_nodes = int(soft_griefing_percentage * number_of_nodes)
-    # number_of_griefing_nodes = int(griefing_percentage * number_of_nodes)
+    number_of_attackers = int(attacker_percentage * number_of_nodes)
 
-    for node in json_data['nodes']:
-        if node['pub_key'] in nodes_potential_to_be_attak:
-            nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
-    nodes_potential_to_be_attak_addresses = [nodes[node] for node in nodes]
-    for node in json_data['nodes']:
-        if node['pub_key'] in nodes_potential_to_soft_grief and random.uniform(0, 1) < soft_griefing_percentage:
-            nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond, NodeType.SOFT_GRIEFING_DOS_ATTACK,
-                                                 nodes_potential_to_be_attak_addresses, 1)
-        elif node['pub_key'] in nodes_potential_to_soft_grief and random.uniform(0, 1) < griefing_percentage:
-            nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond, NodeType.GRIEFING)
-        elif nodes.get(node['pub_key']) is None:
+    for node in json_data['nodes'][:number_of_attackers]:
+        nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
+
+    for node in json_data['nodes'][number_of_attackers:]:
             nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
 
-    # for node in json_data['nodes'][:number_of_soft_griefing_nodes]:
-    #     nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond, NodeType.SOFT_GRIEFING)
-    # for node in json_data['nodes'][number_of_soft_griefing_nodes:number_of_griefing_nodes + number_of_soft_griefing_nodes]:
-    #     nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond, NodeType.GRIEFING)
-    # for node in json_data['nodes'][number_of_griefing_nodes + number_of_soft_griefing_nodes:]:
-    #     nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
     network = Network(list(nodes.values()))
     for edge in json_data['edges']:
         network.add_edge(nodes[edge['node1_pub']], nodes[edge['node2_pub']], int(int(edge['capacity']) / 2))
@@ -257,22 +238,21 @@ def generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing
 
 
 @simulation_details
-def simulate_snapshot_network(soft_griefing_percentage=0.05, griefing_percentage=0.05, delta=40,
-                              max_number_of_block_to_respond=2, use_gp_protocol=True):
+def simulate_snapshot_network(attacker_percentage, attacker_node_type, use_gp_protocol, delta, max_number_of_block_to_respond):
     with open(SNAPSHOT_PATH, encoding="utf-8") as f:
         json_data = json.load(f)
 
-    network = generate_network_from_snapshot(json_data, soft_griefing_percentage, griefing_percentage, delta,
+    network = generate_network_from_snapshot(json_data, attacker_percentage, attacker_node_type, delta,
                                              max_number_of_block_to_respond)
 
-    return run_simulation(network, use_gp_protocol)
+    return run_simulation(network, use_gp_protocol, attacker_percentage > 0)
 
 
 # Redundancy network functions
-def generate_redundancy_network(soft_griefing_percentage, griefing_percentage, delta, max_number_of_block_to_respond, dos_attack):
+def generate_redundancy_network(attacker_percentage, attacker_node_type, delta, max_number_of_block_to_respond):
     # connect 2 nodes if differ by 10 to the power of n(1...floor(log_10(number_of_nodes))+1)
     #   modulo 10^floor(log_10(number_of_nodes))
-    network = create_network(soft_griefing_percentage, griefing_percentage, delta, max_number_of_block_to_respond, dos_attack)
+    network = create_network(attacker_percentage, attacker_node_type, delta, max_number_of_block_to_respond)
     n = int(math.log(NUMBER_OF_NODES, 10))
     jump_indexes = [10 ** i for i in range(n+1)]
     for i in range(NUMBER_OF_NODES):
@@ -289,24 +269,22 @@ def generate_redundancy_network(soft_griefing_percentage, griefing_percentage, d
 
 
 @simulation_details
-def simulate_redundancy_network(soft_griefing_percentage=0.20, griefing_percentage=0.05, use_gp_protocol=True, delta=40,
-                                max_number_of_block_to_respond=5, dos_attack=False):
-    network = generate_redundancy_network(soft_griefing_percentage, griefing_percentage, delta,
-                                          max_number_of_block_to_respond, dos_attack)
-    return run_simulation(network, use_gp_protocol, dos_attack)
+def simulate_redundancy_network(attacker_percentage, attacker_node_type, use_gp_protocol, delta, max_number_of_block_to_respond):
+    network = generate_redundancy_network(attacker_percentage, attacker_node_type, delta,
+                                          max_number_of_block_to_respond)
+    return run_simulation(network, use_gp_protocol, attacker_percentage > 0)
 
 
-def build_and_run_simulation(file_to_write, soft_griefing_percentage, griefing_percentage, use_gp_protocol, delta,
-                             max_number_of_block_to_respond, network_topology, dos_attack):
-    parameters = {"soft_griefing_percentage": soft_griefing_percentage,
-                  "griefing_percentage": griefing_percentage,
+def build_and_run_simulation(file_to_write, attacker_percentage, attacker_node_type, use_gp_protocol, delta,
+                             max_number_of_block_to_respond, network_topology):
+    parameters = {"attacker_percentage": attacker_percentage,
+                  "attacker_node_type": attacker_node_type,
                   "use_gp_protocol": use_gp_protocol,
                   "delta": delta,
-                  "max_number_of_block_to_respond": max_number_of_block_to_respond,
-                  "dos_attack": dos_attack}
-    if network_topology == 'redundancy':
+                  "max_number_of_block_to_respond": max_number_of_block_to_respond}
+    if network_topology == NetworkType.REDUNDANCY:
         metrics = simulate_redundancy_network(**parameters)
-    elif network_topology == 'snapshot':
+    elif network_topology == NetworkType.SNAPSHOT:
         metrics = simulate_snapshot_network(**parameters)
     else:
         raise Exception("got invalid network_topology name!")
@@ -319,39 +297,38 @@ def build_and_run_simulation(file_to_write, soft_griefing_percentage, griefing_p
     FUNCTION_COLLECTOR_INSTANCE.init_parameters()
 
 
-def run_multiple_simulation(is_soft_griefing=True, dos_attack=False):
-    soft_griefing_percentages = [0, 0.1, 0.2]
-    griefing_percentages = [0]
-    if not is_soft_griefing:
-        soft_griefing_percentages = [0]
-        griefing_percentages = [0.01, 0.1, 0.2]
+def run_multiple_simulation():
+    parameters = set()
+    attacker_percentages = [0.001, 0.01, 0.05]
     use_gp_protocol_options = [True, False]
-    network_topologies = ['redundancy']
+    # network_topologies = [NetworkType.REDUNDANCY, NetworkType.SNAPSHOT]
+    network_topologies = [NetworkType.REDUNDANCY]
+    node_types = [NodeType.SOFT_GRIEFING, NodeType.SOFT_GRIEFING_DOS_ATTACK, NodeType.GRIEFING]
     deltas = [40, 70, 100]
     max_numbers_of_block_to_respond = [2, 6, 10]
     try:
         timestamp = datetime.timestamp(datetime.now())
-        with open(f"simulation_results/{timestamp}_rawdata{'_dos' if dos_attack else ''}", 'w') as f:
+        with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
+
+            def run_if_not_ran_before(*args):
+                if args not in parameters:
+                    build_and_run_simulation(f, *args)
+                    parameters.add(args)
+
             for network_topology in network_topologies:
                 for use_gp_protocol in use_gp_protocol_options:
+
                     for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
-                        build_and_run_simulation(f, SOFT_GRIEFING_PERCENTAGE_DEFAULT, GRIEFING_PERCENTAGE_DEFAULT,
-                                                 use_gp_protocol, DELTA_DEFAULT, max_number_of_block_to_respond,
-                                                 network_topology,dos_attack)
+                        run_if_not_ran_before(ATTACK_PERCENTAGE_DEFAULT, NodeType.SOFT_GRIEFING, use_gp_protocol,
+                                              DELTA_DEFAULT, max_number_of_block_to_respond, network_topology)
                     for delta in deltas:
-                        build_and_run_simulation(f, SOFT_GRIEFING_PERCENTAGE_DEFAULT, GRIEFING_PERCENTAGE_DEFAULT,
-                                                 use_gp_protocol, delta, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT,
-                                                 network_topology, dos_attack)
+                        run_if_not_ran_before(ATTACK_PERCENTAGE_DEFAULT, NodeType.SOFT_GRIEFING, use_gp_protocol,
+                                              delta, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT, network_topology)
 
-                    for griefing_percentage in griefing_percentages:
-                        build_and_run_simulation(f, SOFT_GRIEFING_PERCENTAGE_DEFAULT, griefing_percentage,
-                                                 use_gp_protocol, DELTA_DEFAULT, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT,
-                                                 network_topology, dos_attack)
-
-                    for soft_griefing_percentage in soft_griefing_percentages:
-                        build_and_run_simulation(f, soft_griefing_percentage, GRIEFING_PERCENTAGE_DEFAULT,
-                                                 use_gp_protocol, DELTA_DEFAULT, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT,
-                                                 network_topology, dos_attack)
+                    for node_type in node_types:
+                        for attacker_percentage in attacker_percentages:
+                            run_if_not_ran_before(attacker_percentage, node_type, use_gp_protocol,
+                                                  DELTA_DEFAULT, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT, network_topology)
 
     finally:
         f.close()

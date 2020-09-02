@@ -179,9 +179,9 @@
 
     var softGriefing = "0";
     var softGriefingOptions = ["0", "0.1", "0.2"];
-    var busyNetwork = "4";
+    var busyNetwork = "6";
     var busyNetworkOptions = ["2", "6", "10"];
-    var delta = "60";
+    var delta = "70";
     var deltaOptions = ["40", "70", "100"];
     var topology = document.getElementById('network topology');
     topology.onchange = changeGraph;
@@ -280,8 +280,8 @@
             var deltaV = xAxisOptions.value === "delta" ? val : delta;
             var busyNetworkV = xAxisOptions.value === "busy network" ? val : busyNetwork;
             var softGriefingV = xAxisOptions.value === "soft griefing rate" ? val : softGriefing;
-            const keyUseGp = deltaV + '_0_' + busyNetworkV + '_' + topology.value + '_' + softGriefingV + "_True";
-            const keyNotUseGp = deltaV + '_0_' + busyNetworkV + '_' + topology.value + "_" + softGriefingV + "_False";
+            const keyUseGp = deltaV + '_False_0_' + busyNetworkV + '_' + topology.value + '_' + softGriefingV + "_True";
+            const keyNotUseGp = deltaV + '_False_0_' + busyNetworkV + '_' + topology.value + "_" + softGriefingV + "_False";
             console.log("keyUseGp: " + keyUseGp);
             console.log("keyNotUseGp: " + keyNotUseGp);
             graphDataUseGp.push(all_data[keyUseGp][yAxisOptions.value]);

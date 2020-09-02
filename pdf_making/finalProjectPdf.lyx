@@ -371,6 +371,18 @@ status open
 \end_layout
 
 \begin_layout Quotation
+רשת 
+\begin_inset Formula $Lightning$
+\end_inset
+
+ היא רשת מבוזרת הפועלת על גבי רשת ה-
+\begin_inset Formula $Bitcoin$
+\end_inset
+
+ ומטרתה 
+\begin_inset Newline newline
+\end_inset
+
 בפרויקט שלנו החלטנו לממש ולנתח את הרעיון למיגור תקיפת
 \family roman
 \series medium
@@ -425,7 +437,11 @@ Grifeing
 \uwave default
 \noun default
 \color inherit
-בעזרת הטלת קנס על מבצעי המתקפה.
+ברשת 
+\begin_inset Formula $Lightning$
+\end_inset
+
+ בעזרת הטלת קנס על מבצעי המתקפה.
  הרעיון מוצג ב
 \begin_inset ERT
 status open

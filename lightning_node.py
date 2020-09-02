@@ -121,12 +121,12 @@ class LightningNode:
         self._probability_to_not_respond_immediately = 1
         self._delta = delta
         self._max_number_of_block_to_respond = max_number_of_block_to_respond
-        self._im_victim = False
+        # self._im_victim = False
 
         BLOCKCHAIN_INSTANCE.add_node(self, balance)
 
-    def set_im_victim(self):
-        self._im_victim = True
+    # def set_im_victim(self):
+    #     self._im_victim = True
 
     @property
     def address(self):
@@ -495,42 +495,22 @@ class LightningNode:
         contract.invalidate()  # TODO: see if needed
 
 
-class LightningNodeSoftGriefing(LightningNode):
-    def __init__(self, *args, probability_to_soft_griefing):
-        super().__init__(*args)
-        self._block_number_to_resolve = self._delta + 20
-        self._probability_to_soft_griefing = probability_to_soft_griefing
+class LightningNodeAttacker(LightningNode):
+    def __init__(self, *args):
+        super(LightningNodeAttacker, self).__init__(*args)
+        self._node_to_attack = None
 
-    # def resolve_transaction(self, transaction_id: int, x: str):
-    #     if random.uniform(0, 1) <= self._probability_to_soft_griefing:
-    #         super(LightningNodeSoftGriefing, self).resolve_transaction(transaction_id, x)
-    #     else:
-    #         METRICS_COLLECTOR_INSTANCE.count(PERFORM_SOFT_GRIEFING)
-    #         if transaction_id not in self._transaction_id_to_transaction_info:
-    #             return
-    #         info = self._transaction_id_to_transaction_info[transaction_id]
-    #         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
-    #                                            .resolve_transaction(transaction_id, x),
-    #                                            info.expiration_block_number - self._block_number_to_resolve)
-    #
-    # def resolve_htlc_transaction(self, transaction_id: int, x: str):
-    #     if random.uniform(0, 1) <= self._probability_to_soft_griefing:
-    #         super(LightningNodeSoftGriefing, self).resolve_htlc_transaction(transaction_id, x)
-    #     else:
-    #         METRICS_COLLECTOR_INSTANCE.count(PERFORM_SOFT_GRIEFING)
-    #         if transaction_id not in self._transaction_id_to_transaction_info:
-    #             return
-    #         info = self._transaction_id_to_transaction_info[transaction_id]
-    #         FUNCTION_COLLECTOR_INSTANCE\
-    #             .append(lambda: super(LightningNodeSoftGriefing, self)
-    #                     .resolve_htlc_transaction(transaction_id, x),
-    #                     info.expiration_block_number - self._block_number_to_resolve)
-    #
-    # def ask_to_cancel_contract(self, contract: 'cn.Contract_HTLC'):
-    #     return
+    def set_victim(self, node):
+        self._node_to_attack = node
+
+
+class LightningNodeSoftGriefing(LightningNodeAttacker):
+    def __init__(self, *args):
+        super(LightningNodeSoftGriefing, self).__init__(*args)
+        self._block_number_to_resolve = self._delta + 20
 
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
-        if random.uniform(0, 1) <= self._probability_to_soft_griefing:
+        if self._transaction_id_to_final_node.get(transaction_id) != self._node_to_attack:
             super(LightningNodeSoftGriefing, self).receive_cancellation_contract(transaction_id, contract)
         else:
             if transaction_id not in self._transaction_id_to_transaction_info:
@@ -542,13 +522,9 @@ class LightningNodeSoftGriefing(LightningNode):
                                                info.expiration_block_number - self._block_number_to_resolve)
 
 
-class LightningNodeSoftGriefingDosAttack(LightningNode):
+class LightningNodeSoftGriefingDosAttack(LightningNodeAttacker):
     def __init__(self, *args):
-        super().__init__(*args)
-        self._node_to_attack = None
-
-    def set_victim(self, node):
-        self._node_to_attack = node
+        super(LightningNodeSoftGriefingDosAttack, self).__init__(*args)
 
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
         if self._transaction_id_to_final_node.get(transaction_id) == self._node_to_attack:
@@ -557,7 +533,8 @@ class LightningNodeSoftGriefingDosAttack(LightningNode):
             super(LightningNodeSoftGriefingDosAttack, self).receive_cancellation_contract(transaction_id, contract)
 
 
-class LightningNodeGriefing(LightningNode):
+class LightningNodeGriefing(LightningNodeAttacker):
+    # TODO: what to do with griefing??
     def __init__(self, *args, probability_to_griefing):
         super().__init__(*args)
         self._probability_to_griefing = probability_to_griefing
