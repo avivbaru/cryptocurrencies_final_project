@@ -7,5 +7,6 @@
 __pycache__/*
 simulation_results/old/*
 simulation_results/*_rawdata
+simulation_results/*_rawdata_dos
 simulation_gui/node_modules/*
 simulation_gui/.idea/*

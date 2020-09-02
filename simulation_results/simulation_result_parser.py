@@ -2,13 +2,14 @@ import itertools
 import json
 import os
 from collections import defaultdict
+import fire
 
 
-def main():
+def main(is_dos_attack=False):
     files = os.listdir('.')
     all_data = []
     for f_name in files:
-        if f_name.endswith('_rawdata'):
+        if f_name.endswith(f'_rawdata{"_dos" if is_dos_attack else ""}'):
             with open(f_name, 'r') as f:
                 all_data.extend(f.readlines())
     all_data = [json.loads(d.strip()) for d in all_data if d.strip()]
@@ -32,16 +33,18 @@ def main():
                 key_to_calculate_average = '_'.join([str(z[0]) if len(z) == 1 else 'Average' for z in values])
                 for opt in itertools.product(*values):
                     current_key = '_'.join([str(z) for z in opt])
-                    for metric_name, metric_value in runs[current_key].items():
-                        metrics[metric_name] += metric_value
-                    count += 1
-                runs[key_to_calculate_average] = {k: v / count for k, v in metrics.items()} # calculate the average
+                    if current_key in runs:
+                        for metric_name, metric_value in runs[current_key].items():
+                            metrics[metric_name] += metric_value
+                        count += 1
+                if metrics:
+                    runs[key_to_calculate_average] = {k: v / count for k, v in metrics.items()} # calculate the average
     for r in runs:
         print(r, runs[r])
 
-    with open('../simulation_gui/runs.json', 'w') as f:
-        f.write(json.dumps(runs))
+    with open(f'../simulation_gui/runs{"_dos" if is_dos_attack else ""}.js', 'w') as f:
+        f.write(f"data_json = '{json.dumps(runs)}';")
 
 
 if __name__ == '__main__':
-    main()
+    fire.Fire()

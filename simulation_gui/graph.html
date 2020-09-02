@@ -120,6 +120,7 @@
     <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/pure-min.css" integrity="sha384-cg6SkqEOCV1NbJoCu11+bm0NvBRc8IYLRGXkmNrqUBfTjmMYwNKPWBTIKyw9mHNJ" crossorigin="anonymous">
     <link href="nouislider.css" rel="stylesheet">
     <script src="nouislider.js"></script>
+    <script  type="text/javascript"  src="runs.js"></script>
 </head>
 <body>
 <div itemtype="container-all" class="container">
@@ -133,7 +134,7 @@
             </div>
             <div itemtype="inner" class="container">
                 <p itemtype="text">X axis</p>
-                <select id="x" name="x" onchange="changeSelectX()">
+                <select id="x" name="x" onchange="changeGraph()">
                     <option id="x soft griefing" value="soft griefing rate">soft griefing rate</option>
                     <option id="x busy network" value="busy network">busy network</option>
                     <option id="x delta" value="delta">delta</option>
@@ -142,49 +143,11 @@
         </div>
         <hr>
         <div itemtype="container" class="container" id="sliders">
-<!--            <div itemtype="inner" class="container">-->
-<!--                <p itemtype="text">block number</p>-->
-<!--                <select id="block number" name="x">-->
-<!--                    <option value="2160">2160</option>-->
-<!--                </select>-->
-<!--            </div>-->
-<!--            <div itemtype="inner" class="container">-->
-<!--                <p itemtype="text">number of nodes</p>-->
-<!--                <select id="number of nodes" name="x">-->
-<!--                    <option value="100">100</option>-->
-<!--                </select>-->
-<!--            </div>-->
-            <div itemtype="inner" class="container">
-                <p itemtype="text" >soft griefing rate</p>
-                <select id="soft griefing rate" name="x">
-                    <option value="Average">Average</option>
-                    <option value="0">0</option>
-                    <option value="0.05">0.05</option>
-                    <option value="0.15">0.15</option>
-                </select>
-            </div>
             <div itemtype="inner" class="container">
                 <p itemtype="text">network topology</p>
                 <select id="network topology" name="x">
                     <option value="redundancy">redundancy</option>
-                    <option value="random">random</option>
                     <option value="snapshot">snapshot</option>
-                </select>
-            </div>
-            <div itemtype="inner" class="container">
-                <p itemtype="text">delta</p>
-                <select id="delta" name="delta">
-                    <option value="Average">Average</option>
-                    <option value="40">40</option>
-                    <option value="100">100</option>
-                </select>
-            </div>
-            <div itemtype="inner" class="container">
-                <p itemtype="text">busy network</p>
-                <select id="busy network" name="busy network">
-                    <option value="Average">Average</option>
-                    <option value="2">2</option>
-                    <option value="8">8</option>
                 </select>
             </div>
             <div itemtype="container" class="container">
@@ -192,7 +155,20 @@
             </div>
         </div>
         <canvas id="myChart" width=50% height=20%></canvas>
-
+        <h1>Using GP Protocol</h1>
+        <table id="table" class="pure-table">
+            <thead id="header">
+            </thead>
+            <tbody id="tbody">
+            </tbody>
+        </table>
+        <h1>Not Using GP Protocol</h1>
+        <table id="table2" class="pure-table">
+            <thead id="headerNotUse">
+            </thead>
+            <tbody id="tbodyNotUse">
+            </tbody>
+        </table>
     </form>
 </div>
 </body>
@@ -201,40 +177,19 @@
 <script src="Chart.js"></script>
 <script>
 
-    // var block = document.getElementById('block number');
-    // block.onchange = changeGraph;
-    // var nodes = document.getElementById('number of nodes');
-    // nodes.onchange = changeGraph;
-    var softGriefing = document.getElementById('soft griefing rate');
-    softGriefing.onchange = changeGraph;
+    var softGriefing = "0";
+    var softGriefingOptions = ["0", "0.1", "0.2"];
+    var busyNetwork = "4";
+    var busyNetworkOptions = ["2", "6", "10"];
+    var delta = "60";
+    var deltaOptions = ["40", "70", "100"];
     var topology = document.getElementById('network topology');
     topology.onchange = changeGraph;
-    var busyNetwork = document.getElementById('busy network');
-    busyNetwork.onchange = changeGraph;
-    var delta = document.getElementById('delta');
-    delta.onchange = changeGraph;
     var yAxisOptions = document.getElementById('y');
     var xAxisOptions = document.getElementById('x');
     var myChart = document.getElementById("myChart");
 
-    function changeSelectX() {
-        console.log("test");
-        softGriefing.disabled = false;
-        delta.disabled = false;
-        busyNetwork.disabled = false;
-        var chosen = document.getElementById(xAxisOptions.value);
-        chosen.disabled = true;
-        changeGraph();
-    }
-    function readJsonFile(jsonFile) {
-        var request = new XMLHttpRequest();
-        request.open("GET", jsonFile, false);
-        request.send(null)
-        return JSON.parse(request.responseText);
-    }
-
-    // const all_data = readJsonFile("fake_data.json");
-    const all_data = readJsonFile("runs.json");
+    const all_data = JSON.parse(data_json);
     // Create metrics texts
     let metrics = new Set();
     const jsons = Object.values(all_data);
@@ -243,8 +198,10 @@
         Object.keys(jsonValue).forEach(metrics.add, metrics)
     }
     metrics = Array.from(metrics);
-    var values = document.getElementById('values');
     var tbody = document.getElementById('tbody');
+    var header = document.getElementById('header');
+    var tbodyNotUse = document.getElementById('tbodyNotUse');
+    var headerNotUse = document.getElementById('headerNotUse');
     for (var i = 0; i < metrics.length; i++) {
         let metric = metrics[i];
         const option = document.createElement("option");
@@ -255,25 +212,109 @@
 
 
     function changeGraph() {
-        var xAxis = document.getElementById(xAxisOptions.value);
+        var options = softGriefingOptions;
+        if (xAxisOptions.value === "delta") options = deltaOptions;
+        else if (xAxisOptions.value === "busy network") options = busyNetworkOptions;
+
         var graphDataUseGp = [];
         var graphDataNotUseGp = [];
         var labels = [];
-        for (var i = 0; i < xAxis.options.length; i++) {
-            var val = xAxis.options[i].value;
-            if (val === "Average") {
-                continue;
+
+        // use
+        var curr = document.getElementById("current");
+        if (curr) {
+            header.removeChild(curr);
+        }
+
+        const newCurr = document.createElement("tr");
+        newCurr.id = "current";
+        const tb = document.createElement("th");
+        tb.innerText = "Parameter";
+        newCurr.appendChild(tb)
+        header.appendChild(newCurr)
+
+        // Not Use
+        var currNotUse =  document.getElementById("currentNotUse");
+        if (currNotUse) {
+            headerNotUse.removeChild(currNotUse);
+        }
+
+        const newCurrNotUse = document.createElement("tr");
+        newCurrNotUse.id = "currentNotUse";
+        const tbNotUse = document.createElement("th");
+        tbNotUse.innerText = "Parameter";
+        newCurrNotUse.appendChild(tbNotUse)
+        headerNotUse.appendChild(newCurrNotUse)
+
+        for (var i = 0; i < yAxisOptions.options.length; i++) {
+            // Use
+            var toRemove =  document.getElementById(yAxisOptions.options[i].value);
+            if (toRemove) {
+                tbody.removeChild(toRemove);
             }
-            var deltaV = delta.isEqualNode(xAxis) ? xAxis.options[i].value : delta.value;
-            var busyNetworkV = busyNetwork.isEqualNode(xAxis) ? xAxis.options[i].value : busyNetwork.value;
-            var softGriefingV = softGriefing.isEqualNode(xAxis) ? xAxis.options[i].value : softGriefing.value;
+
+            const tr = document.createElement("tr");
+            tr.id = yAxisOptions.options[i].value;
+            const tbCurr = document.createElement("th");
+            tbCurr.innerText = yAxisOptions.options[i].value;
+            tr.appendChild(tbCurr);
+            tbody.appendChild(tr);
+
+
+            // Not Use
+            var toRemoveNotUse =  document.getElementById(yAxisOptions.options[i].value + "notuse");
+            if (toRemoveNotUse) {
+                tbodyNotUse.removeChild(toRemoveNotUse);
+            }
+
+            const trNotUse = document.createElement("tr");
+            trNotUse.id = yAxisOptions.options[i].value + "notuse";
+            const tbCurrNotUse = document.createElement("th");
+            tbCurrNotUse.innerText = yAxisOptions.options[i].value;
+            trNotUse.appendChild(tbCurrNotUse);
+            tbodyNotUse.appendChild(trNotUse);
+        }
+
+        for (var i = 0; i < 3; i++) {
+            var val = options[i];
+            var deltaV = xAxisOptions.value === "delta" ? val : delta;
+            var busyNetworkV = xAxisOptions.value === "busy network" ? val : busyNetwork;
+            var softGriefingV = xAxisOptions.value === "soft griefing rate" ? val : softGriefing;
             const keyUseGp = deltaV + '_0_' + busyNetworkV + '_' + topology.value + '_' + softGriefingV + "_True";
             const keyNotUseGp = deltaV + '_0_' + busyNetworkV + '_' + topology.value + "_" + softGriefingV + "_False";
             console.log("keyUseGp: " + keyUseGp);
             console.log("keyNotUseGp: " + keyNotUseGp);
             graphDataUseGp.push(all_data[keyUseGp][yAxisOptions.value]);
             graphDataNotUseGp.push(all_data[keyNotUseGp][yAxisOptions.value]);
-            labels.push(xAxis.options[i].value);
+            labels.push(val);
+
+
+            // use gp
+            for (var j = 0; j < yAxisOptions.options.length; j++) {
+                const key = yAxisOptions.options[j].value;
+                const currKey =  document.getElementById(key);
+                const tbCurr = document.createElement("th");
+                tbCurr.innerText = yAxisOptions.options[j].value in all_data[keyUseGp]? all_data[keyUseGp][key]: "";
+                currKey.appendChild(tbCurr);
+            }
+
+            const tbHeaderUse = document.createElement("th");
+            tbHeaderUse.innerText = val;
+            newCurr.appendChild(tbHeaderUse)
+
+            // not use gp
+            for (var j = 0; j < yAxisOptions.options.length; j++) {
+                const key = yAxisOptions.options[j].value;
+                const currKey =  document.getElementById(key + "notuse");
+                const tbCurr = document.createElement("th");
+                tbCurr.innerText = yAxisOptions.options[j].value in all_data[keyNotUseGp]? all_data[keyNotUseGp][key]: "";
+                currKey.appendChild(tbCurr);
+            }
+
+            const tbHeaderNotUse = document.createElement("th");
+            tbHeaderNotUse.innerText = val;
+            newCurrNotUse.appendChild(tbHeaderNotUse)
+
         }
         new Chart(myChart,
             {
@@ -317,7 +358,6 @@
         myChart.hidden = false;
     }
 
-    changeSelectX();
-    // changeGraph();
+    changeGraph();
 </script>
 </html>
