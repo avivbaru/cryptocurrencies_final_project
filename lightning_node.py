@@ -422,7 +422,12 @@ class LightningNode:
         del self._transaction_id_to_transaction_info[transaction_id]
         info.previous_node.terminate_transaction(transaction_id, r)
 
-    def start_regular_htlc_transaction(self, final_node: 'LightningNode', amount_in_wei, nodes_between: List['LightningNode']):
+    def start_regular_htlc_transaction(self, final_node: 'LightningNode', amount_in_wei: int,
+                                       nodes_between: List['LightningNode']):
+        """
+        Starts a transaction between `self` and `final_node` with the original ('regular') htlc protocol. Creates a transaction
+        info and sends it to the next node in the path `nodes_between`
+        """
         hash_x = final_node.generate_secret_x_hash()
         assert nodes_between
         node_to_send = nodes_between[0]
@@ -436,6 +441,10 @@ class LightningNode:
         self.send_regular_htlc(info, nodes_between[1:])
 
     def send_regular_htlc(self, transaction_info: TransactionInfo, nodes_between: List['LightningNode']):
+        """
+        Creates a forward contract (which acts as a regular htlc) `ContractForward` and sends it with the
+        current `TransactionInfo` to the `next_node` in `transaction_info`
+        """
         channel = self._other_nodes_to_channels[transaction_info.next_node.address]
 
         contract = cn.Contract_HTLC(transaction_info.id, transaction_info.amount_in_wei, transaction_info.hash_x, 0,
@@ -444,6 +453,11 @@ class LightningNode:
 
     def receive_regular_htlc(self, sender: 'LightningNode', previous_transaction_info: TransactionInfo,
                              contract: 'cn.Contract_HTLC', nodes_between: List['LightningNode']):
+        """
+        Receives a forward contract from `sender`, uses `previous_transaction_info` to deduce it's own `TransactionInfo` and sends
+        a new contract to the next node in `nodes_between` if exists, otherwise starts resolving the transaction with the
+        previous node.
+        """
         node_to_send = nodes_between[0] if nodes_between else None
         fee = self.get_fee_for_transfer_amount(previous_transaction_info.amount_in_wei)
         amount_in_wei = previous_transaction_info.amount_in_wei - fee if nodes_between else 0
@@ -468,6 +482,9 @@ class LightningNode:
 
     @random_delay_node
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
+        """
+        Resolves the transaction the corresponds to `transaction_id` with the given pre-image `x`.
+        """
         if transaction_id not in self._transaction_id_to_transaction_info:
             return
         info = self._transaction_id_to_transaction_info[transaction_id]
@@ -486,21 +503,29 @@ class LightningNode:
 
         info.previous_node.resolve_htlc_transaction(transaction_id, x)
 
-    def generate_secret_x_hash(self) -> (int, int):
+    def generate_secret_x_hash(self) -> int:
+        """
+        Generates a new random key `x` (acts as a transaction confirmation key) and returns it's hash.
+        """
         x = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         hash_image = hash(x)
         self._hash_image_x_to_preimage[hash_image] = x
         return hash_image
 
     def generate_secret_r_hash(self) -> int:
+        """
+        Generates a new random key `r` (acts as a transaction cancellation key) and returns it's hash.
+        """
         r = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         hash_image = hash(r)
         self._hash_image_r_to_preimage[hash_image] = r
         return hash_image
 
     def close_channel(self, node):
-        if node.address not in self._other_nodes_to_channels:
-            return
+        """
+        Closing the channel between `self` and `node`.
+        """
+        assert node.address in self._other_nodes_to_channels
 
         channel = self._other_nodes_to_channels[node.address]
         del self._other_nodes_to_channels[node.address]
@@ -511,9 +536,15 @@ class LightningNode:
         del self._channels[channel.channel_state.channel_data.address]
 
     def notify_of_change_in_locked_funds(self, locked_fund):
+        """
+        Used to notify this node of a change in its locked funds in one of its channels.
+        """
         self._locked_funds += locked_fund
 
     def notify_of_closed_channel(self, channel: 'cm.Channel', other_node: 'LightningNode'):
+        """
+        Used to notify this node that one of its channels closed.
+        """
         if channel.channel_state.channel_data.address not in self._channels:
             return
         del self._channels[channel.channel_state.channel_data.address]
@@ -522,6 +553,9 @@ class LightningNode:
             del self._other_nodes_to_channels[other_node.address]
 
     def notify_of_cancellation_contract_payment(self, contract: 'cn.ContractCancellation'):
+        """
+        Used to notify this node of cancellation contract payment and to close this chain of cancellation contract off-chain.
+        """
         info = self._transaction_id_to_transaction_info[contract.transaction_id]
 
         previous_node = info.previous_node
