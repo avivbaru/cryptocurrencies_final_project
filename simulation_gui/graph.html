@@ -135,7 +135,7 @@
             <div itemtype="inner" class="container">
                 <p itemtype="text">X axis</p>
                 <select id="x" name="x" onchange="changeGraph()">
-                    <option id="x soft griefing" value="soft griefing rate">soft griefing rate</option>
+                    <option id="x number of attackers" value="number of attackers">number of attackers</option>
                     <option id="x busy network" value="busy network">busy network</option>
                     <option id="x delta" value="delta">delta</option>
                 </select>
@@ -148,6 +148,14 @@
                 <select id="network topology" name="x">
                     <option value="redundancy">redundancy</option>
                     <option value="snapshot">snapshot</option>
+                </select>
+            </div>
+            <div itemtype="inner" class="container">
+                <p itemtype="text">Node type</p>
+                <select id="node type" name="x">
+                    <option value="soft griefing">soft griefing</option>
+                    <option value="griefing">griefing</option>
+                    <option value="soft griefing dos attack">soft griefing dos attack</option>
                 </select>
             </div>
             <div itemtype="container" class="container">
@@ -177,14 +185,18 @@
 <script src="Chart.js"></script>
 <script>
 
-    var softGriefing = "0";
-    var softGriefingOptions = ["0", "0.1", "0.2"];
+    var nodeTypeDefault = "soft griefing";
+    var numberOfAttacker = "0";
+    var numberOfAttackersOptions = ["1", "3", "5"];
     var busyNetwork = "6";
     var busyNetworkOptions = ["2", "6", "10"];
     var delta = "70";
     var deltaOptions = ["40", "70", "100"];
     var topology = document.getElementById('network topology');
     topology.onchange = changeGraph;
+    var nodeType = document.getElementById('node type');
+    nodeType.onchange = changeGraph;
+
     var yAxisOptions = document.getElementById('y');
     var xAxisOptions = document.getElementById('x');
     var myChart = document.getElementById("myChart");
@@ -212,9 +224,20 @@
 
 
     function changeGraph() {
-        var options = softGriefingOptions;
-        if (xAxisOptions.value === "delta") options = deltaOptions;
-        else if (xAxisOptions.value === "busy network") options = busyNetworkOptions;
+        var options = numberOfAttackersOptions;
+        nodeType.disabled = true;
+        if (xAxisOptions.value === "delta")
+        {
+            nodeType.selectedIndex = 0;
+            options = deltaOptions;
+        }
+        else if (xAxisOptions.value === "busy network") {
+            nodeType.selectedIndex = 0;
+            options = busyNetworkOptions;
+        }
+        else {
+            nodeType.disabled = false;
+        }
 
         var graphDataUseGp = [];
         var graphDataNotUseGp = [];
@@ -279,9 +302,9 @@
             var val = options[i];
             var deltaV = xAxisOptions.value === "delta" ? val : delta;
             var busyNetworkV = xAxisOptions.value === "busy network" ? val : busyNetwork;
-            var softGriefingV = xAxisOptions.value === "soft griefing rate" ? val : softGriefing;
-            const keyUseGp = deltaV + '_False_0_' + busyNetworkV + '_' + topology.value + '_' + softGriefingV + "_True";
-            const keyNotUseGp = deltaV + '_False_0_' + busyNetworkV + '_' + topology.value + "_" + softGriefingV + "_False";
+            var numberOfAttackersV = xAxisOptions.value === "number of attackers" ? val : numberOfAttacker;
+            const keyUseGp = nodeType.value + '_' + deltaV + '_' + busyNetworkV + '_' + topology.value + '_' + numberOfAttackersV + "_True";
+            const keyNotUseGp = nodeType.value + '_' + deltaV + '_' + busyNetworkV + '_' + topology.value + "_" + numberOfAttackersV + "_False";
             console.log("keyUseGp: " + keyUseGp);
             console.log("keyNotUseGp: " + keyNotUseGp);
             graphDataUseGp.push(all_data[keyUseGp][yAxisOptions.value]);

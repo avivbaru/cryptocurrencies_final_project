@@ -5,11 +5,12 @@ from collections import defaultdict
 import fire
 
 
-def main(is_dos_attack=False):
+def main():
     files = os.listdir('.')
     all_data = []
     for f_name in files:
-        if f_name.endswith(f'_rawdata{"_dos" if is_dos_attack else ""}'):
+        if f_name.endswith(f'_rawdata'):
+            print(f"Opening file {f_name}")
             with open(f_name, 'r') as f:
                 all_data.extend(f.readlines())
     all_data = [json.loads(d.strip()) for d in all_data if d.strip()]
@@ -42,7 +43,7 @@ def main(is_dos_attack=False):
     for r in runs:
         print(r, runs[r])
 
-    with open(f'../simulation_gui/runs{"_dos" if is_dos_attack else ""}.js', 'w') as f:
+    with open(f'../simulation_gui/runs.js', 'w') as f:
         f.write(f"data_json = '{json.dumps(runs)}';")
 
 

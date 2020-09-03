@@ -35,12 +35,13 @@ STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to crea
 GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 1
 SIGMA = 0.1
-NUMBER_OF_NODES = 300
-NUMBER_OF_BLOCKS = 10 * 144
+# NUMBER_OF_NODES = 1000
+NUMBER_OF_NODES = 500
+NUMBER_OF_BLOCKS = 5 * 144
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 SOFT_GRIEFING_PROBABILITY = 0.5
 GRIEFING_PROBABILITY = 0.5
-ATTACK_PERCENTAGE_DEFAULT = 0
+ATTACKERS_NUMBER_DEFAULT = 0
 DELTA_DEFAULT = 70
 MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT = 6
 
@@ -71,8 +72,7 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
     METRICS_COLLECTOR_INSTANCE.average(BASE_FEE_LOG, base_fee)
     if NodeType.SOFT_GRIEFING == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
-                                                        GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                        probability_to_soft_griefing=SOFT_GRIEFING_PROBABILITY)
+                                                        GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond)
     if NodeType.GRIEFING == attacker_node_type:
         return lightning_node.LightningNodeGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                     GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
@@ -91,7 +91,10 @@ def run_simulation(network, use_gp_protocol, simulate_attack):
         victims_node = random.choices([node for node in network.nodes if node not in attackers_node], k=len(attackers_node))
         for attacker, victim in zip(attackers_node, victims_node):
             attacker.set_victim(victim)
+            attacker.set_base_fee(victim.base_fee)
+            attacker.set_fee_percentage(victim.fee_percentage)
     counter = 0
+    counter_attack = 0
     nodes_to_simulate = [node for node in network.nodes if node not in attackers_node and node not in victims_node]
     while BLOCKCHAIN_INSTANCE.block_number < NUMBER_OF_BLOCKS:
         sender_node = random.choice(nodes_to_simulate)
@@ -101,8 +104,13 @@ def run_simulation(network, use_gp_protocol, simulate_attack):
             receiver_node = random.choice(nodes_to_simulate)
 
         if simulate_attack:
-            send_transaction(network, victims_node, attackers_node, use_gp_protocol, 1000) # TODO: change to choose the amount
-                                                                                            # in the node itself
+            counter_attack += 1
+            if counter_attack == 30: # TODO: change!
+                counter_attack = 0
+                for attacker in attackers_node:
+                    send_transaction(network, attacker.get_victim(), attacker, use_gp_protocol, 1000 if type(attacker) is not
+                                                                                                        lightning_node.LightningNodeSoftGriefingDosAttack else None)
+                    # TODO: change to choose the amount in the node itself
         if send_transaction(network, receiver_node, sender_node, use_gp_protocol):
             METRICS_COLLECTOR_INSTANCE.count(SEND_TRANSACTION)
         else:
@@ -119,6 +127,7 @@ def run_simulation(network, use_gp_protocol, simulate_attack):
     print(f"Final block number is {BLOCKCHAIN_INSTANCE.block_number}")
     close_channel_and_log_metrics(network, attackers_node, victims_node)
     metrics = METRICS_COLLECTOR_INSTANCE.get_metrics()
+    add_more_metrics(metrics)
     metrics_str = '\n'.join([f'\t{k}: {v:,}' for k, v in metrics.items()])
     print(f"Metrics of this run: \n{metrics_str}")
     return metrics
@@ -167,6 +176,9 @@ def close_channel_and_log_metrics(network, attacker_nodes, victim_nodes):
 def add_more_metrics(metrics):
     metrics[LOCKED_FUND_PER_TRANSACTION_NORMALIZE_BY_AMOUNT_SENT_AVG] = metrics.get(LOCKED_FUND_PER_TRANSACTION_AVG, 0) / \
                                                                         metrics.get(TRANSACTION_AMOUNT_AVG, 1)
+    metrics["Attacker balance - Victim balance"] = metrics.get("Attacker node balance avg", 0) - metrics.get("Victim node "
+                                                                                                             "balance avg", 0)
+    # TODO: add difference of attacker and victim
 
 
 def simulation_details(func):
@@ -188,12 +200,11 @@ def simulation_details(func):
     return wrapper
 
 
-def create_network(attacker_percentage, attacker_node_type, delta, max_number_of_block_to_respond):
+def create_network(number_of_attackers, attacker_node_type, delta, max_number_of_block_to_respond):
     network = Network()
-    number_of_attacker_nodes = int(attacker_percentage * NUMBER_OF_NODES)
-    for _ in range(NUMBER_OF_NODES - number_of_attacker_nodes):
+    for _ in range(NUMBER_OF_NODES - number_of_attackers):
         network.add_node(create_node(delta, max_number_of_block_to_respond))
-    for _ in range(number_of_attacker_nodes):
+    for _ in range(number_of_attackers):
         network.add_node(create_node(delta, max_number_of_block_to_respond, attacker_node_type))
     random.shuffle(network.nodes)
     return network
@@ -249,10 +260,10 @@ def simulate_snapshot_network(attacker_percentage, attacker_node_type, use_gp_pr
 
 
 # Redundancy network functions
-def generate_redundancy_network(attacker_percentage, attacker_node_type, delta, max_number_of_block_to_respond):
+def generate_redundancy_network(number_of_attackers, attacker_node_type, delta, max_number_of_block_to_respond):
     # connect 2 nodes if differ by 10 to the power of n(1...floor(log_10(number_of_nodes))+1)
     #   modulo 10^floor(log_10(number_of_nodes))
-    network = create_network(attacker_percentage, attacker_node_type, delta, max_number_of_block_to_respond)
+    network = create_network(number_of_attackers, attacker_node_type, delta, max_number_of_block_to_respond)
     n = int(math.log(NUMBER_OF_NODES, 10))
     jump_indexes = [10 ** i for i in range(n+1)]
     for i in range(NUMBER_OF_NODES):
@@ -269,15 +280,15 @@ def generate_redundancy_network(attacker_percentage, attacker_node_type, delta, 
 
 
 @simulation_details
-def simulate_redundancy_network(attacker_percentage, attacker_node_type, use_gp_protocol, delta, max_number_of_block_to_respond):
-    network = generate_redundancy_network(attacker_percentage, attacker_node_type, delta,
+def simulate_redundancy_network(number_of_attackers, attacker_node_type, use_gp_protocol, delta, max_number_of_block_to_respond):
+    network = generate_redundancy_network(number_of_attackers, attacker_node_type, delta,
                                           max_number_of_block_to_respond)
-    return run_simulation(network, use_gp_protocol, attacker_percentage > 0)
+    return run_simulation(network, use_gp_protocol, number_of_attackers > 0)
 
 
-def build_and_run_simulation(file_to_write, attacker_percentage, attacker_node_type, use_gp_protocol, delta,
+def build_and_run_simulation(file_to_write, number_of_attackers, attacker_node_type, use_gp_protocol, delta,
                              max_number_of_block_to_respond, network_topology):
-    parameters = {"attacker_percentage": attacker_percentage,
+    parameters = {"number_of_attackers": number_of_attackers,
                   "attacker_node_type": attacker_node_type,
                   "use_gp_protocol": use_gp_protocol,
                   "delta": delta,
@@ -299,16 +310,18 @@ def build_and_run_simulation(file_to_write, attacker_percentage, attacker_node_t
 
 def run_multiple_simulation():
     parameters = set()
-    attacker_percentages = [0.001, 0.01, 0.05]
+    # attacker_percentages = [0.001, 0.01, 0.05]
+    attacker_percentages = [1, 3, 5]
     use_gp_protocol_options = [True, False]
     # network_topologies = [NetworkType.REDUNDANCY, NetworkType.SNAPSHOT]
     network_topologies = [NetworkType.REDUNDANCY]
-    node_types = [NodeType.SOFT_GRIEFING, NodeType.SOFT_GRIEFING_DOS_ATTACK, NodeType.GRIEFING]
+    # node_types = [NodeType.SOFT_GRIEFING, NodeType.SOFT_GRIEFING_DOS_ATTACK, NodeType.GRIEFING]
+    node_types = [NodeType.SOFT_GRIEFING, NodeType.SOFT_GRIEFING_DOS_ATTACK]
     deltas = [40, 70, 100]
     max_numbers_of_block_to_respond = [2, 6, 10]
     try:
-        timestamp = datetime.timestamp(datetime.now())
-        with open(f"simulation_results/{timestamp}_rawdata", 'w') as f:
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        with open(f"simulation_results/{current_time}_rawdata", 'w') as f:
 
             def run_if_not_ran_before(*args):
                 if args not in parameters:
@@ -318,17 +331,20 @@ def run_multiple_simulation():
             for network_topology in network_topologies:
                 for use_gp_protocol in use_gp_protocol_options:
 
-                    for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
-                        run_if_not_ran_before(ATTACK_PERCENTAGE_DEFAULT, NodeType.SOFT_GRIEFING, use_gp_protocol,
-                                              DELTA_DEFAULT, max_number_of_block_to_respond, network_topology)
-                    for delta in deltas:
-                        run_if_not_ran_before(ATTACK_PERCENTAGE_DEFAULT, NodeType.SOFT_GRIEFING, use_gp_protocol,
-                                              delta, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT, network_topology)
-
                     for node_type in node_types:
                         for attacker_percentage in attacker_percentages:
+                            # for delta in deltas:    # TODO: check if needed
+                            #     run_if_not_ran_before(attacker_percentage, node_type, use_gp_protocol,
+                            #                           delta, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT, network_topology)
                             run_if_not_ran_before(attacker_percentage, node_type, use_gp_protocol,
                                                   DELTA_DEFAULT, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT, network_topology)
+
+                    for max_number_of_block_to_respond in max_numbers_of_block_to_respond:
+                        run_if_not_ran_before(ATTACKERS_NUMBER_DEFAULT, NodeType.SOFT_GRIEFING, use_gp_protocol,
+                                              DELTA_DEFAULT, max_number_of_block_to_respond, network_topology)
+                    for delta in deltas:
+                        run_if_not_ran_before(ATTACKERS_NUMBER_DEFAULT, NodeType.SOFT_GRIEFING, use_gp_protocol,
+                                              delta, MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT, network_topology)
 
     finally:
         f.close()
