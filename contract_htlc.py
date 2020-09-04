@@ -4,11 +4,25 @@ from singletons import *
 
 
 class Contract_HTLC:
+    """
+    An abstract class that represent a contract for transferring money in the lightning network.
+    """
     def __init__(self, transaction_id: int, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
                  attached_channel: cm.Channel, payer: 'ln.LightningNode', payee: 'ln.LightningNode'):
+        """
+        Initializes a contract.
+        @param transaction_id: the id of the transaction this contract is used for.
+        @param amount_in_wei: the amount to be transferred in this contract.
+        @param hash_x: the hash of the secret x in this contract.
+        @param hash_r: the hash of the secret r in this contract.
+        @param expiration_block_number: the block number of the expiration time of this contract.
+        @param attached_channel: the channel associated with this contract.
+        @param payer: the payer of this contract.
+        @param payee: the payee of this contract.
+        """
         assert amount_in_wei > 0
 
-        self._transaction_id = transaction_id  # for debugging purposes
+        self._transaction_id = transaction_id
         self._amount_in_wei: int = amount_in_wei
         self._hash_x: int = hash_x
         self._hash_r: int = hash_r
@@ -20,16 +34,21 @@ class Contract_HTLC:
         self._payee = payee
         self._is_valid = False
         self._was_accepted = False
-
         self._money_to_transfer_to_payee = 0
 
         FUNCTION_COLLECTOR_INSTANCE.append(self._on_expired, expiration_block_number)
 
     def _on_expired(self):
+        """
+        Called upon contract expiration.
+        """
         assert self.is_expired
 
     @property
     def is_expired(self):
+        """
+        True iff this contract is expired.
+        """
         return BLOCKCHAIN_INSTANCE.block_number >= self._expiration_block_number
 
     @property
@@ -58,10 +77,16 @@ class Contract_HTLC:
 
     @property
     def pre_image_x(self):
+        """
+        @return: the pre image of `hash_x` - defaults to `None` and changes if someone reports its pre image.
+        """
         return self._pre_image_x
 
     @property
     def pre_image_r(self):
+        """
+        @return: the pre image of `hash_r` - defaults to `None` and changes if someone reports its pre image.
+        """
         return self._pre_image_r
 
     @property
@@ -74,20 +99,33 @@ class Contract_HTLC:
 
     @property
     def transfer_amount_to_payee(self):
+        """
+        @return: the amount the `payee` should get from `payer`, default is 0, might change when contract is concluded.
+        """
         return self._money_to_transfer_to_payee
 
-    @property
-    def is_concluded(self):
-        return not self._is_valid or self.is_expired or self._pre_image_x or self._pre_image_r
+    # @property TODO: see if can remove this
+    # def is_concluded(self):
+    #     """
+    #     True iff this contract is can no longer change (concluded)
+    #     @note: this can happen if either
+    #     """
+    #     return not self._is_valid or self.is_expired or self._pre_image_x or self._pre_image_r
 
     @property
     def is_valid(self):
         return self._is_valid
 
     def invalidate(self):
+        """
+        Invalidates this contract (means it can no longer be used for transferring)
+        """
         self._is_valid = False
 
     def report_x(self, x: str):
+        """
+        Used to report the pre image of the `hash_x` given in the constructor.
+        """
         assert not self.is_expired
         assert self._is_valid
         assert self._pre_image_x is None and self._pre_image_r is None
@@ -95,6 +133,9 @@ class Contract_HTLC:
         self._pre_image_x = x
 
     def report_r(self, r: str):
+        """
+        Used to report the pre image of the `hash_r` given in the constructor.
+        """
         assert not self.is_expired
         assert self._is_valid
         assert self._pre_image_x is None and self._pre_image_r is None
@@ -102,6 +143,10 @@ class Contract_HTLC:
         self._pre_image_r = r
 
     def accept_contract(self):
+        """
+        Used to accept the contract by other party (payee) - if not accepted, the contract in invalid and as such can't be used
+        for transferring money.
+        """
         if self._was_accepted:
             return
         self._was_accepted = True
@@ -109,6 +154,9 @@ class Contract_HTLC:
 
 
 class ContractForward(Contract_HTLC):
+    """
+    Class to represent a forward contract ('classic' htlc) in the lightning network.
+    """
     def __init__(self, transaction_id: int, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
                  attached_channel: cm.Channel, payer: 'ln.LightningNode', payee: 'ln.LightningNode'):
         super().__init__(transaction_id, amount_in_wei, hash_x, hash_r, expiration_block_number, attached_channel, payer, payee)

@@ -5,10 +5,16 @@ from typing import Dict, Optional
 
 
 class BlockChain:
+    """
+    Class to represent Bitcoin's blockchain (as a simplification).
+    """
     def __init__(self):
         self.init_parameters()
 
     def init_parameters(self):
+        """
+        Used to reset this instance.
+        """
         self._block_number = 0
         self._open_channels: Dict[str, 'cm.Channel'] = {}
         self._channels_to_htlcs: Dict[str, 'cn.Contract_HTLC'] = {}
@@ -18,15 +24,24 @@ class BlockChain:
 
     @property
     def block_number(self):
+        """
+        @return: the current block number in the blockchain.
+        """
         return self._block_number
 
     @property
     def total_balance(self) -> int:
+        """
+        @return: returns the total balance currently held in the blockchain.
+        """
         return int(sum(self._nodes_addresses_to_balances.values()))  # TODO: maybe don't calculate for all nodes each time -
         # but keep an updating variable
 
     @property
     def fee(self):
+        """
+        @return: the fee (as a percentage in the range [0 - 1]) the blockchain claims upon a transaction.
+        """
         return self._fee
 
     def get_balance_for_node(self, node):
