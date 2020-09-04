@@ -27,8 +27,11 @@ class MetricsCollector:
     def count(self, key):
         self._metrics[key] += 1
 
+    def sum(self, key, value):
+        self._metrics[key] += value
+
     def get_metrics(self):
-        average_metrics = {metric + "_avg": sum / self._average_metrics_count[metric]
+        average_metrics = {metric: sum / self._average_metrics_count[metric]
                            for metric, sum in self._average_metrics.items()}
         return {**self._metrics, **average_metrics}
 

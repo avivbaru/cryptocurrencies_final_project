@@ -1,12 +1,11 @@
 .idea/*
 */__pycache__/*
 */.idea/*
+.idea/*
 *.zip
 */*.zip
 __pycache__/*
-simulation_results/1598890162.55368_rawdata
-simulation_results/1598890210.046521_rawdata
-simulation_results/1598890230.645865_rawdata
-simulation_results/1598890250.473607_rawdata
-simulation_results/1598890266.303701_rawdata
-simulation_results/1598890678.964494_rawdata
+simulation_results/old/*
+simulation_results/*_rawdata
+simulation_gui/node_modules/*
+simulation_gui/.idea/*
