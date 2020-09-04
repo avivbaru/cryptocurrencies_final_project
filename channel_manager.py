@@ -183,9 +183,9 @@ class Channel(object):
         self._update_message_state(new_owner1_balance)
 
         if contract.pre_image_x:
-            BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_x, contract.pre_image_x)
+            BLOCKCHAIN_INSTANCE.report_pre_image(contract.pre_image_x)
         elif contract.pre_image_r:
-            BLOCKCHAIN_INSTANCE.report_pre_image(contract.hash_r, contract.pre_image_r)
+            BLOCKCHAIN_INSTANCE.report_pre_image(contract.pre_image_r)
 
     def pay_amount_to_owner(self, owner: 'ln.LightningNode', contract: 'cn.ContractCancellation'):  # TODO: maybe give up owner
         # and just use contract.payer and payee
