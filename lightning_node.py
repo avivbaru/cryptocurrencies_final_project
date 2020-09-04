@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 import random
 import string
 import contract_htlc as cn
@@ -118,7 +118,7 @@ class LightningNode:
         self._transaction_id_to_forward_contracts: Dict[int, 'cn.ContractForward'] = {}
         self._transaction_id_to_cancellation_contracts: Dict[int, 'cn.ContractCancellation'] = {}
         self._transaction_id_to_htlc_contracts: Dict[int, 'cn.Contract_HTLC'] = {}
-        self._probability_to_not_respond_immediately = 1
+        self._probability_to_not_respond_immediately = 1 # TODO: change, need to talk about.
         self._delta = delta
         self._max_number_of_block_to_respond = max_number_of_block_to_respond
 
@@ -189,8 +189,8 @@ class LightningNode:
         node_to_send = nodes_between[0]
 
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
-
         METRICS_COLLECTOR_INSTANCE.average(TOTAL_FEE, total_fee)
+
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
         info = TransactionInfo(id, amount_in_wei + total_fee, 0, hash_x, hash_r,
@@ -234,12 +234,14 @@ class LightningNode:
             info = TransactionInfo(previous_transaction_info.id, 0, griefing_penalty,
                                    previous_transaction_info.hash_x, previous_transaction_info.hash_r, waiting_time,
                                    delta_waiting_time, previous_transaction_info.starting_block, sender)
-            # TODO: see that info is constructed the right way
             self._transaction_id_to_transaction_info[info.id] = info
             r = self._hash_image_r_to_preimage[info.hash_r]
             del self._hash_image_r_to_preimage[info.hash_r]
+            # TODO: maybe not good! cause cancel even if the forward arrive. need 2 function like this.
+            FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._check_if_forward_contract_is_available(info.id),
+                                               BLOCKCHAIN_INSTANCE.block_number + self._delta)
             FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._handle_cancellation_is_about_to_expire(info.id, r),
-                                               waiting_time - self._delta)
+                                               info.expiration_block_number - 30)
             self.send_cancellation_contract(info.id)
 
     def send_cancellation_contract(self, transaction_id: int):
@@ -265,7 +267,7 @@ class LightningNode:
         else:
             self.send_forward_contract(transaction_id)
 
-    def _check_if_forward_contract_is_available(self, transaction_id: int): # TODO: check if can remove
+    def _check_if_forward_contract_is_available(self, transaction_id: int):
         if transaction_id not in self._transaction_id_to_cancellation_contracts or \
                 transaction_id in self._transaction_id_to_forward_contracts:
             return
@@ -275,6 +277,7 @@ class LightningNode:
         self.terminate_transaction(transaction_id, r)
 
     def _handle_cancellation_is_about_to_expire(self, transaction_id: int, r: str):
+        print("not gooddddddddddddddddddddddddddd!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         if transaction_id not in self._transaction_id_to_cancellation_contracts:
             return
 
@@ -500,22 +503,23 @@ class LightningNode:
 class LightningNodeAttacker(LightningNode):
     def __init__(self, *args):
         super(LightningNodeAttacker, self).__init__(*args)
-        self._node_to_attack = None
+        self._node_to_attack: Optional['LightningNode'] = None
 
     def get_victim(self):
         return self._node_to_attack
 
     def set_victim(self, node):
+        # TODO (Yakir): make property?
         self._node_to_attack = node
 
 
 class LightningNodeSoftGriefing(LightningNodeAttacker):
     def __init__(self, *args):
         super(LightningNodeSoftGriefing, self).__init__(*args)
-        self._block_number_to_resolve =  20 + self._delta
+        self._block_number_to_resolve = 50
 
     def resolve_transaction(self, transaction_id: int, x: str):
-        if self._transaction_id_to_final_node.get(transaction_id) != self._node_to_attack:
+        if self._transaction_id_to_final_node.get(transaction_id).address != self._node_to_attack.address:
             super(LightningNodeSoftGriefing, self).resolve_transaction(transaction_id, x)
         else:
             if transaction_id not in self._transaction_id_to_transaction_info:
@@ -527,7 +531,7 @@ class LightningNodeSoftGriefing(LightningNodeAttacker):
                                                info.expiration_block_number - self._block_number_to_resolve)
 
     def resolve_htlc_transaction(self, transaction_id: int, x: str):
-        if self._transaction_id_to_final_node.get(transaction_id) != self._node_to_attack:
+        if self._transaction_id_to_final_node.get(transaction_id).address != self._node_to_attack.address:
             super(LightningNodeSoftGriefing, self).resolve_htlc_transaction(transaction_id, x)
         else:
             if transaction_id not in self._transaction_id_to_transaction_info:
@@ -544,7 +548,7 @@ class LightningNodeSoftGriefingDosAttack(LightningNodeAttacker):
         super(LightningNodeSoftGriefingDosAttack, self).__init__(*args)
 
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
-        if self._transaction_id_to_final_node.get(transaction_id) == self._node_to_attack:
+        if self._transaction_id_to_final_node.get(transaction_id).address == self._node_to_attack.address:
             return
         else:
             super(LightningNodeSoftGriefingDosAttack, self).receive_cancellation_contract(transaction_id, contract)
