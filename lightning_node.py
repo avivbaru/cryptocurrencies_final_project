@@ -597,16 +597,29 @@ class LightningNode:
 
 
 class LightningNodeAttacker(LightningNode):
-    def __init__(self, *args):
+    def __init__(self, *args, block_amount_to_send_transaction: int):
         super(LightningNodeAttacker, self).__init__(*args)
         self._node_to_attack: Optional['LightningNode'] = None
+        self._peer: Optional['LightningNode'] = None
+        self._block_amount_to_send_transaction = block_amount_to_send_transaction
 
     def get_victim(self):
         return self._node_to_attack
 
-    def set_victim(self, node):
-        # TODO (Yakir): make property?
+    def set_victim(self, node: 'LightningNode'):
         self._node_to_attack = node
+
+    def get_peer(self):
+        return self._peer
+
+    def set_peer(self, peer: 'LightningNode'):
+        self._peer = peer
+
+    def should_send_attack(self) -> bool:
+        return BLOCKCHAIN_INSTANCE.block_number % self._block_amount_to_send_transaction == 0
+
+    def how_much_to_send(self):
+        return 50  # TODO: figure out what to do here
 
 
 class LightningNodeSoftGriefing(LightningNodeAttacker):
