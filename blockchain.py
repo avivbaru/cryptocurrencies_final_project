@@ -48,7 +48,7 @@ class BlockChain:
         return self._nodes_addresses_to_balances.get(node.address)
 
     def wait_k_blocks(self, k):
-        self._block_number += 1
+        self._block_number += k
 
     def add_channel(self, channel: 'cm.Channel'):
         self.apply_transaction(channel.channel_state.channel_data.owner1, channel.channel_state.message_state.owner1_balance)
@@ -74,7 +74,7 @@ class BlockChain:
         if node.address in self._nodes_addresses_to_balances:
             return
 
-        self._nodes_addresses_to_balances[node.address] = balance
+        self._nodes_addresses_to_balances[node.address] = balance # TODO: check if remove
 
     def get_pre_image_if_exists_onchain(self, hash_image: int) -> Optional[str]:
         if hash_image in self._hash_image_to_pre_images:
