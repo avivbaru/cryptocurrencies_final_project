@@ -60,7 +60,7 @@ class Contract_HTLC:
         return self._transaction_id
 
     @property
-    def amount_in_wei(self) -> int:
+    def amount_in_msat(self) -> int:
         return self._amount_in_wei
 
     @property
@@ -170,7 +170,7 @@ class ContractForward(Contract_HTLC):
 
     def report_x(self, x: str):
         super().report_x(x)
-        self._money_to_transfer_to_payee = self.amount_in_wei
+        self._money_to_transfer_to_payee = self.amount_in_msat
         self.attached_channel.notify_of_end_of_contract(self)
 
     def report_r(self, r: str):
@@ -179,16 +179,16 @@ class ContractForward(Contract_HTLC):
 
 
 class ContractCancellation(Contract_HTLC):
-    def __init__(self, transaction_id: int, amount_in_wei: int, hash_x: int, hash_r: int, expiration_block_number: int,
+    def __init__(self, transaction_id: int, amount_in_msat: int, hash_x: int, hash_r: int, expiration_block_number: int,
                  attached_channel: cm.Channel, payer: 'ln.LightningNode', payee: 'ln.LightningNode'):
-        super().__init__(transaction_id, amount_in_wei, hash_x, hash_r, expiration_block_number, attached_channel, payer, payee)
+        super().__init__(transaction_id, amount_in_msat, hash_x, hash_r, expiration_block_number, attached_channel, payer, payee)
 
     def _on_expired(self):
         if self._pre_image_r or self._pre_image_x or not self._channel_to_notify.is_open or not self._is_valid:
             return
         super()._on_expired()
 
-        self._money_to_transfer_to_payee = self.amount_in_wei
+        self._money_to_transfer_to_payee = self.amount_in_msat
         self._channel_to_notify.notify_of_end_of_contract(self)
         self.payee.notify_of_cancellation_contract_payment(self)
 

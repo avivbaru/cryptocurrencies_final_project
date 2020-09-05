@@ -200,15 +200,15 @@ class Channel:
         @return: True iff the contract was added successfully.
         """
         if self.is_owner1(contract.payer):
-            if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_wei:
+            if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_msat:
                 contract.invalidate()
                 return False  # TODO: decide where to invalidate
-            self._owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_wei)
+            self._owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_msat)
         else:
-            if self.amount_owner2_can_transfer_to_owner1 < contract.amount_in_wei:
+            if self.amount_owner2_can_transfer_to_owner1 < contract.amount_in_msat:
                 contract.invalidate()
                 return False
-            self._owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_wei)
+            self._owner2_htlc_locked_setter(self._owner2_htlc_locked + contract.amount_in_msat)
         self._state.htlc_contracts.append(contract)
         return True
 
@@ -231,10 +231,10 @@ class Channel:
         transfer_to_owner1 = 0
         transfer_to_owner2 = 0
         if self.is_owner1(contract.payer):
-            locked_for_owner1 = contract.amount_in_wei
+            locked_for_owner1 = contract.amount_in_msat
             transfer_to_owner2 = contract.transfer_amount_to_payee
         else:
-            locked_for_owner2 = contract.amount_in_wei
+            locked_for_owner2 = contract.amount_in_msat
             transfer_to_owner1 = contract.transfer_amount_to_payee
 
         self._owner1_htlc_locked_setter(int(self._owner1_htlc_locked - locked_for_owner1))
@@ -253,12 +253,12 @@ class Channel:
         Pays the amount in the contract `contract` to the payee `contract.payee`
         """
         assert owner == contract.payee  # TODO: remove this line and owner argument after a few runs
-        owner1_new_balance_delta = contract.amount_in_wei
+        owner1_new_balance_delta = contract.amount_in_msat
         if self.is_owner1(contract.payee):
-            self._owner2_htlc_locked_setter(int(self._owner2_htlc_locked - contract.amount_in_wei))
+            self._owner2_htlc_locked_setter(int(self._owner2_htlc_locked - contract.amount_in_msat))
         else:
-            self._owner1_htlc_locked_setter(int(self._owner1_htlc_locked - contract.amount_in_wei))
-            owner1_new_balance_delta = -contract.amount_in_wei
+            self._owner1_htlc_locked_setter(int(self._owner1_htlc_locked - contract.amount_in_msat))
+            owner1_new_balance_delta = -contract.amount_in_msat
         self._update_message_state(self._state.message_state.owner1_balance + owner1_new_balance_delta)
         contract.invalidate()
         self._state.htlc_contracts.remove(contract)

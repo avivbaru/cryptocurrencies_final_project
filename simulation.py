@@ -16,21 +16,21 @@ from singletons import *
 # parameters ofr runs
 MIN_TO_SEND = 100
 MAX_TO_SEND = 1000000000
-MSAT_AMOUNTS_TO_SEND = [1000, 10000, 100000, 1000000, 10000000, 100000000]
-# MSAT_AMOUNTS_TO_SEND = [1000000]
-MSAT_CHANNEL_CAPACITY = [500000000, 1000000000, 1500000000, 2000000000, 2500000000, 3000000000, 3500000000, 4500000000,
-                         5000000000, 5500000000, 8500000000, 10500000000]
-# MSAT_CHANNEL_CAPACITY = [10000000000]
-MSAT_CHANNEL_CAPACITY_PROB = [0.477, 0.110, 0.109, 0.019, 0.051, 0.013, 0.023, 0.015, 0.007, 0.044, 0.015, 0.024]
-# MSAT_CHANNEL_CAPACITY_PROB = [1]
-BASE_FEE = [0, 100, 200, 300, 400, 500, 600, 800, 900, 1000]
-BASE_FEE_PROB = [0.300, 0.019, 0.003, 0.005, 0.019, 0.011, 0.002, 0.011, 0.012, 0.591]
-# BASE_FEE = [100]
-# BASE_FEE_PROB = [1]
-FEE_RATE = [0, 1, 2, 5, 10]
-FEE_RATE_PROB = [0.066, 0.597, 0.007, 0.006, 0.046]
-# FEE_RATE = [3]
-# FEE_RATE_PROB = [1]
+# MSAT_AMOUNTS_TO_SEND = [1000, 10000, 100000, 1000000, 10000000, 100000000]
+MSAT_AMOUNTS_TO_SEND = [10000]
+# MSAT_CHANNEL_CAPACITY = [500000000, 1000000000, 1500000000, 2000000000, 2500000000, 3000000000, 3500000000, 4500000000,
+#                          5000000000, 5500000000, 8500000000, 10500000000]
+MSAT_CHANNEL_CAPACITY = [100000000000]
+# MSAT_CHANNEL_CAPACITY_PROB = [0.477, 0.110, 0.109, 0.019, 0.051, 0.013, 0.023, 0.015, 0.007, 0.044, 0.015, 0.024]
+MSAT_CHANNEL_CAPACITY_PROB = [1]
+# BASE_FEE = [100, 200, 300, 400, 500, 600, 800, 900, 1000]
+# BASE_FEE_PROB = [0.019, 0.003, 0.005, 0.019, 0.011, 0.002, 0.011, 0.012, 0.591]
+BASE_FEE = [100]
+BASE_FEE_PROB = [1]
+# FEE_RATE = [100, 200, 500, 1000]
+# FEE_RATE_PROB = [0.597, 0.007, 0.006, 0.046]
+FEE_RATE = [500]
+FEE_RATE_PROB = [1]
 STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to create all channels
 GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 1
@@ -57,7 +57,7 @@ class NetworkType(str, Enum):
 
 
 def how_much_to_send():
-    mu = random.choice(MSAT_AMOUNTS_TO_SEND) / 10
+    mu = random.choice(MSAT_AMOUNTS_TO_SEND)
     amount = int(min(max(random.gauss(mu, SIGMA), MIN_TO_SEND), MAX_TO_SEND))
     METRICS_COLLECTOR_INSTANCE.average(TRANSACTION_AMOUNT_AVG, amount)
     return amount
@@ -72,15 +72,15 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
     if NodeType.SOFT_GRIEFING == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                        block_amount_to_send_transaction=50) # TODO: change number?
+                                                        block_amount_to_send_transaction=10) # TODO: change number?
     if NodeType.SOFT_GRIEFING_BUSY_NETWORK == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                        block_amount_to_send_transaction=50)
+                                                        block_amount_to_send_transaction=10)
     if NodeType.SOFT_GRIEFING_DOS_ATTACK == attacker_node_type:
         return lightning_node.LightningNodeDosAttack(STARTING_BALANCE, base_fee, fee_percentage,
                                                      GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                     block_amount_to_send_transaction=50)
+                                                     block_amount_to_send_transaction=10)
     return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE, delta,
                                         max_number_of_block_to_respond)
 
@@ -97,19 +97,34 @@ def run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack):
 
         amount_in_msat = how_much_to_send()
         if simulate_attack and attacker.should_send_attack():
+            amount_to_send = attacker.how_much_to_send()
             if attacker.get_peer():
                 if attacker.get_victim():
                     # soft griefing to specific victim
-                    send_attack_transaction(network, attacker.get_victim(), attacker, attacker.get_peer(), use_gp_protocol,
-                                            attacker.how_much_to_send())
+                    should_try_to_send_transaction = amount_to_send > 0
+                    while should_try_to_send_transaction:
+                        result = send_attack_transaction(network, attacker.get_victim(), attacker, attacker.get_peer(),
+                                                         use_gp_protocol, amount_to_send)
+                        amount_to_send = amount_to_send // 2
+                        should_try_to_send_transaction = amount_to_send > 0 and not result
                 else:
                     # soft griefing to make busy network
-                    find_path_and_send_transaction(network, attacker.get_peer(), attacker, use_gp_protocol,
-                                                   attacker.how_much_to_send())
+                    should_try_to_send_transaction = amount_to_send > 0
+                    while should_try_to_send_transaction:
+                        result = find_path_and_send_transaction(network, attacker.get_peer(), attacker, use_gp_protocol,
+                                                                amount_to_send)
+                        amount_to_send = amount_to_send // 2
+                        should_try_to_send_transaction = amount_to_send > 0 and not result
             else:
                 # Dos attack to specific victim
                 find_path_and_send_transaction(network, attacker.get_victim(), attacker, use_gp_protocol,
                                                attacker.how_much_to_send())
+                should_try_to_send_transaction = amount_to_send > 0
+                while should_try_to_send_transaction:
+                    result = find_path_and_send_transaction(network, attacker.get_victim(), attacker, use_gp_protocol,
+                                                            amount_to_send)
+                    amount_to_send = amount_to_send // 2
+                    should_try_to_send_transaction = amount_to_send > 0 and not result
         if find_path_and_send_transaction(network, receiver_node, sender_node, use_gp_protocol, amount_in_msat):
             METRICS_COLLECTOR_INSTANCE.count(SEND_TRANSACTION)
         else:
@@ -142,6 +157,7 @@ def send_attack_transaction(network, receiver_node, sender_node, peer_sender_nod
                                                           GRIEFING_PENALTY_RATE, node_to_min_to_send[sender_node]):
             node_to_path[sender_node] = [receiver_node] + node_to_path[sender_node]
             return send_transaction(peer_sender_node, sender_node, use_gp_protocol, amount_in_msat, node_to_path)
+    return False
 
 
 def find_path_and_send_transaction(network, receiver_node, sender_node, use_gp_protocol, amount_in_msat):
@@ -213,10 +229,12 @@ def simulation_details(func):
 
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
     network = Network()
-    attacker, victim = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
+    attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
     number_of_nodes_to_create = NUMBER_OF_NODES - (0 if not attacker else (1 if not victim else 2))
     for _ in range(number_of_nodes_to_create):
         network.add_node(create_node(delta, max_number_of_block_to_respond))
+    if attacker2 and attacker2 not in network.nodes:
+        network.add_node(attacker2)
     random.shuffle(network.nodes)
     return network, attacker, victim
 
@@ -224,6 +242,7 @@ def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
 def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond):
     attacker = None
     victim = None
+    attacker2 = None
     if attacker_node_type:
         attacker = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
         network.add_node(attacker)
@@ -236,11 +255,12 @@ def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of
             network.add_node(victim)
         if attacker_node_type != NodeType.SOFT_GRIEFING_DOS_ATTACK:
             attacker2 = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
-            network.add_node(attacker2)
             attacker.set_peer(attacker2)
             if attacker_node_type == NodeType.SOFT_GRIEFING:
-                network.add_edge(attacker2, victim, 10500000000) # TODO: check if the balance is enough
-    return attacker, victim
+                network.add_edge(attacker2, victim, 1050000000000)  # TODO: check if the balance is enough
+            else:
+                network.add_node(attacker2)
+    return attacker, victim, attacker2
 
 
 def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_block_to_respond):
