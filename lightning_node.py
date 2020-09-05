@@ -597,11 +597,12 @@ class LightningNode:
         """
         total_last_locked_fund = self._locked_funds * (BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
         assert total_last_locked_fund >= 0
-        self.log_avg_metric(DURATION_OF_LUCKED_FUND_IN_BLOCKS,
-                            BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
+        if total_last_locked_fund > 0:
+            self.log_avg_metric(DURATION_OF_LUCKED_FUND_IN_BLOCKS,
+                                BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
 
-        self.log_avg_metric(LOCKED_FUND_PER_TRANSACTION_AVG, total_last_locked_fund)
-        self.log_sum_metric(TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, total_last_locked_fund)
+            self.log_avg_metric(LOCKED_FUND_PER_TRANSACTION_AVG, total_last_locked_fund)
+            self.log_sum_metric(TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, total_last_locked_fund)
 
         self._locked_funds += locked_fund
         self._locked_funds_since_block = BLOCKCHAIN_INSTANCE.block_number
