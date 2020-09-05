@@ -36,7 +36,7 @@ GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 1
 SIGMA = 0.1
 # NUMBER_OF_NODES = 1000
-NUMBER_OF_NODES = 800
+NUMBER_OF_NODES = 200
 NUMBER_OF_BLOCKS = 10 * 144
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 SOFT_GRIEFING_PROBABILITY = 0.5
@@ -87,7 +87,7 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
 
 def run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack):
     counter = 0
-    nodes_to_simulate = [node for node in network.nodes if node != attacker and node != victim]
+    nodes_to_simulate = [node for node in network.nodes if node != attacker and node != victim and node != attacker.get_peer()]
     while BLOCKCHAIN_INSTANCE.block_number < NUMBER_OF_BLOCKS:
         sender_node = random.choice(nodes_to_simulate)
         # find receiver node
@@ -147,15 +147,15 @@ def run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack):
     return metrics
 
 
-def send_attack_transaction(network, receiver_node, sender_node, peer_sender_node, use_gp_protocol, amount_in_msat):
-    node_to_min_to_send, node_to_path = network.find_shortest_path(receiver_node, sender_node, amount_in_msat,
+def send_attack_transaction(network, victim_node, sender_node, peer_sender_node, use_gp_protocol, amount_in_msat):
+    node_to_min_to_send, node_to_path = network.find_shortest_path(victim_node, sender_node, amount_in_msat,
                                                                    GRIEFING_PENALTY_RATE, use_gp_protocol)
     nodes_between = node_to_path.get(sender_node)
     if nodes_between:
-        nodes_between = list(reversed(nodes_between[:-1])) + [receiver_node]
-        if Network.is_griefing_possible(nodes_between, peer_sender_node, node_to_min_to_send,
-                                                          GRIEFING_PENALTY_RATE, node_to_min_to_send[sender_node]):
-            node_to_path[sender_node] = [receiver_node] + node_to_path[sender_node]
+        nodes_between = [victim_node] + nodes_between[:-1]
+        if Network.is_griefing_possible(nodes_between, sender_node, node_to_min_to_send, GRIEFING_PENALTY_RATE,
+                                        node_to_min_to_send[sender_node]):
+            node_to_path[sender_node] = [victim_node] + node_to_path[sender_node]
             return send_transaction(peer_sender_node, sender_node, use_gp_protocol, amount_in_msat, node_to_path)
     return False
 
@@ -208,25 +208,6 @@ def add_more_metrics(metrics):
     metrics.get()
 
 
-def simulation_details(func):
-    def wrapper(*args, **kwargs):
-        func_args = inspect.signature(func).bind(*args, **kwargs)
-        func_args.apply_defaults()
-        func_args_str = ", ".join("{} = {!r}".format(*item) for item in func_args.arguments.items())
-        print(f"Start to run {func.__qualname__} with arguments: ( {func_args_str} )")
-        starting_time = time.time()
-        try:
-            res = func(*args, **kwargs)
-        except Exception as e:
-            raise e
-        finally:
-            time_took = time.time() - starting_time
-            print(f"Finish the run in {int(time_took)}s.")
-        return res
-
-    return wrapper
-
-
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
     network = Network()
     attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
@@ -271,11 +252,22 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
     nodes = {}
     network = Network()
     attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
+    rand_numbers = random.sample(range(len(json_data['nodes'])), 3)
+    nodes[json_data['nodes'][rand_numbers[0]]['pub_key']] = attacker
+
+    if victim:
+        nodes[json_data['nodes'][rand_numbers[1]]['pub_key']] = victim
+    if attacker2 and attacker_node_type != NodeType.SOFT_GRIEFING:
+        nodes[json_data['nodes'][rand_numbers[2]]['pub_key']] = attacker2
+
     for node in json_data['nodes']:
         nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
     network.nodes = list(nodes.values())
     for edge in json_data['edges']:
         network.add_edge(nodes[edge['node1_pub']], nodes[edge['node2_pub']], int(int(edge['capacity']) / 2))
+
+    if attacker2 and attacker2 not in network.nodes:
+        network.add_node(attacker2)
     return network, attacker, victim
 
 
