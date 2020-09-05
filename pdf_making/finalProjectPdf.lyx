@@ -1613,11 +1613,12 @@ Penalty Risk
 \begin_inset Formula $Griefing$
 \end_inset
 
-, מציע 
+, 
 \begin_inset Formula $HTLC-GP$
 \end_inset
 
- לנעול כמות גדולה מאד של כספים ביחס לכסף הנשלח )במאמר צוין יחס 
+ מציע לנעול כמות גדולה מאד של כספים ביחס לכסף הנשלח )לפי המאמר בו צוין יחס
+ 
 \begin_inset Formula $griefing\,penalty$
 \end_inset
 
@@ -1625,7 +1626,7 @@ Penalty Risk
 \begin_inset Formula $0.001$
 \end_inset
 
-( מה שעלול לחשוף את משתתפי התשלומים לסיכון גבוה.
+( מה שעלול לחשוף את המשתתפים במסלול התשלומים לסיכון גבוה.
  חלק מהמתקפות שהצגנו מסתמכות על כך.
  למשל, נעילת ה-
 \begin_inset Formula $penalty$
@@ -1648,7 +1649,25 @@ Penalty Risk
 \begin_inset Formula $penalty$
 \end_inset
 
-, 
+, ניתן לתקוף את המכשיר ממנו ה-
+\begin_inset Formula $node$
+\end_inset
+
+ פועל )או את מערכת התקשורת בה הוא משתמש( כדי שלא יוכל להגיב בזמן, ויאלץ
+ לשלם את ה-
+\begin_inset Formula $penalty$
+\end_inset
+
+.
+ בנוסף, ישנו סיכון שמשתמשי הרשת צריכים לקחת בחשבון, אם ה-
+\begin_inset Formula $node$
+\end_inset
+
+ נופל באמצע מעבר של טרנזקציה, הוא עלול לשלם 
+\begin_inset Formula $penalty$
+\end_inset
+
+ גבוה.
 \end_layout
 
 \begin_layout Standard
@@ -1695,7 +1714,8 @@ Penalty Risk
 \begin_inset Formula $Reverse\,Griefing$
 \end_inset
 
- אבל לאחר עדכון המאמר שפותר את הבעיה החלטנו להתמקד הפרוטוקול החדש וביעילותו.
+ אבל לאחר העדכון של המאמר שפותר את הבעיה )או לפחות הופך אותה לפחות אקרקטיבית(
+ העדפנו להתמקד בפרוטוקול החדש וביעילותו.
 \begin_inset Newline newline
 \end_inset
 
@@ -1733,7 +1753,7 @@ Penalty Risk
 \lang english
 Lightning
 \lang hebrew
- שאנחנו בנינו בשפת 
+ שאנחנו כתבנו בשפת 
 \lang english
 Python
 \lang hebrew
