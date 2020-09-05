@@ -45,18 +45,30 @@ class BlockChain:
         return self._fee
 
     def get_balance_for_node(self, node):
+        """
+        @return: returns the current balance of `node`.
+        """
         return self._nodes_addresses_to_balances.get(node.address)
 
     def wait_k_blocks(self, k):
+        """
+        Increments the current block number by `k` blocks.
+        """
         self._block_number += k
 
     def add_channel(self, channel: 'cm.Channel'):
+        """
+        Adds channel `channel` to the blockchain.
+        """
         self.apply_transaction(channel.channel_state.channel_data.owner1, channel.channel_state.message_state.owner1_balance)
         self._open_channels[channel.channel_state.channel_data.address] = channel
 
     def close_channel(self, message_state: 'cm.MessageState'):
+        """
+        Closes the channel that corresponds to the given `message_state`.
+        """
         if message_state.channel_address not in self._open_channels:
-            return # TODO: if we resolve all contracts of a closing channel, there is no need for this!!
+            return  # TODO: if we resolve all contracts of a closing channel, there is no need for this!!
         channel: cm.Channel = self._open_channels[message_state.channel_address]
         owner2_balance = channel.channel_state.channel_data.total_wei - message_state.owner1_balance
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1.address] += \
@@ -67,22 +79,34 @@ class BlockChain:
         # if contract:
         #     self._channels_to_htlcs[message_state.channel_address] = contract
 
-    def report_pre_image(self, hash_image: int, pre_image: str):
-        self._hash_image_to_pre_images[hash_image] = pre_image
+    def report_pre_image(self, pre_image: str):
+        """
+        Used for reporting the given `pre_image` to the blockchain so it can be obtained later by other nodes in the network.
+        """
+        self._hash_image_to_pre_images[hash(pre_image)] = pre_image
 
     def add_node(self, node: 'lc.LightningNode', balance: int):
+        """
+        Adds the given `node` to the blockchain with the given initial balance `balance`
+        """
         if node.address in self._nodes_addresses_to_balances:
             return
 
-        self._nodes_addresses_to_balances[node.address] = balance # TODO: check if remove
+        self._nodes_addresses_to_balances[node.address] = balance  # TODO: check if remove
 
     def get_pre_image_if_exists_onchain(self, hash_image: int) -> Optional[str]:
+        """
+        @return: the pre image of `hash_image` if exists in the blockchain, `None` otherwise.
+        """
         if hash_image in self._hash_image_to_pre_images:
             return self._hash_image_to_pre_images[hash_image]
         return None
 
-    def apply_transaction(self, node: 'lc.LightningNode', amount_in_wei: int):
-        # TODO: figure out how to make owner2 put in funds in a nice way
-        self._nodes_addresses_to_balances[node.address] -= amount_in_wei * (1 + self._fee)
+    def apply_transaction(self, node: 'lc.LightningNode', amount_in_msat: int):
+        """
+        @return: applies (takes fee and reduces balance) a transaction with amount `amount_in_msat` with `node` as the sender.
+        """
+        # TODO: change amount_in_wei to amount_in_msat!!!
+        self._nodes_addresses_to_balances[node.address] -= amount_in_msat * (1 + self._fee)
         assert self._nodes_addresses_to_balances[node.address] >= 0
 
