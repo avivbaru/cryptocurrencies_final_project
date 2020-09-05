@@ -54,9 +54,9 @@ class Network:
                     # check if griefing is possible
                     is_griefing_possible = True
                     if is_gp_protocol and griefing_penalty_rate > 0:
-                        is_griefing_possible = Network._is_griefing_possible(path[min_node], edge_node,
-                                                                             visited,
-                                                                             griefing_penalty_rate, new_wei)
+                        is_griefing_possible = Network.is_griefing_possible(path[min_node], edge_node,
+                                                                            visited,
+                                                                            griefing_penalty_rate, new_wei)
 
                     if (edge_node not in visited or new_wei < visited[edge_node]) and is_griefing_possible:
                         visited[edge_node] = new_wei
@@ -65,8 +65,8 @@ class Network:
         return visited, path
 
     @staticmethod
-    def _is_griefing_possible(nodes_in_path: List[LightningNode], final_node, visited, griefing_penalty_rate,
-                              new_wei):
+    def is_griefing_possible(nodes_in_path: List[LightningNode], final_node, visited, griefing_penalty_rate,
+                             new_wei):
         length = len(nodes_in_path) + 1
         reversed_nodes_in_path = list(reversed(nodes_in_path))
         prev = final_node

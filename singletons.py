@@ -26,6 +26,9 @@ ADD_FORWARD_CONTRACT_FAILED = "Fail transaction - could not add forward contract
 DELAYED_RUN_FUNCTION = "Delayed run function"
 DELAYED_RUN_FUNCTION_AVG = "Number of blocks to delayed function run avg"
 TERMINATE_TRANSACTION = "Terminate transaction"
+VICTIM_NODE_BALANCE_AVG = "Victim node balance avg"
+ATTACKER_NODE_BALANCE_AVG = "Attacker node balance avg"
+ATTACKER_BALANCE_MINUS_VICTIM = "Attacker balance - Victim balance"
 
 BLOCKCHAIN_INSTANCE: blockchain.BlockChain = blockchain.BlockChain()
 METRICS_COLLECTOR_INSTANCE: utils.MetricsCollector = utils.MetricsCollector()
