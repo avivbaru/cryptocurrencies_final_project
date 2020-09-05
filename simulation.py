@@ -20,7 +20,7 @@ MAX_TO_SEND = 1000000000
 MSAT_AMOUNTS_TO_SEND = [10000]
 # MSAT_CHANNEL_CAPACITY = [500000000, 1000000000, 1500000000, 2000000000, 2500000000, 3000000000, 3500000000, 4500000000,
 #                          5000000000, 5500000000, 8500000000, 10500000000]
-MSAT_CHANNEL_CAPACITY = [500000]
+MSAT_CHANNEL_CAPACITY = [550000]
 # MSAT_CHANNEL_CAPACITY_PROB = [0.477, 0.110, 0.109, 0.019, 0.051, 0.013, 0.023, 0.015, 0.007, 0.044, 0.015, 0.024]
 MSAT_CHANNEL_CAPACITY_PROB = [1]
 # BASE_FEE = [100, 200, 300, 400, 500, 600, 800, 900, 1000]
@@ -66,9 +66,9 @@ def how_much_to_send():
 def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
     # divide by million to get the rate per msat
     fee_percentage = random.choices(FEE_RATE, weights=FEE_RATE_PROB, k=1)[0] / 1000000
-    METRICS_COLLECTOR_INSTANCE.average(FEE_PERCENTAGE, fee_percentage)
+    # METRICS_COLLECTOR_INSTANCE.average(FEE_PERCENTAGE, fee_percentage)
     base_fee = random.choices(BASE_FEE, weights=BASE_FEE_PROB, k=1)[0]
-    METRICS_COLLECTOR_INSTANCE.average(BASE_FEE_LOG, base_fee)
+    # METRICS_COLLECTOR_INSTANCE.average(BASE_FEE_LOG, base_fee)
     if NodeType.SOFT_GRIEFING == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
@@ -194,18 +194,18 @@ def close_channel_and_log_metrics(network, attacker_nodes, victim):
         for other_node in network.edges[node]:
             node.close_channel(other_node)
 
-        if node == victim:
-            METRICS_COLLECTOR_INSTANCE.average(VICTIM_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        elif node == attacker_nodes:
-            METRICS_COLLECTOR_INSTANCE.average(ATTACKER_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
-        elif type(node) is lightning_node.LightningNode:
-            METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        # if node == victim:
+        #     METRICS_COLLECTOR_INSTANCE.average(VICTIM_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        # elif node == attacker_nodes:
+        #     METRICS_COLLECTOR_INSTANCE.average(ATTACKER_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
+        # elif type(node) is lightning_node.LightningNode:
+        #     METRICS_COLLECTOR_INSTANCE.average(HONEST_NODE_BALANCE_AVG, BLOCKCHAIN_INSTANCE.get_balance_for_node(node))
 
 
 def add_more_metrics(metrics):
     metrics[LOCKED_FUND_PER_TRANSACTION_NORMALIZE_BY_AMOUNT_SENT_AVG] = metrics.get(LOCKED_FUND_PER_TRANSACTION_AVG, 0) / \
                                                                         metrics.get(TRANSACTION_AMOUNT_AVG, 1)
-    metrics[ATTACKER_BALANCE_MINUS_VICTIM] = metrics.get(ATTACKER_NODE_BALANCE_AVG, 0) - metrics.get(VICTIM_NODE_BALANCE_AVG, 0)
+    metrics.get()
 
 
 def simulation_details(func):
@@ -294,7 +294,7 @@ def generate_redundancy_network(attacker_node_type, delta, max_number_of_block_t
             if next_index != i:
                 channel_starting_balance = random.choices(MSAT_CHANNEL_CAPACITY,
                                                           weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)[0]
-                METRICS_COLLECTOR_INSTANCE.average(CHANNEL_STARTING_BALANCE, channel_starting_balance)
+                # METRICS_COLLECTOR_INSTANCE.average(CHANNEL_STARTING_BALANCE, channel_starting_balance)
                 network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
 
     if attacker2 and attacker2 not in network.nodes:

@@ -247,7 +247,7 @@ class LightningNode:
         node_to_send = nodes_between[0]
 
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
-        self.log_avg_metric(TOTAL_FEE, total_fee)
+        # self.log_avg_metric(TOTAL_FEE, total_fee)
 
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
@@ -422,7 +422,7 @@ class LightningNode:
             if forward_contract.is_expired:
                 return
             forward_contract.report_x(x)
-            self.log_sum_metric("Funds earned", self.get_fee_for_transfer_amount(info.amount_in_wei))
+            self.log_count_metric(TRANSACTIONS_PASSED_SUCCESSFUL)
 
         if info.previous_node is None:
             del self._transaction_id_to_final_node[info.id]
@@ -442,8 +442,6 @@ class LightningNode:
         if transaction_id in self._transaction_id_to_transaction_info:
             del self._transaction_id_to_transaction_info[transaction_id]
 
-        if info.next_node is not None and type(info.next_node) == LightningNode:
-            self.log_count_metric("Transactions received successful")
         info.previous_node.resolve_transaction(transaction_id, x)
 
     def terminate_transaction(self, transaction_id: int, r: str):
@@ -453,8 +451,9 @@ class LightningNode:
         """
         if transaction_id not in self._transaction_id_to_transaction_info:
             return
-        self.log_count_metric(TERMINATE_TRANSACTION)  # TODO: is it ok to log here??
         info = self._transaction_id_to_transaction_info[transaction_id]
+        if type(self) == LightningNode and info.next_node is None:
+            self.log_count_metric(TERMINATE_TRANSACTION)
 
         if transaction_id in self._transaction_id_to_forward_contracts:
             forward_contract = self._transaction_id_to_forward_contracts[transaction_id]
@@ -485,7 +484,7 @@ class LightningNode:
         assert nodes_between
         node_to_send = nodes_between[0]
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
-        self.log_avg_metric(TOTAL_FEE, total_fee)
+        # self.log_avg_metric(TOTAL_FEE, total_fee)
 
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
@@ -539,6 +538,7 @@ class LightningNode:
         """
         Resolves the transaction the corresponds to `transaction_id` with the given pre-image `x`.
         """
+        # TODO: register needed mterics as in gp
         if transaction_id not in self._transaction_id_to_transaction_info:
             return
         info = self._transaction_id_to_transaction_info[transaction_id]
@@ -598,7 +598,7 @@ class LightningNode:
         total_last_locked_fund = self._locked_funds * (BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
         assert total_last_locked_fund >= 0
         if total_last_locked_fund > 0:
-            self.log_avg_metric(DURATION_OF_LUCKED_FUND_IN_BLOCKS,
+            self.log_avg_metric(DURATION_OF_LOCKED_FUNDS_IN_BLOCKS,
                                 BLOCKCHAIN_INSTANCE.block_number - self._locked_funds_since_block)
 
             self.log_avg_metric(LOCKED_FUND_PER_TRANSACTION_AVG, total_last_locked_fund)
@@ -689,10 +689,6 @@ class LightningNodeSoftGriefing(LightningNodeAttacker):
     #         super(LightningNodeSoftGriefing, self).resolve_transaction(transaction_id, x)
 
     def _resolve_transaction_after_receiving_forward_contract(self, transaction_info: 'TransactionInfo'):
-        # if self._transaction_id_to_final_node.get(transaction_info.id) == self._peer:
-        #     super(LightningNodeSoftGriefing, self)._resolve_transaction_after_receiving_forward_contract(transaction_info)
-        #     return
-
         self.log_count_metric(PERFORM_SOFT_GRIEFING)
         r = self._hash_image_r_to_preimage[transaction_info.hash_r]
         # del self._hash_image_r_to_preimage[transaction_info.hash_r]
