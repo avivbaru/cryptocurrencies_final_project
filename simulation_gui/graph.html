@@ -135,7 +135,7 @@
             <div itemtype="inner" class="container">
                 <p itemtype="text">X axis</p>
                 <select id="x" name="x" onchange="changeGraph()">
-                    <option id="x number of attackers" value="number of attackers">number of attackers</option>
+                    <option id="x attackers" value="Attacks">Attacks</option>
                     <option id="x busy network" value="busy network">busy network</option>
                     <option id="x delta" value="delta">delta</option>
                 </select>
@@ -154,15 +154,18 @@
                 <p itemtype="text">Node type</p>
                 <select id="node type" name="x">
                     <option value="soft griefing">soft griefing</option>
-                    <option value="griefing">griefing</option>
-                    <option value="soft griefing dos attack">soft griefing dos attack</option>
+                    <option value="soft griefing busy network">soft griefing busy network</option>
+                    <option value="dos attack">dos attack</option>
                 </select>
             </div>
             <div itemtype="container" class="container">
                 <a class="button4" style="background-color:#f14e4e" onclick="changeGraph()">Show Graph</a>
             </div>
         </div>
-        <canvas id="myChart" width=50% height=20%></canvas>
+        <div id="charts">
+            <canvas id="myChart" width=50% height=20%></canvas>
+            <canvas id="myBar" width=50% height=20%></canvas>
+        </div>
         <h1>Using GP Protocol</h1>
         <table id="table" class="pure-table">
             <thead id="header">
@@ -180,14 +183,12 @@
     </form>
 </div>
 </body>
-<!--<script src="https://d3js.org/d3.v4.js"></script>-->
-<!--<script src="https://d3js.org/d3.v3.min.js"></script>-->
 <script src="Chart.js"></script>
 <script>
 
-    var nodeTypeDefault = "soft griefing";
-    var numberOfAttacker = "0";
-    var numberOfAttackersOptions = ["1", "3", "5"];
+    var attackOptions = ["Simulate attack", "Not simulate attack"];
+    var DeltaDefaultNodeType = "soft griefing dos attack";
+    var busyNetworkDefaultNodeType = "None";
     var busyNetwork = "6";
     var busyNetworkOptions = ["2", "6", "10"];
     var delta = "70";
@@ -195,11 +196,13 @@
     var topology = document.getElementById('network topology');
     topology.onchange = changeGraph;
     var nodeType = document.getElementById('node type');
+    var charts = document.getElementById('charts');
     nodeType.onchange = changeGraph;
 
     var yAxisOptions = document.getElementById('y');
     var xAxisOptions = document.getElementById('x');
     var myChart = document.getElementById("myChart");
+    var myBar = document.getElementById("myBar");
 
     const all_data = JSON.parse(data_json);
     // Create metrics texts
@@ -224,18 +227,18 @@
 
 
     function changeGraph() {
-        var options = numberOfAttackersOptions;
+        var options = attackOptions;
+        var graphChart = false;
         nodeType.disabled = true;
-        if (xAxisOptions.value === "delta")
-        {
+        if (xAxisOptions.value === "delta") {
             nodeType.selectedIndex = 0;
             options = deltaOptions;
-        }
-        else if (xAxisOptions.value === "busy network") {
+            graphChart = true;
+        } else if (xAxisOptions.value === "busy network") {
             nodeType.selectedIndex = 0;
             options = busyNetworkOptions;
-        }
-        else {
+            graphChart = true;
+        } else {
             nodeType.disabled = false;
         }
 
@@ -243,7 +246,7 @@
         var graphDataNotUseGp = [];
         var labels = [];
 
-        // use
+        // use GP
         var curr = document.getElementById("current");
         if (curr) {
             header.removeChild(curr);
@@ -253,11 +256,11 @@
         newCurr.id = "current";
         const tb = document.createElement("th");
         tb.innerText = "Parameter";
-        newCurr.appendChild(tb)
-        header.appendChild(newCurr)
+        newCurr.appendChild(tb);
+        header.appendChild(newCurr);
 
-        // Not Use
-        var currNotUse =  document.getElementById("currentNotUse");
+        // Not Use GP
+        var currNotUse = document.getElementById("currentNotUse");
         if (currNotUse) {
             headerNotUse.removeChild(currNotUse);
         }
@@ -266,12 +269,12 @@
         newCurrNotUse.id = "currentNotUse";
         const tbNotUse = document.createElement("th");
         tbNotUse.innerText = "Parameter";
-        newCurrNotUse.appendChild(tbNotUse)
-        headerNotUse.appendChild(newCurrNotUse)
+        newCurrNotUse.appendChild(tbNotUse);
+        headerNotUse.appendChild(newCurrNotUse);
 
         for (var i = 0; i < yAxisOptions.options.length; i++) {
-            // Use
-            var toRemove =  document.getElementById(yAxisOptions.options[i].value);
+            // Use GP
+            var toRemove = document.getElementById(yAxisOptions.options[i].value);
             if (toRemove) {
                 tbody.removeChild(toRemove);
             }
@@ -284,8 +287,8 @@
             tbody.appendChild(tr);
 
 
-            // Not Use
-            var toRemoveNotUse =  document.getElementById(yAxisOptions.options[i].value + "notuse");
+            // Not Use GP
+            var toRemoveNotUse = document.getElementById(yAxisOptions.options[i].value + "notuse");
             if (toRemoveNotUse) {
                 tbodyNotUse.removeChild(toRemoveNotUse);
             }
@@ -298,26 +301,46 @@
             tbodyNotUse.appendChild(trNotUse);
         }
 
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < options.length; i++) {
             var val = options[i];
-            var deltaV = xAxisOptions.value === "delta" ? val : delta;
-            var busyNetworkV = xAxisOptions.value === "busy network" ? val : busyNetwork;
-            var numberOfAttackersV = xAxisOptions.value === "number of attackers" ? val : numberOfAttacker;
-            const keyUseGp = nodeType.value + '_' + deltaV + '_' + busyNetworkV + '_' + topology.value + '_' + numberOfAttackersV + "_True";
-            const keyNotUseGp = nodeType.value + '_' + deltaV + '_' + busyNetworkV + '_' + topology.value + "_" + numberOfAttackersV + "_False";
-            console.log("keyUseGp: " + keyUseGp);
-            console.log("keyNotUseGp: " + keyNotUseGp);
-            graphDataUseGp.push(all_data[keyUseGp][yAxisOptions.value]);
-            graphDataNotUseGp.push(all_data[keyNotUseGp][yAxisOptions.value]);
-            labels.push(val);
+            var keyUse = "";
+            var keyNotUse = "";
+            if (xAxisOptions.value === "Attacks") {
+                // "Simulate attack", "Not simulate attack"
+                const isSimulate = val === "Simulate attack";
+                const valV = isSimulate? "True": "False";
+                keyUse = nodeType.value + '_' + delta + '_' + busyNetwork + '_' + topology.value + '_' + valV + '_True';
+                if (isSimulate) {
+                    graphDataUseGp.push(all_data[keyUse][yAxisOptions.value]);
+                }
+                else {
+                    graphDataNotUseGp.push(all_data[keyUse][yAxisOptions.value]);
+                }
+
+                labels.push(val);
+            }
+            else {
+                if (xAxisOptions.value === "delta") {
+                    keyUse = DeltaDefaultNodeType + '_' + val + '_' + busyNetwork + '_' + topology.value + '_True_True';
+                    keyNotUse = DeltaDefaultNodeType + '_' + val + '_' + busyNetwork + '_' + topology.value + "_False_True";
+                } else if (xAxisOptions.value === "busy network") {
+                    keyUse = busyNetworkDefaultNodeType + '_' + delta + '_' + val + '_' + topology.value + '_False_True';
+                    keyNotUse = busyNetworkDefaultNodeType + '_' + delta + '_' + val + '_' + topology.value + '_False_False';
+                }
+                console.log("keyUse: " + keyUse);
+                console.log("keyNotUse: " + keyNotUse);
+                graphDataUseGp.push(all_data[keyUse][yAxisOptions.value]);
+                graphDataNotUseGp.push(all_data[keyNotUse][yAxisOptions.value]);
+                labels.push(val);
+            }
 
 
-            // use gp
+            // use
             for (var j = 0; j < yAxisOptions.options.length; j++) {
                 const key = yAxisOptions.options[j].value;
-                const currKey =  document.getElementById(key);
+                const currKey = document.getElementById(key);
                 const tbCurr = document.createElement("th");
-                tbCurr.innerText = yAxisOptions.options[j].value in all_data[keyUseGp]? all_data[keyUseGp][key]: "";
+                tbCurr.innerText = yAxisOptions.options[j].value in all_data[keyUse] ? all_data[keyUse][key] : "";
                 currKey.appendChild(tbCurr);
             }
 
@@ -325,39 +348,121 @@
             tbHeaderUse.innerText = val;
             newCurr.appendChild(tbHeaderUse)
 
-            // not use gp
-            for (var j = 0; j < yAxisOptions.options.length; j++) {
-                const key = yAxisOptions.options[j].value;
-                const currKey =  document.getElementById(key + "notuse");
-                const tbCurr = document.createElement("th");
-                tbCurr.innerText = yAxisOptions.options[j].value in all_data[keyNotUseGp]? all_data[keyNotUseGp][key]: "";
-                currKey.appendChild(tbCurr);
+            // not use
+            if (keyNotUse !== "") {
+                for (var j = 0; j < yAxisOptions.options.length; j++) {
+                    const key = yAxisOptions.options[j].value;
+                    const currKey = document.getElementById(key + "notuse");
+                    const tbCurr = document.createElement("th");
+                    tbCurr.innerText = yAxisOptions.options[j].value in all_data[keyNotUse] ? all_data[keyNotUse][key] : "";
+                    currKey.appendChild(tbCurr);
+                }
             }
 
             const tbHeaderNotUse = document.createElement("th");
             tbHeaderNotUse.innerText = val;
             newCurrNotUse.appendChild(tbHeaderNotUse)
 
+
         }
-        new Chart(myChart,
+        if (graphChart) {
+            createGraph(labels, graphDataUseGp, graphDataNotUseGp);
+        }
+        else {
+            createBar(labels, graphDataUseGp, graphDataNotUseGp);
+        }
+    }
+
+    function removeCharts() {
+        var bar = document.getElementById("myBar");
+        var chart = document.getElementById("myChart");
+        if (bar) {
+            charts.removeChild(bar);
+        }
+        if (chart) {
+            charts.removeChild(chart);
+        }
+    }
+
+    function createCanvas(id) {
+        const canvas = document.createElement("canvas");
+        canvas.id = id;
+        canvas.height = "20";
+        canvas.width = "50";
+        charts.appendChild(canvas);
+        return canvas;
+    }
+
+    function createBar(labels, graphDataUseSimulate, graphDataNotUseSimulate) {
+        removeCharts();
+        const canvas = createCanvas("myBar");
+        new Chart(canvas,
+            {type: "bar",
+                data:
+                    {
+                        labels: [],
+                        datasets: [
+                            {
+                                label:"Simulate Attack",
+                                data: graphDataUseSimulate,
+                                fill: false,
+                                backgroundColor: ["rgba(3, 148, 252, 0.5)"],
+                                borderColor:["rgb(54, 162, 235)"],
+                                borderWidth: 1
+                            },
+                            {
+                                label:"Not simulate Attack",
+                                data: graphDataNotUseSimulate,
+                                fill: false,
+                                backgroundColor: ["rgba(252, 186, 3, 0.5)"],
+                                borderColor:["rgb(255, 205, 86)"],
+                                borderWidth:1
+                            }
+                            ]
+                    },
+                options:
+                    {
+                        scales:
+                            {
+                                yAxes:[
+                                    {
+                                        ticks:
+                                            {
+                                                beginAtZero:true
+                                            }
+                                    }
+                                ]
+                            }
+                    }
+            }
+        );
+
+        charts.hidden = false;
+
+    }
+
+    function createGraph(labels, graphDataUseGp, graphDataNotUseGp) {
+        removeCharts();
+        const canvas = createCanvas("myChart");
+        new Chart(canvas,
             {
                 type: "line",
                 data: {
                     labels: labels,
-                    datasets:[
+                    datasets: [
                         {
                             label: "Use GP Pr otocol",
-                            data:graphDataUseGp,
-                            fill:false,
-                            borderColor:"rgb(3, 148, 252)",
-                            lineTension:0.1
+                            data: graphDataUseGp,
+                            fill: false,
+                            borderColor: "rgb(3, 148, 252)",
+                            lineTension: 0.1
                         },
                         {
                             label: "Not Use GP Protocol",
-                            data:graphDataNotUseGp,
-                            fill:false,
-                            borderColor:"rgb(252, 186, 3)",
-                            lineTension:0.1
+                            data: graphDataNotUseGp,
+                            fill: false,
+                            borderColor: "rgb(252, 186, 3)",
+                            lineTension: 0.1
                         }]
                 },
                 options: {
@@ -377,8 +482,8 @@
                     }
                 }
             });
-
-        myChart.hidden = false;
+        // myChart.hidden = false;
+        // myBar.hidden = true;
     }
 
     changeGraph();
