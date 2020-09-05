@@ -111,6 +111,8 @@ fixltx2e
 \begin_body
 
 \begin_layout Standard
+
+\size large
 \begin_inset FormulaMacro
 \newcommand{\lm}{\underset{n\rightarrow\infty}{\lim}}
 \end_inset
@@ -144,6 +146,8 @@ fixltx2e
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset FormulaMacro
 \newcommand{\al}{\forall}
 \end_inset
@@ -187,6 +191,8 @@ fixltx2e
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset FormulaMacro
 \newcommand{\sqn}[1]{(#1_{n})_{n=1}^{\infty}}
 \end_inset
@@ -262,99 +268,22 @@ backgroundcolor "none"
 status open
 
 \begin_layout Title
-)
-\numeric on
-67513
-\numeric off
-( מבוא למטבעות קריפטוגרפיים
-\family roman
+
+\size large
+)67513( מבוא למטבעות קריפטוגרפיים
 \series medium
 \shape up
-\size largest
-\emph off
-\bar no
-\strikeout off
-\uuline off
-\uwave off
-\noun off
-\color none
  
-\family default
 \series default
 \shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
 | 
 \series medium
 \shape up
-\size small
 פרויקט סופי
 \end_layout
 
 \begin_layout Author
-יקיר עוז |
-\family roman
-\series medium
-\shape smallcaps
-\size large
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-203330683
-\numeric off
-, אביב ברו |
-\family roman
-\series medium
-\shape smallcaps
-\size large
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-204319453
+יקיר עוז | 203330683, אביב ברו | 204319453
 \end_layout
 
 \end_inset
@@ -367,10 +296,15 @@ status open
 \end_layout
 
 \begin_layout Section*
+
+\series bold
+\size large
 תקציר
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 רשת 
 \begin_inset Formula $Lightning$
 \end_inset
@@ -383,61 +317,11 @@ status open
 \begin_inset Newline newline
 \end_inset
 
-בפרויקט שלנו החלטנו לממש ולנתח את הרעיון למיגור תקיפת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+בפרויקט שלנו החלטנו לממש ולנתח את הרעיון למיגור תקיפת 
 \lang english
 Grifeing
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ברשת 
+ ברשת 
 \begin_inset Formula $Lightning$
 \end_inset
 
@@ -462,87 +346,12 @@ href{https://arxiv.org/pdf/2005.09327.pdf}{מאמר זה}
 
 \lang english
 Grifeing
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-היא בעיה ידועה אשר בעזרתה תוקפים יכולים להשבית חלקים גדולים מרשת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ היא בעיה ידועה אשר בעזרתה תוקפים יכולים להשבית חלקים גדולים מרשת 
 \lang english
 lightning
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ע
+ ע
 \begin_inset Quotes erd
 \end_inset
 
@@ -567,116 +376,16 @@ Blockchain
 \begin_inset Quotes erd
 \end_inset
 
-ל, הרעיון הכללי הוא הטלת קנס על מבצע מתקפת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ל, הרעיון הכללי הוא הטלת קנס על מבצע מתקפת 
 \lang english
 Griefing
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ובכך לעשותה לא כלכלית.
- הקנס הוא חלק מפרוטוקול חדש בשם
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ ובכך לעשותה לא כלכלית.
+ הקנס הוא חלק מפרוטוקול חדש בשם 
 \lang english
 HTLC-GP
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-שמרחיב את פרוטוקול ה-
+ שמרחיב את פרוטוקול ה-
 \begin_inset Formula $HTLC$
 \end_inset
 
@@ -684,61 +393,11 @@ HTLC-GP
 \begin_inset Formula $Lightning\,Network$
 \end_inset
 
- ובעצם חלק מהחוזה שנחתם בין כל
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ ובעצם חלק מהחוזה שנחתם בין כל 
 \lang english
 Node
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-בשרשרת העברה כלשהי.
+ בשרשרת העברה כלשהי.
 \begin_inset Newline newline
 \end_inset
 
@@ -747,61 +406,11 @@ Node
 \end_inset
 
 בעבודה זו ביקשנו לבדוק את ההשפעות של הפרוטוקול על הרשת, מה ההשפעה הכללית
- על הרשת, ההשפעה הפרטנית על
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ על הרשת, ההשפעה הפרטנית על 
 \lang english
 Nodes
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ישרים אשר משתתפים ברשת המשתמשת בפרוטוקול זה ובנוסף נציג מתקפת 
+ ישרים אשר משתתפים ברשת המשתמשת בפרוטוקול זה ובנוסף נציג מתקפת 
 \begin_inset Formula $Dos$
 \end_inset
 
@@ -814,25 +423,8 @@ Nodes
 \end_layout
 
 \begin_layout Standard
-\begin_inset Separator plain
-\end_inset
 
-
-\end_layout
-
-\begin_layout Part*
-מבוא
-\end_layout
-
-\begin_layout Standard
-לדבר על 
-\begin_inset Formula $Lightning$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -841,326 +433,162 @@ Nodes
 
 \begin_layout Section*
 
+\series bold
+\size large
+מבוא
+\end_layout
+
+\begin_layout Standard
+
+\size large
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+
+\size large
+\begin_inset Formula $Lightning\,Network$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Quotation
+
+\size large
+רשת ה-
+\begin_inset Formula $Lightning$
+\end_inset
+
+ היא רשת אנונית המשמשת כשכבה שנייה על גבי רשת מבוססת 
+\begin_inset Formula $Blockchain$
+\end_inset
+
+ כמו רשת ה-
+\begin_inset Formula $Bitcoin$
+\end_inset
+
+.
+ מטרת הרשת היא לפתור את בעית ה-
+\begin_inset Formula $scalability$
+\end_inset
+
+ ע
+\begin_inset Quotes erd
+\end_inset
+
+י שימוש ב-
+\begin_inset Formula $Payment\,channels$
+\end_inset
+
+ דו כיווניים בין משתמשים כך שתשלומים נחתמים ע
+\begin_inset Quotes erd
+\end_inset
+
+י שני המשתתפים בטרנזקציה ויכולים להתבצע מחוץ ל-
+\begin_inset Formula $blockchain$
+\end_inset
+
+ וכך להתבסס על רשת התקשורת בין המשתתפים.
+ הרשת מאפשרת תשלום בין משתתפים להם אין 
+\begin_inset Formula $channel$
+\end_inset
+
+ ישיר ע
+\begin_inset Quotes erd
+\end_inset
+
+י שימוש בחוזה 
+\begin_inset Formula $HTLC$
+\end_inset
+
+ המאפשר לעבור בין משתמשי ביניים מבלי לסמוך עליהם, אלא על ידי חתימות קריפטוגרפיות.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\size large
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+
+\size large
 \lang english
 Griefing Attack
 \end_layout
 
 \begin_layout Quotation
-ראשית נתחיל בלהציג את מתקפת 
+
+\size large
+נציג את מתקפת 
 \lang english
 Griefing
 \lang hebrew
+ שהיא מתקפה המתאפשרת ברשת שמשתמשת בפרוטוקול 
+\begin_inset Formula $HTLC$
+\end_inset
+
 .
- ניזכר כי כאשר
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ מתקפה זו היא בעיה ברשת 
+\begin_inset Formula $Lightning$
+\end_inset
+
+ וגורמת לה להיות פחות אטרקטיבית ולהוות פיתרון אמיתי לבעית ה-
+\begin_inset Formula $scalability$
+\end_inset
+
+.
+ מטרת המתקפה היא לנעול כמות גדולה של כסף של משתמש הוגן ולגרום ל-
+\begin_inset Formula $Denail-Of-Service$
+\end_inset
+
+, בידוד של המשתמש מהרשת או נעילת 
+\begin_inset Formula $channel$
+\end_inset
+
+ לגמרי.
+ ניזכר כי כאשר 
 \lang english
 Node A
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-מעוניין להעביר כסף ל-
+ מעוניין להעביר כסף ל-
 \lang english
 Node R
 \lang hebrew
-, הוא צריך למצוא מסלול בינו לבין
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+, הוא צריך למצוא מסלול בינו לבין 
 \lang english
 R
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-על גבי רשת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ על גבי רשת 
 \lang english
 Lightning
 \lang hebrew
-, במקרה של התמונה למטה, המסלול הוא
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-
+, במקרה של התמונה למטה, המסלול הוא 
 \begin_inset Formula $A\rightarrow B\rightarrow C\rightarrow D\rightarrow R$
 \end_inset
 
 .
- בין כל שני
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ בין כל שני 
 \lang english
 Nodes
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-עוקבים יש ליצור חוזה
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ עוקבים יש ליצור חוזה 
 \lang english
 HTLC
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-אשר יוודא כי אם התשלום יעבור בהצלחה, כל ה
+ אשר יוודא כי אם התשלום יעבור בהצלחה, כל ה
 \lang english
 Nodes
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-במסלול יקבלו את המגיע שלהם, או לחילופין, שאם התשלום לא הצליח, לא יפסידו
+ במסלול יקבלו את המגיע שלהם, או לחילופין, שאם התשלום לא הצליח, לא יפסידו
  כסף.
 \begin_inset Newline newline
 \end_inset
@@ -1189,90 +617,15 @@ Nodes
 \end_inset
 
  אליו הוא מעביר את הכסף.
- תוקף המבצע
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ תוקף המבצע 
 \lang english
 Griefing
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-רוצה לנעול כמה שיותר כספים לכמה שיותר זמן והוא עושה זאת ע
+ רוצה לנעול כמה שיותר כספים לכמה שיותר זמן והוא עושה זאת ע
 \begin_inset Quotes erd
 \end_inset
 
-י התעלמות ממימוש חוזה
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+י התעלמות ממימוש חוזה 
 \lang english
 HTLC
 \lang hebrew
@@ -1285,61 +638,11 @@ HTLC
 \begin_inset Newline newline
 \end_inset
 
-בדוגמה שלנו,
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+בדוגמה שלנו, 
 \lang english
 R
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-מתעלם מהחוזה וגורם לכל השרשרת לנעול כספים ליום אחד לפחות ובמסלולים ארוכים
+ מתעלם מהחוזה וגורם לכל השרשרת לנעול כספים ליום אחד לפחות ובמסלולים ארוכים
  יותר זו יכולה להיות בעיה רצינית הרבה יותר.
 \begin_inset Newline newline
 \end_inset
@@ -1348,7 +651,7 @@ R
 \begin_inset Formula $Node$
 \end_inset
 
--ים, כך לגרום לתשלומים ש
+-ים, כך לגרום לתשלומים ש-
 \begin_inset Formula $Node$
 \end_inset
 
@@ -1361,51 +664,36 @@ R
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
 
 \end_layout
 
-\begin_layout Part*
+\begin_layout Section*
 
+\series bold
+\size large
 \lang english
 HTLC-GP Protocl
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 כותבי המאמר מציעים בניה חדשה של 
 \lang english
 HTLC
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-על מנת להטיל קנס על מבצע המתקפה המדוברת.
- הרעיון הוא שמקבל החוזה יינעל כספים נוספים )בהתאם למיקומו במסלול התשלום(,
- אם החוזה פג תוקף, משלם מקבל החוזה את הסכום הנקוב לשולח החוזה )נאכף ע
+ על מנת להטיל קנס על מבצע מתקפת ה-
+\begin_inset Formula $Griefing$
+\end_inset
+
+.
+ הרעיון הוא שמקבל החוזה ינעל כספים נוספים )בהתאם למיקומו במסלול התשלום(,
+ אם החוזה פג תוקף, מקבל החוזה משלם את הסכום הנקוב לשולח החוזה )נאכף ע
 \begin_inset Quotes erd
 \end_inset
 
@@ -1420,35 +708,10 @@ HTLC
  שייצג את מחיר ה-
 \lang english
 Griefing
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
-, 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-כלומר כמה מקבל החוזה צריך לשלם )ביחס לסכום שננעל( על כל דקה שבה נעל כסף
+, כלומר כמה מקבל החוזה צריך לשלם )ביחס לסכום שננעל( על כל דקה שבה נעל כסף
  )ולבסוף לא העביר אותו(.
- על תוקפת זו )בהמשך נתייחס למקרים בהם היא לא בהכרח תוקפת( לשלם לכל ה
+ על התוקף לשלם לכל ה
 \begin_inset Quotes erd
 \end_inset
 
@@ -1456,32 +719,7 @@ Griefing
 \begin_inset Quotes erd
 \end_inset
 
- כלומר לכל מי שנעל את הכסף אבל בעצם לא קיבל
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ שלפניו בשרשרת כלומר לכל מי שנעל את הכסף אבל בעצם לא קיבל 
 \lang english
 fee
 \lang hebrew
@@ -1501,90 +739,15 @@ fee
 \begin_inset Newline newline
 \end_inset
 
-כפי שניתן לראות בתמונה, הקנס הוא מצטבר, זה כי כל
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+כפי שניתן לראות בתמונה, הקנס הוא מצטבר, זה כי כל 
 \lang english
 Node
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-בשרשרת צריך לשלם ל-
+ בשרשרת צריך לשלם ל-
 \lang english
 Node
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-שקדם לו.
+ שקדם לו.
  בדוגמה זו דייב נועל )בנוסף לכספים לשלם העברה( 
 \begin_inset Formula $qp_{Alice}t$
 \end_inset
@@ -1626,61 +789,11 @@ Node
 \end_inset
 
 .
- במקרה שבו בוב יחליט לבצע
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ במקרה שבו בוב יחליט לבצע 
 \lang english
 Griefing
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ולהתעלם ממימוש החוזה שנשלח אליו, הוא ישלם לצ'ארלי 
+ ולהתעלם ממימוש החוזה שנשלח אליו, הוא ישלם לצ'ארלי 
 \begin_inset Formula $qp_{Alice}t+qp_{Dave}\left(t-1\right)+qp_{Charlie}\left(t-2\right)$
 \end_inset
 
@@ -1696,65 +809,11 @@ Griefing
 \begin_inset Formula $Griefing$
 \end_inset
 
-.
+, והוא כמובן לא יקבל כלום.
 \begin_inset Newline newline
 \end_inset
 
-כותבי המאמר הציגו
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-2
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-פרוטוקולים למימוש רעיון זה, הפרוטוקול הראשון 
+כותבי המאמר הציגו 2 פרוטוקולים למימוש רעיון זה, הפרוטוקול הראשון 
 \begin_inset ERT
 status open
 
@@ -1767,7 +826,7 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 
 \end_inset
 
-, והפרוטוקול השני שמוצג הגירסא הנוכחית של המאמר.
+ , והפרוטוקול השני שמוצג בגירסא הנוכחית של המאמר.
  
 \begin_inset Newline newline
 \end_inset
@@ -1856,7 +915,15 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \begin_inset Quotes erd
 \end_inset
 
-י כך שהפך את המתקפה ללא משתלמת, אבל מספר בעיות נוספו שנפרט בהמשך נוספו בעקבותו.
+י כך שהפך את המתקפה ללא משתלמת משום שמבצע המתקפה ישלם 
+\begin_inset Formula $penalty$
+\end_inset
+
+, אבל מספר בעיות נוספו שנפרט בהמשך נוספו בעקבותו )האם לפרט על 
+\begin_inset Formula $reverse\,griefing$
+\end_inset
+
+????????(.
 \begin_inset Newline newline
 \end_inset
 
@@ -1881,6 +948,15 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
 .
+ בשלב זה 
+\begin_inset Formula $Alice$
+\end_inset
+
+ שולחת הודעה דרך כל המשתתפים בטרנזקציה שיוכלו לדעת מי ה-
+\begin_inset Formula $Node$
+\end_inset
+
+ שנמצא לפניהם ואחריהם.
  כעת, 
 \begin_inset Formula $Bob$
 \end_inset
@@ -1909,7 +985,7 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \begin_inset Formula $Nodes$
 \end_inset
 
-.
+ )כפי שהוצג קודם(.
  אם 
 \begin_inset Formula $Bob$
 \end_inset
@@ -1990,6 +1066,65 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \begin_inset Newline newline
 \end_inset
 
+ 
+\begin_inset Formula $Dave$
+\end_inset
+
+ יוצר חוזה באופן דומה עם 
+\begin_inset Formula $charlie$
+\end_inset
+
+ שיוצר כזה עם 
+\begin_inset Formula $bob$
+\end_inset
+
+.
+\begin_inset Newline newline
+\end_inset
+
+כעת, בוב ישחרר את 
+\begin_inset Formula $x$
+\end_inset
+
+ ל-
+\begin_inset Formula $charlie$
+\end_inset
+
+ כדי לקבל את תשלום הכסף, והם יבטלו את ה-
+\begin_inset Formula $cancellation\,contract$
+\end_inset
+
+ ו-
+\begin_inset Formula $charlie$
+\end_inset
+
+ ישלח כסף באופן רגיל.
+ 
+\begin_inset Formula $charlie$
+\end_inset
+
+ בתורו יבצע את אותם הפעולות עם 
+\begin_inset Formula $Dave$
+\end_inset
+
+ שיבצע עם 
+\begin_inset Formula $Alice$
+\end_inset
+
+.
+ וכך הכסף עבר מ-
+\begin_inset Formula $Alice$
+\end_inset
+
+ ל-
+\begin_inset Formula $Bob$
+\end_inset
+
+ בצורה בטוחה.
+ 
+\begin_inset Newline newline
+\end_inset
+
 
 \begin_inset Graphics
 	filename pasted5.png
@@ -2001,39 +1136,10 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
 בתמונה זו ניתן לראות את שלב שליחת 
-\numeric on
-
 \begin_inset Formula $H$
 \end_inset
 
-
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ו-
+ ו-
 \begin_inset Formula $Y$
 \end_inset
 
@@ -2058,9 +1164,58 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  זהו החוזה הרגיל שמעביר את הכסף.
+\begin_inset Newline newline
+\end_inset
+
+אלמנט חשוב נוסף בפרוטוקול הוא פרמטר 
+\begin_inset Formula $delta$
+\end_inset
+
+.
+ הוא מגדיר את הזמן המקסימלי ש-
+\begin_inset Formula $Bob$
+\end_inset
+
+ יחכה מרגע ששלח חוזה 
+\begin_inset Formula $Cancellation$
+\end_inset
+
+ ועד שקיבל את חוזה התשלום מ-
+\begin_inset Formula $Charlie$
+\end_inset
+
+.
+ אם לא קיבל חוזה כזה והזמן שעבר הוא יותר מ-
+\begin_inset Formula $delta$
+\end_inset
+
+, 
+\begin_inset Formula $Bob$
+\end_inset
+
+ יבטל את חוזה ה-
+\begin_inset Formula $Cancellation$
+\end_inset
+
+.
+ 
+\begin_inset Newline newline
+\end_inset
+
+הפרמטר חשוב משום שאחרת 
+\begin_inset Formula $Bob$
+\end_inset
+
+ היה נועל את ה-
+\begin_inset Formula $Penalty$
+\end_inset
+
+ לזמן רב.
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -2069,121 +1224,24 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 
 \begin_layout Section*
 
+\size large
 \lang english
 Reverse Griefing
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 )למחוק?( הפרוטוקול הראשון שהמאמר הציע מציג בעיה חדשה )אשר צויינה במאמר(
- בשם
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ בשם 
 \lang english
 Reverse Griefing
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-- מתקפה זו בעצם מטילה את העונש על
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ - מתקפה זו בעצם מטילה את העונש על 
 \lang english
 Node
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ישר ובכך גורמת לו להפסיד כסף.
+ ישר ובכך גורמת לו להפסיד כסף.
 \begin_inset Newline newline
 \end_inset
 
@@ -2253,10 +1311,65 @@ Node
 \end_inset
 
  יצטרך לשלם קנס על לא עוול בכפו.
- כותבי המאמר מציעים דרך למגר את התופעה שנדון על מהי ויעילותה בהמשך.
+ הפרוטוקול הראשון הוצע ע
+\begin_inset Quotes erd
+\end_inset
+
+י כותבי המאמר רגיש לבעיה זו.
+\begin_inset Newline newline
+\end_inset
+
+בפרוטוקול של המאמר המעודכן, העובדה שאנחנו קודם יוצרים את חוזי ה-
+\begin_inset Formula $Cancellation$
+\end_inset
+
+ מונעת את הבעיה משום שאם 
+\begin_inset Formula $F$
+\end_inset
+
+ יתעלם לגמרי מהודעות של 
+\begin_inset Formula $E$
+\end_inset
+
+, הוא יצטרף לשלם לו 
+\begin_inset Formula $penalty$
+\end_inset
+
+.
+ ואם יבטל את חוזה ה-
+\begin_inset Formula $Cancellation$
+\end_inset
+
+ שלו עם 
+\begin_inset Formula $E$
+\end_inset
+
+ אז זה אומר שהוא שיחרר את 
+\begin_inset Formula $x$
+\end_inset
+
+ או 
+\begin_inset Formula $r$
+\end_inset
+
+, ולכן 
+\begin_inset Formula $E$
+\end_inset
+
+ יוכל לבטל את חוזה ה-
+\begin_inset Formula $Cancellation$
+\end_inset
+
+ שלו עם 
+\begin_inset Formula $D$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -2265,11 +1378,14 @@ Node
 
 \begin_layout Section*
 
+\size large
 \lang english
 Soft Griefing
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 בשרשור מיילים בנוגע למאמר, הוצג הרעיון של 
 \begin_inset Formula $Soft\,Griefing$
 \end_inset
@@ -2289,10 +1405,13 @@ Soft Griefing
 \begin_inset Formula $Node$
 \end_inset
 
- הרשע ממשיך את מהלך התשלום הרגיל ברגע האחרון לפני שהחוזה פג, כלומר הוא גורם
- לכסף להיות נעול במשך הזמן הכי ממושך שאפשר, כך שהתשלום עדיין עובר והוא לא
- צריך לשלם את הקנס.
- לכן 
+ הרשע ממשיך את מהלך התשלום הרגיל )כלומר חושף את 
+\begin_inset Formula $x$
+\end_inset
+
+( ברגע האחרון לפני שהחוזה פג, כלומר הוא גורם לכסף להיות נעול במשך הזמן הכי
+ ממושך שאפשר, כך שהתשלום עדיין עובר והוא לא צריך לשלם את הקנס.
+ 
 \begin_inset Formula $Node$
 \end_inset
 
@@ -2310,11 +1429,21 @@ Soft Griefing
 \begin_inset Formula $Forward\,Contract$
 \end_inset
 
- ובכך לגרום לכספים רבים להיות נעולים.
+, ובכך לגרום לכספים רבים להיות נעולים.
  
+\begin_inset Newline newline
+\end_inset
+
+כאשר הכספים עוברים דרכו הוא עלול להיות מוגבל בפרמטר 
+\begin_inset Formula $delta$
+\end_inset
+
+, אך אם הוא מקבל התשלום, הוא יכול לבצע את המתקפה עד לזמן שסמוך לפקיעת החוזה.
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -2323,17 +1452,20 @@ Soft Griefing
 
 \begin_layout Section*
 
+\size large
 \lang english
 Griefing Dos Attack
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 כעת ברצונינו להציג מתקפה חדשה.
  נציג איך במתקפה זו התוקף לא צריך להתחייב ולנעול כסף ובכל זאת לגרום ל-
 \begin_inset Formula $Node$
 \end_inset
 
- ישר להתחייב ולנעול סכומי כסף.
+ ישר להתחייב ולנעול סכומי כסף משמעותיים.
 \begin_inset Newline newline
 \end_inset
 
@@ -2361,7 +1493,7 @@ Griefing Dos Attack
 
  הראשון במסלול(.
  כעת התוקף יבצע 
-\begin_inset Formula $grief$
+\begin_inset Formula $griefing$
 \end_inset
 
  ויתעלם מההודעה ליצירת החוזה.
@@ -2390,11 +1522,7 @@ Griefing Dos Attack
 \begin_inset Formula $Node$
 \end_inset
 
- הראשון במסלול, כל ה
-\numeric on
--
-\numeric off
-
+ הראשון במסלול, כל ה-
 \begin_inset Formula $Node$
 \end_inset
 
@@ -2403,7 +1531,7 @@ Griefing Dos Attack
 \begin_inset Formula $penalty$
 \end_inset
 
-(, לזמן מוגדר מראש - 
+ לכל אחד מהמשתתפים לפניו(, לזמן מוגדר מראש - 
 \begin_inset Formula $delta$
 \end_inset
 
@@ -2435,7 +1563,8 @@ Griefing Dos Attack
 \begin_inset Formula $Denail\,Of\,Service$
 \end_inset
 
- עבור אותו קורבן משום שהוא לא יוכל להעביר כסף או לקבל כסף דרך אותם 
+ עבור אותו קורבן משום שהוא עלול לא להיות מסוגל להעביר כסף או לקבל כסף דרך
+ אותם 
 \begin_inset Formula $channel$
 \end_inset
 
@@ -2462,6 +1591,69 @@ Griefing Dos Attack
 \end_layout
 
 \begin_layout Standard
+
+\size large
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+
+\size large
+\lang english
+Penalty Risk
+\end_layout
+
+\begin_layout Quotation
+
+\size large
+כדי לפתור את בעית ה-
+\begin_inset Formula $Griefing$
+\end_inset
+
+, מציע 
+\begin_inset Formula $HTLC-GP$
+\end_inset
+
+ לנעול כמות גדולה מאד של כספים ביחס לכסף הנשלח )במאמר צוין יחס 
+\begin_inset Formula $griefing\,penalty$
+\end_inset
+
+ של 
+\begin_inset Formula $0.001$
+\end_inset
+
+( מה שעלול לחשוף את משתתפי התשלומים לסיכון גבוה.
+ חלק מהמתקפות שהצגנו מסתמכות על כך.
+ למשל, נעילת ה-
+\begin_inset Formula $penalty$
+\end_inset
+
+ עלולה לגרום למתקפת 
+\begin_inset Formula $dos$
+\end_inset
+
+ רגילה על 
+\begin_inset Formula $node$
+\end_inset
+
+ ברשת להיות אטרקטיבית יותר.
+ לאחר ש-
+\begin_inset Formula $node$
+\end_inset
+
+ מסוים נועל כסף ל-
+\begin_inset Formula $penalty$
+\end_inset
+
+, 
+\end_layout
+
+\begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -2469,14 +1661,20 @@ Griefing Dos Attack
 \end_layout
 
 \begin_layout Part*
+
+\size large
 העבודה שלנו
 \end_layout
 
 \begin_layout Section*
+
+\size large
 מבוא
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 בחרנו למממש סימולציה של רשת 
 \begin_inset Formula $Lightning$
 \end_inset
@@ -2485,11 +1683,19 @@ Griefing Dos Attack
 \begin_inset Formula $HTLC$
 \end_inset
 
- המוטבע כרגע ועם הפרוטוקול 
+ המוטמע כרגע ועם הפרוטוקול 
 \begin_inset Formula $HTLC-GP$
 \end_inset
 
  החדש ולבחון את השפעות השינוי.
+\begin_inset Newline newline
+\end_inset
+
+תחילה רצינו להתמקד באפקטיביות מתקפת ה-
+\begin_inset Formula $Reverse\,Griefing$
+\end_inset
+
+ אבל לאחר עדכון המאמר שפותר את הבעיה החלטנו להתמקד הפרוטוקול החדש וביעילותו.
 \begin_inset Newline newline
 \end_inset
 
@@ -2506,6 +1712,8 @@ Griefing Dos Attack
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -2513,126 +1721,30 @@ Griefing Dos Attack
 \end_layout
 
 \begin_layout Section*
+
+\size large
 מימוש
 \end_layout
 
 \begin_layout Quotation
-בחרנו לממש את הפרוטוקול על סימולציה של רשת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+
+\size large
+בחרנו לממש את הפרוטוקול על סימולציה של רשת 
 \lang english
 Lightning
 \lang hebrew
- שאנחנו בנינו בשפת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ שאנחנו בנינו בשפת 
 \lang english
 Python
 \lang hebrew
 .
  בחרנו לא להשתמש בספריות קיימות משום שהן כתובות בשפות שאנחנו לא בקיעים שהן,
  מסובכות וגדולות מדי לצרכים שלנו.
- בנוסף, הסימולציות הקיימות לא מאפשרות פתיחת ערוץ בו שני
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ בנוסף, הסימולציות הקיימות לא מאפשרות פתיחת ערוץ בו שני 
 \lang english
 Nodes
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-מפקידים לתוכו כסף, כאשר פרוטוקול זה מחייב זאת )אחרת בהעברה הראשונה לא נוכל
+ מפקידים לתוכו כסף, כאשר פרוטוקול זה מחייב זאת )אחרת בהעברה הראשונה לא נוכל
  לנעול את הכספים עבור העונש(.
 \begin_inset Newline newline
 \end_inset
@@ -2640,33 +1752,8 @@ Nodes
 בסימולציה שלנו אנחנו עושים הרבה הנחות - למשל שה-
 \lang english
 Nodes
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-מוודאים נכונה שהחוזה שקיבלו תקין או שימוש בבלוקצ'יין 
+ מוודאים נכונה שהחוזה שקיבלו תקין או שימוש בבלוקצ'יין 
 \begin_inset Quotes eld
 \end_inset
 
@@ -2675,32 +1762,7 @@ Nodes
 \end_inset
 
  שפשוט מספק נתונים הנחוצים לריצת הסימולציה.
- זאת מכיוון שאנחנו לא באים לבדוק את הבלוקצ'יין או מימוש ספציפי של
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ זאת מכיוון שאנחנו לא באים לבדוק את הבלוקצ'יין או מימוש ספציפי של 
 \lang english
 Node
 \lang hebrew
@@ -2713,64 +1775,12 @@ Node
 \begin_inset Newline newline
 \end_inset
 
-בפרויקט
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-3
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-חלקים מרכזיים:
+בפרויקט 3 חלקים מרכזיים:
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 מידול רשת ה-
 \begin_inset Formula $Lightning$
 \end_inset
@@ -2791,11 +1801,15 @@ Node
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 סימולציה שבונה רשת בעזרת המידול עם פרמטרים שונים אותם נרצה לבדוק, מריצה
  טרנזקציות על גבי הרשת, אוספת נתונים על הריצה ושומרת אותם.
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 עמוד 
 \begin_inset Formula $UI$
 \end_inset
@@ -2862,36 +1876,7 @@ Node
 \begin_inset Newline newline
 \end_inset
 
-מהלך הסימולציה הוא יצירת רשת ב
-\numeric on
-3
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-טופולוגיות אפשריות )נפרט בהמשך( של 
+מהלך הסימולציה הוא יצירת רשת ב3 טופולוגיות אפשריות )נפרט בהמשך( של 
 \begin_inset Formula $Node$
 \end_inset
 
@@ -2939,36 +1924,7 @@ Node
 \begin_inset Formula $1440$
 \end_inset
 
- בלוקים )
-\numeric on
-10
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ימים( ועם פרמטר 
+ בלוקים )10 ימים( ועם פרמטר 
 \begin_inset Formula $Griefing\,Penalty$
 \end_inset
 
@@ -3028,6 +1984,8 @@ Node
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 כמה התקשורת ברשת עמוסה - עבור פונקציות מסוימות במהלך טרנזקציה בין 
 \begin_inset Formula $Node$
 \end_inset
@@ -3035,181 +1993,13 @@ Node
 -ים יצרנו עיכוב יזום בהסתברות קבועה של )להוסיף!!!(, כך שעבור כל פונקציה
  נדגום באופן אחיד כמה בלוקים נתעכב.
  מבלוק אחד ועד לפרמטר אותו נבדוק.
- בדקנו את הערכים
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-2
-\numeric off
-,
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-6
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ו-
-\numeric on
-10
-\numeric off
-.
+ בדקנו את הערכים 2, 6 ו-10.
 \end_layout
 
 \begin_layout Itemize
-כמות התוקפים , ומאיזה סוג - נבדוק תוקף אחד,
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-3
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ו-
-\numeric on
-5
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-תוקפים.
+
+\size large
+כמות התוקפים , ומאיזה סוג - נבדוק תוקף אחד, 3 ו-5 תוקפים.
  כאשר סוגיהם הם 
 \begin_inset Formula $Soft\,Griefing$
 \end_inset
@@ -3222,6 +2012,8 @@ Node
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 פרוטוקול 
 \begin_inset Formula $HTLC$
 \end_inset
@@ -3234,11 +2026,15 @@ Node
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 טופולוגית הרשת: 
 \end_layout
 
 \begin_deeper
 \begin_layout Itemize
+
+\size large
 רשת בעלת יתירות.
  עבור רשת בעלת 
 \begin_inset Formula $n$
@@ -3274,6 +2070,8 @@ Node
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 רשת אמיתית.
  נעזרנו בקוד שצורף למאמר המעודכן ויצרנו רשת לפי 
 \begin_inset Formula $snapshot$
@@ -3296,6 +2094,8 @@ Node
 
 \end_deeper
 \begin_layout Itemize
+
+\size large
 פרמטר 
 \begin_inset Formula $delta$
 \end_inset
@@ -3396,86 +2196,11 @@ Node
 \lang english
 LightningNode
 \lang hebrew
-: מייצגת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+: מייצגת 
 \lang english
 Node
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ברשת
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+ ברשת 
 \lang english
 lightning
 \lang hebrew
@@ -3487,152 +2212,28 @@ lightning
 \lang english
 Contract_HTLC
 \lang hebrew
-: מייצגת חוזה
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+: מייצגת חוזה 
 \lang english
 HTLC
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
  כפי שאנחנו מכירים אותו.
 \begin_inset Newline newline
 \end_inset
 
 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
 \lang english
 Contract_HTLC_GP
 \lang hebrew
-: מייצגת חוזה
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
+: מייצגת חוזה 
 \lang english
 HTLC-GP
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-כפי שכותבי המאמר מציעים.
+ כפי שכותבי המאמר מציעים.
  החוזה דומה מאוד ל-
 \lang english
 HTLC
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-ועל כן המחלקה יורשת מ-
+ ועל כן המחלקה יורשת מ-
 \lang english
 Contract_HTLC
 \lang hebrew
@@ -3643,36 +2244,12 @@ Contract_HTLC
 
 \lang english
 :ChannelManager
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
  מבצע את כל הפעולות הקשורות לניהול ערוץ הנפתח ע
 \begin_inset Quotes erd
 \end_inset
 
 י שני 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
 \lang english
 Nodes
 \lang hebrew
@@ -3687,33 +2264,8 @@ Network
 : מייצגת את רשת ה
 \lang english
 Lightning
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
 \lang hebrew
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-בסימולציה שלנו.
+ בסימולציה שלנו.
 \begin_inset Newline newline
 \end_inset
 
@@ -3781,6 +2333,8 @@ TODO: put in more classes and talk about the GUI
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -3788,10 +2342,14 @@ TODO: put in more classes and talk about the GUI
 \end_layout
 
 \begin_layout Section*
+
+\size large
 תוצאות
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 תוצאה ראשונה עליה נרצה לפרט היא עומס הרשת.
  )להביא גרפים מעודכנים!!!!!!!!!!!!!(
 \begin_inset Newline newline
@@ -3842,90 +2400,7 @@ TODO: put in more classes and talk about the GUI
 \begin_inset Formula $busy\,network$
 \end_inset
 
-
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-2
-\numeric off
-(, בפרוטוקול החדש נועלים יותר מפי
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\numeric on
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-2
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\numeric off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
- 
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-מכמות הכסף מאשר בפרוטוקול הרגיל.
+ 2(, בפרוטוקול החדש נועלים יותר מפי 2 מכמות הכסף מאשר בפרוטוקול הרגיל.
 \begin_inset Newline newline
 \end_inset
 
@@ -4048,6 +2523,8 @@ TODO: put in more classes and talk about the GUI
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -4055,10 +2532,14 @@ TODO: put in more classes and talk about the GUI
 \end_layout
 
 \begin_layout Section*
+
+\size large
 מסקנות
 \end_layout
 
 \begin_layout Quotation
+
+\size large
 כפי שהוצג בתוצאות, פרוטוקול 
 \begin_inset Formula $HTLC-GP$
 \end_inset
@@ -4079,6 +2560,8 @@ TODO: put in more classes and talk about the GUI
 \end_layout
 
 \begin_layout Standard
+
+\size large
 \begin_inset Separator plain
 \end_inset
 
@@ -4087,6 +2570,7 @@ TODO: put in more classes and talk about the GUI
 
 \begin_layout Section*
 
+\size large
 \lang english
 Future Work
 \lang hebrew
@@ -4094,6 +2578,8 @@ Future Work
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 בסימולציה שבנינו ניסינו להעביר טרנזקציה דרך מסלול אחד, ואם לא הצלחנו לא
  ניסינו לפצל אותה לתת תשלומים דרך מסלולים שונים.
  אנחנו חושבים שיש ערך לנסות לבדוק את הסימולציה בעזרת מנגנון של פיצול טרנזקציות,
@@ -4119,11 +2605,15 @@ Future Work
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 נרצה לתרגם את העבודה לאנגלית )החלטנו לכתוב בעברית בגלל חוסר זמן( על מנת
  שיגיע לתפוצה רחבה יותר )כולל כותבי המאמר(.
 \end_layout
 
 \begin_layout Itemize
+
+\size large
 האופן שבו בנינו את סימולציה והאובייקטים מאפשר להמשיך לחקור את 
 \begin_inset Formula $HTLC-GP$
 \end_inset

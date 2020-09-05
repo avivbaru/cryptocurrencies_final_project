@@ -20,7 +20,7 @@ MAX_TO_SEND = 1000000000
 MSAT_AMOUNTS_TO_SEND = [10000]
 # MSAT_CHANNEL_CAPACITY = [500000000, 1000000000, 1500000000, 2000000000, 2500000000, 3000000000, 3500000000, 4500000000,
 #                          5000000000, 5500000000, 8500000000, 10500000000]
-MSAT_CHANNEL_CAPACITY = [100000000000]
+MSAT_CHANNEL_CAPACITY = [500000]
 # MSAT_CHANNEL_CAPACITY_PROB = [0.477, 0.110, 0.109, 0.019, 0.051, 0.013, 0.023, 0.015, 0.007, 0.044, 0.015, 0.024]
 MSAT_CHANNEL_CAPACITY_PROB = [1]
 # BASE_FEE = [100, 200, 300, 400, 500, 600, 800, 900, 1000]
@@ -233,10 +233,8 @@ def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
     number_of_nodes_to_create = NUMBER_OF_NODES - (0 if not attacker else (1 if not victim else 2))
     for _ in range(number_of_nodes_to_create):
         network.add_node(create_node(delta, max_number_of_block_to_respond))
-    if attacker2 and attacker2 not in network.nodes:
-        network.add_node(attacker2)
     random.shuffle(network.nodes)
-    return network, attacker, victim
+    return network, attacker, victim, attacker2
 
 
 def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond):
@@ -285,7 +283,7 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
 def generate_redundancy_network(attacker_node_type, delta, max_number_of_block_to_respond):
     # connect 2 nodes if differ by 10 to the power of n(1...floor(log_10(number_of_nodes))+1)
     #   modulo 10^floor(log_10(number_of_nodes))
-    network, attacker, victim = create_network(attacker_node_type, delta, max_number_of_block_to_respond)
+    network, attacker, victim, attacker2 = create_network(attacker_node_type, delta, max_number_of_block_to_respond)
     n = int(math.log(NUMBER_OF_NODES, 10))
     jump_indexes = [10 ** i for i in range(n + 1)]
     for i in range(NUMBER_OF_NODES):
@@ -298,6 +296,9 @@ def generate_redundancy_network(attacker_node_type, delta, max_number_of_block_t
                                                           weights=MSAT_CHANNEL_CAPACITY_PROB, k=1)[0]
                 METRICS_COLLECTOR_INSTANCE.average(CHANNEL_STARTING_BALANCE, channel_starting_balance)
                 network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
+
+    if attacker2 and attacker2 not in network.nodes:
+        network.add_node(attacker2)
     return network, attacker, victim
 
 
