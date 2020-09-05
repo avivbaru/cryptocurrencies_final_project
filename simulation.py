@@ -36,7 +36,7 @@ GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 1
 SIGMA = 0.1
 # NUMBER_OF_NODES = 1000
-NUMBER_OF_NODES = 200
+NUMBER_OF_NODES = 800
 NUMBER_OF_BLOCKS = 10 * 144
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 SOFT_GRIEFING_PROBABILITY = 0.5
@@ -270,7 +270,7 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
 
     nodes = {}
     network = Network()
-    attacker, victim = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
+    attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
     for node in json_data['nodes']:
         nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
     network.nodes = list(nodes.values())

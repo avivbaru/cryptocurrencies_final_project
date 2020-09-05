@@ -709,12 +709,12 @@ class LightningNodeDosAttack(LightningNodeAttacker):
     def __init__(self, *args, block_amount_to_send_transaction: int):
         super(LightningNodeDosAttack, self).__init__(*args, block_amount_to_send_transaction=block_amount_to_send_transaction)
 
-    # def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
-    #     if self._transaction_id_to_final_node.get(transaction_id) == self._node_to_attack:
-    #         self.log_count_metric("LightningNodeDosAttack")
-    #         return
-    #     else:
-    #         super(LightningNodeDosAttack, self).receive_cancellation_contract(transaction_id, contract)
+    def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
+        if self._transaction_id_to_final_node.get(transaction_id) == self._node_to_attack:
+            self.log_count_metric("LightningNodeDosAttack")
+            return
+        else:
+            super(LightningNodeDosAttack, self).receive_cancellation_contract(transaction_id, contract)
 
 
 class LightningNodeSoftDosAttack(LightningNodeAttacker):
@@ -722,16 +722,16 @@ class LightningNodeSoftDosAttack(LightningNodeAttacker):
         super(LightningNodeSoftDosAttack, self).__init__(*args, block_amount_to_send_transaction=block_amount_to_send_transaction)
         self._number_of_spare_blocks = number_of_spare_blocks
 
-    # def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
-    #     if self._transaction_id_to_final_node.get(transaction_id) == self._node_to_attack:
-    #         if transaction_id not in self._transaction_id_to_transaction_info:
-    #             return
-    #         self.log_count_metric("LightningNodeSoftDosAttack")  # TODO: use this and get the spare block from start transaction
-    #         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftDosAttack, self)
-    #                                            .receive_cancellation_contract(transaction_id, contract),
-    #                                            BLOCKCHAIN_INSTANCE.block_number + self._delta - self._number_of_spare_blocks)
-    #     else:
-    #         super(LightningNodeSoftDosAttack, self).receive_cancellation_contract(transaction_id, contract)
+    def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
+        if self._transaction_id_to_final_node.get(transaction_id) == self._node_to_attack:
+            if transaction_id not in self._transaction_id_to_transaction_info:
+                return
+            self.log_count_metric("LightningNodeSoftDosAttack")  # TODO: use this and get the spare block from start transaction
+            FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftDosAttack, self)
+                                               .receive_cancellation_contract(transaction_id, contract),
+                                               BLOCKCHAIN_INSTANCE.block_number + self._delta - self._number_of_spare_blocks)
+        else:
+            super(LightningNodeSoftDosAttack, self).receive_cancellation_contract(transaction_id, contract)
 
         # class LightningNodeGriefing(LightningNodeAttacker):
         #     # TODO: what to do with griefing??
