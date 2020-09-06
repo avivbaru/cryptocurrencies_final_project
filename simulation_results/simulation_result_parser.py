@@ -12,7 +12,6 @@ def main():
             print(f"Opening file {f_name}")
             with open('./GoodRuns/' + f_name, 'r') as f:
                 all_data.extend(f.readlines())
-            break
     all_data = [json.loads(d.strip()) for d in all_data if d.strip()]
     runs_sum = defaultdict(lambda: defaultdict(float))
     runs_count = defaultdict(lambda: defaultdict(float))
@@ -25,13 +24,13 @@ def main():
     runs = defaultdict(lambda: defaultdict(float))
     for k in runs_sum:
         for m in runs_sum[k]:
-            runs[k][m] = runs_sum[k][m] / runs_count[k][m]
+            runs[k][m] = int(runs_sum[k][m] / runs_count[k][m])
 
     for r in runs:
-        print(r, runs_sum[r])
+        print(r, runs[r])
 
     with open(f'../simulation_gui/runs.js', 'w') as f:
-        f.write(f"data_json = '{json.dumps(runs_sum)}';")
+        f.write(f"data_json = '{json.dumps(runs)}';")
 
 
 if __name__ == '__main__':
