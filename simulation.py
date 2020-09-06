@@ -207,9 +207,11 @@ def close_channel_and_log_metrics(network, victims):
 
 
 def add_more_metrics(metrics):
-    metrics[LOCKED_FUND_PER_TRANSACTION] = metrics.get(TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, 0) / metrics.get(TRANSACTIONS_PASSED_THROUGH, 0)
+    metrics[LOCKED_FUND_PER_TRANSACTION] = metrics.get(TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, 0) / \
+                                           metrics.get(TRANSACTIONS_PASSED_THROUGH, 10000000000000000000000000)
     metrics["Victim: " + LOCKED_FUND_PER_TRANSACTION] = metrics.get("Victim: " + TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, 0) / \
-                                                        metrics.get("Victim: " + TRANSACTIONS_PASSED_THROUGH, 0)
+                                                        metrics.get("Victim: " + TRANSACTIONS_PASSED_THROUGH,
+                                                                    10000000000000000000000000) # to get zero if no transactions
 
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
     network = Network()
