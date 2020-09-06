@@ -213,9 +213,10 @@ def add_more_metrics(metrics):
                                                         metrics.get("Victim: " + TRANSACTIONS_PASSED_THROUGH,
                                                                     10000000000000000000000000) # to get zero if no transactions
 
+
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
     network = Network()
-    number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.REDUNDANCY][attacker_node_type]
+    number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.REDUNDANCY].get(attacker_node_type, 1)
     attackers, victims, attackers2 = create_attacker_and_victim(network, attacker_node_type, delta,
                                                                 max_number_of_block_to_respond, number_of_attackers_to_create)
     number_of_special_nodes = len(attackers) + len(victims) + \
@@ -281,7 +282,7 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
 
     nodes = {}
     network = Network()
-    number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.SNAPSHOT][attacker_node_type]
+    number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.SNAPSHOT].get(attacker_node_type, 1)
     attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta,
                                                              max_number_of_block_to_respond, number_of_attackers_to_create)
 
