@@ -48,8 +48,8 @@ MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT = 6
 
 class NodeType(str, Enum):
     SOFT_GRIEFING = "soft griefing"
-    SOFT_GRIEFING_BUSY_NETWORK = "soft griefing busy network"
-    SOFT_GRIEFING_DOS_ATTACK = "soft griefing dos attack"
+    SOFT_GRIEFING_BUSY_NETWORK = "soft griefing - locking funds in network"
+    SOFT_GRIEFING_DOS_ATTACK = "dos attack"
 
 
 class NetworkType(str, Enum):
@@ -83,11 +83,11 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
     if NodeType.SOFT_GRIEFING_BUSY_NETWORK == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                        block_amount_to_send_transaction=10)
+                                                        block_amount_to_send_transaction=3)
     if NodeType.SOFT_GRIEFING_DOS_ATTACK == attacker_node_type:
         return lightning_node.LightningNodeDosAttack(STARTING_BALANCE, base_fee, fee_percentage,
                                                      GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                     block_amount_to_send_transaction=10)
+                                                     block_amount_to_send_transaction=7)
     return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE, delta,
                                         max_number_of_block_to_respond)
 

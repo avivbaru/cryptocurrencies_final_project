@@ -349,16 +349,11 @@ Grifeing
 Lightning
 \lang hebrew
  בעזרת הטלת קנס על מבצעי המתקפה.
- הרעיון מוצג ב
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-href{https://arxiv.org/pdf/2005.09327.pdf}{מאמר זה}
-\end_layout
+ הרעיון מוצג ב-
+\begin_inset CommandInset citation
+LatexCommand cite
+key "key-1"
+literal "false"
 
 \end_inset
 
@@ -4540,6 +4535,17 @@ key "key-1"
 \end_inset
 
 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://arxiv.org/pdf/2005.09327.pdf
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Bibliography
@@ -4549,7 +4555,18 @@ key "key-2"
 
 \end_inset
 
-שדג
+
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://arxiv.org/pdf/2005.09327v1.pdf
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Bibliography

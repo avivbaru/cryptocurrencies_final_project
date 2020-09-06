@@ -10,3 +10,6 @@ simulation_results/old/*
 simulation_results/*_rawdata
 simulation_gui/node_modules/*
 simulation_gui/.idea/*
+GoodRuns/2020-09-06_09-49-56_rawdata
+pdf_making/#finalProjectPdf.lyx#
+simulation_gui/runs.js
