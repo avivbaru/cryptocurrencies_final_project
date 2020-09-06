@@ -1027,7 +1027,11 @@ Node
 \lang english
 Griefing
 \lang hebrew
- ולהתעלם ממימוש החוזה שנשלח אליו, הוא ישלם לצ'ארלי 
+ ולהתעלם ממימוש החוזה שנשלח אליו,
+\begin_inset Newline newline
+\end_inset
+
+ הוא ישלם לצ'ארלי 
 \begin_inset Formula $qp_{Alice}t+qp_{Dave}\left(t-1\right)+qp_{Charlie}\left(t-2\right)$
 \end_inset
 
@@ -1039,11 +1043,7 @@ Griefing
 \begin_inset Formula $qp_{Alice}t$
 \end_inset
 
- ובכך כולם יקבלו תשלום על כך שנעלו כספים לשווא 
-\begin_inset Newline newline
-\end_inset
-
-מבוב שביצע 
+ ובכך כולם יקבלו תשלום על כך שנעלו כספים לשווא מבוב שביצע 
 \lang english
 Griefing
 \lang hebrew
@@ -1416,7 +1416,11 @@ Forward Contract
 \begin_inset Formula $Charlie$
 \end_inset
 
- כדי לקבל את תשלום הכסף, והם יבטלו את ה-
+ כדי לקבל את תשלום הכסף, 
+\begin_inset Newline newline
+\end_inset
+
+והם יבטלו את ה-
 \lang english
 Cancellation Contract
 \family roman
