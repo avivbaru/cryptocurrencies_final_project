@@ -424,14 +424,23 @@
                     {
                         scales:
                             {
-                                yAxes:[
-                                    {
-                                        ticks:
-                                            {
-                                                beginAtZero:true
-                                            }
+
+                                yAxes: [{
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: yAxisOptions.value
+                                    },
+                                    ticks:
+                                        {
+                                            beginAtZero:true
+                                        }
+                                }],
+                                xAxes: [{
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: nodeType.value
                                     }
-                                ]
+                                }]
                             }
                     }
             }
