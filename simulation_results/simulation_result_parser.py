@@ -10,7 +10,7 @@ def main():
     for f_name in reversed(files):
         if f_name.endswith(f'_rawdata'):
             print(f"Opening file {f_name}")
-            with open(f_name, 'r') as f:
+            with open('./GoodRuns/' + f_name, 'r') as f:
                 all_data.extend(f.readlines())
             break
     all_data = [json.loads(d.strip()) for d in all_data if d.strip()]
