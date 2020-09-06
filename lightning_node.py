@@ -500,7 +500,7 @@ class LightningNode:
         contract.accept_contract()
 
         if nodes_between:
-            self.log_count_metric(TRANSACTIONS_PASSED_THROUGH + " (htlc)")
+            self.log_count_metric(TRANSACTIONS_PASSED_THROUGH)
             self.send_regular_htlc(new_info, nodes_between[1:])
         else:
             x = self._hash_image_x_to_preimage[new_info.hash_x]
@@ -522,7 +522,7 @@ class LightningNode:
             if contract.is_expired:
                 return
             contract.report_x(x)
-            self.log_count_metric(TRANSACTIONS_PASSED_SUCCESSFUL + " (htlc)")
+            self.log_count_metric(TRANSACTIONS_PASSED_SUCCESSFUL)
         else:
             self.log_count_metric(TRANSACTION_SUCCESSFUL_COUNT)
             self.log_avg_metric(TRANSACTION_WAITING_TIME_BEFORE_COMPLETING,
