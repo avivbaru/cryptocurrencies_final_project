@@ -87,7 +87,8 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
 
 def run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack):
     counter = 0
-    nodes_to_simulate = [node for node in network.nodes if node != attacker and node != victim and node != attacker.get_peer()]
+    attacker2 = None if attacker is None else attacker.get_peer()
+    nodes_to_simulate = [node for node in network.nodes if node != attacker and node != victim and node != attacker2]
     while BLOCKCHAIN_INSTANCE.block_number < NUMBER_OF_BLOCKS:
         sender_node = random.choice(nodes_to_simulate)
         # find receiver node
@@ -205,7 +206,7 @@ def close_channel_and_log_metrics(network, attacker_nodes, victim):
 def add_more_metrics(metrics):
     metrics[LOCKED_FUND_PER_TRANSACTION_NORMALIZE_BY_AMOUNT_SENT_AVG] = metrics.get(LOCKED_FUND_PER_TRANSACTION_AVG, 0) / \
                                                                         metrics.get(TRANSACTION_AMOUNT_AVG, 1)
-    metrics.get()
+    # metrics.get()
 
 
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
@@ -252,16 +253,17 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
     nodes = {}
     network = Network()
     attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
+
+    for node in json_data['nodes']:
+        nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
+
     rand_numbers = random.sample(range(len(json_data['nodes'])), 3)
     nodes[json_data['nodes'][rand_numbers[0]]['pub_key']] = attacker
-
     if victim:
         nodes[json_data['nodes'][rand_numbers[1]]['pub_key']] = victim
     if attacker2 and attacker_node_type != NodeType.SOFT_GRIEFING:
         nodes[json_data['nodes'][rand_numbers[2]]['pub_key']] = attacker2
 
-    for node in json_data['nodes']:
-        nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
     network.nodes = list(nodes.values())
     for edge in json_data['edges']:
         network.add_edge(nodes[edge['node1_pub']], nodes[edge['node2_pub']], int(int(edge['capacity']) / 2))
