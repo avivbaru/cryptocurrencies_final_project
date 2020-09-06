@@ -313,7 +313,36 @@ Lightning
 \lang english
 Bitcoin
 \lang hebrew
- ומטרתה 
+ ומטרתה לפתור את בעיית
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+הסילוּמיוּת )
+\lang english
+scalability
+\lang hebrew
+( של הרשת.
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -352,7 +381,7 @@ Lightning
  הרעיון מוצג ב-
 \begin_inset CommandInset citation
 LatexCommand cite
-key "key-1"
+key "Original Paper"
 literal "false"
 
 \end_inset
@@ -381,12 +410,62 @@ Lightning
 \begin_inset Quotes erd
 \end_inset
 
- ערוצים ברשת ובכך פוגעים ביכולת שלה להתרחב ולשמש פתרון לבעיית הסקאלביליות
+ ערוצים ברשת ובכך פוגעים ביכולת שלה להתרחב ולשמש פתרון לבעיית הסילוּמיוּת
  של רשת ה
 \lang english
 Blockchain
 \lang hebrew
-.
+, בנוסף, יכול תוקף להשבית את הפעילות של
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ספציפי ובכך להסית ממנו טרנזאקציות.
 \begin_inset Newline newline
 \end_inset
 
@@ -416,10 +495,6 @@ Lightning Network
 Node
 \lang hebrew
  בשרשרת העברה כלשהי.
-\begin_inset Newline newline
-\end_inset
-
-)האם אנחנו רוצים להתייחס לפרוטוקול הישן?(
 \begin_inset Newline newline
 \end_inset
 
@@ -455,7 +530,7 @@ Nodes
 \lang english
 DOS
 \lang hebrew
- שמתאפשרת בעזרת פרוטוקול זה ואסטרטגיה חדשה שנקרא לה
+ שמתאפשרת בעזרת פרוטוקול זה ואסטרטגית תקיפה חדשה, אשר שנקרא לה
 \family roman
 \series medium
 \shape up
@@ -482,7 +557,19 @@ DOS
 \lang english
 Soft Griefing
 \lang hebrew
- ונבדוק את הכדאיות וההשפעה שלה.
+ ונבדוק את הכדאיות וההשפעה שלה ביחס ל-
+\lang english
+Griefing
+\lang hebrew
+ 
+\begin_inset Quotes eld
+\end_inset
+
+קלאסי
+\begin_inset Quotes erd
+\end_inset
+
+.
  
 \end_layout
 
@@ -525,7 +612,7 @@ Lightning Network
 \lang english
 Lightning
 \lang hebrew
- היא רשת אנונית המשמשת כשכבה שנייה על גבי רשת מבוססת
+ היא רשת אנונימית המשמשת כשכבה שנייה על גבי רשת מבוססת
 \family roman
 \series medium
 \shape up
@@ -557,11 +644,7 @@ Blockchain
 Bitcoin
 \lang hebrew
 .
- מטרת הרשת היא לפתור את בעית ה-
-\lang english
-scalability
-\lang hebrew
- ע
+ מטרת הרשת היא לפתור את בעית הסילוּמיוּת ע
 \begin_inset Quotes erd
 \end_inset
 
@@ -569,7 +652,7 @@ scalability
 \lang english
 Payment Channels
 \lang hebrew
- דו כיווניים בין משתמשים כך שתשלומים נחתמים ע
+ דו-כיווניים בין משתמשים ברשתת כך שתשלומים נחתמים ע
 \begin_inset Quotes erd
 \end_inset
 
@@ -649,11 +732,7 @@ HTLC
 \lang english
 Lightning
 \lang hebrew
- וגורמת לה להיות פחות אטרקטיבית ולהוות פיתרון אמיתי לבעית ה-
-\lang english
-scalability
-\lang hebrew
-.
+ וגורמת לה להיות פחות אטרקטיבית ולהוות פיתרון אמיתי לבעית הסילוּמיוּת.
  מטרת המתקפה היא לנעול כמות גדולה של כסף של משתמש הוגן ולגרום ל-
 \lang english
 Denial Of Service
@@ -720,7 +799,7 @@ Nodes
 \lang english
 HTLC
 \lang hebrew
- נועל את הכספים בישביל ה-
+ נועל את הכספים בשביל ה-
 \lang english
 Node
 \lang hebrew
@@ -737,8 +816,7 @@ Griefing
 \lang english
 HTLC
 \lang hebrew
-.
- בדרך זו הוא מסוגל לנעול כספים למספר גדול של 
+, בדרך זו הוא מסוגל לנעול כספים למספר גדול של 
 \lang english
 Node
 \lang hebrew
@@ -921,20 +999,15 @@ Griefing
 \begin_inset Newline newline
 \end_inset
 
-כותבי המאמר הציגו 2 פרוטוקולים למימוש רעיון זה, הפרוטוקול הראשון 
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-
-\backslash
-href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המאמר}
-\end_layout
+כותבי המאמר הציגו 2 פרוטוקולים למימוש רעיון זה, הפרוטוקול הראשון
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Original paper - V1"
+literal "false"
 
 \end_inset
 
- , והפרוטוקול השני שמוצג בגירסא הנוכחית של המאמר.
+, והפרוטוקול השני שמוצג בגירסא הנוכחית של המאמר.
  
 \begin_inset Newline newline
 \end_inset
@@ -4530,13 +4603,14 @@ Griefing Penalty
 \begin_layout Bibliography
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
-key "key-1"
+key "Original Paper"
+literal "false"
 
 \end_inset
 
 
 \begin_inset Flex URL
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -4551,13 +4625,14 @@ https://arxiv.org/pdf/2005.09327.pdf
 \begin_layout Bibliography
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
-key "key-2"
+key "Original paper - V1"
+literal "false"
 
 \end_inset
 
 
 \begin_inset Flex URL
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -4572,15 +4647,23 @@ https://arxiv.org/pdf/2005.09327v1.pdf
 \begin_layout Bibliography
 \begin_inset CommandInset bibitem
 LatexCommand bibitem
-key "key-3"
+key "Mailing list"
+literal "false"
 
 \end_inset
 
 
-\lang english
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
 https://www.mail-archive.com/lightning-dev@lists.linuxfoundation.org/msg01983.html
-\lang hebrew
-.
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Bibliography
