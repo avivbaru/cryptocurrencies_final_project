@@ -369,7 +369,7 @@ def build_and_run_simulation(file_to_write, attacker_node_type, delta, max_numbe
 
 def run_multiple_simulation():
     # network_topologies = [NetworkType.REDUNDANCY, NetworkType.SNAPSHOT]
-    network_topologies = [NetworkType.SNAPSHOT]
+    network_topologies = [NetworkType.REDUNDANCY]
     node_types = [NodeType.SOFT_GRIEFING, NodeType.SOFT_GRIEFING_BUSY_NETWORK, NodeType.SOFT_GRIEFING_DOS_ATTACK]
     delta_node_type = NodeType.SOFT_GRIEFING_DOS_ATTACK
     deltas = [40, 70, 100]
