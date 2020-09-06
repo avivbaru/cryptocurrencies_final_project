@@ -243,11 +243,10 @@ class LightningNode:
         :param nodes_between: The path to take during the transaction.
         """
         hash_x, hash_r = final_node.generate_secret_x_hash(), final_node.generate_secret_r_hash()
-        assert nodes_between
         node_to_send = nodes_between[0]
 
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
-        # self.log_avg_metric(TOTAL_FEE, total_fee)
+        self.log_avg_metric(TOTAL_FEE, total_fee)
 
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
@@ -310,8 +309,6 @@ class LightningNode:
             # TODO: maybe not good! cause cancel even if the forward arrive. need 2 function like this.
             FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._check_if_forward_contract_is_available(info.id),
                                                BLOCKCHAIN_INSTANCE.block_number + self._delta)
-            FUNCTION_COLLECTOR_INSTANCE.append(lambda: self._handle_cancellation_is_about_to_expire(info.id, r),
-                                               info.expiration_block_number - 30)
             self.send_cancellation_contract(info.id)
 
     def send_cancellation_contract(self, transaction_id: int):
@@ -356,13 +353,6 @@ class LightningNode:
         r = self._hash_image_r_to_preimage[info.hash_r]
         self.terminate_transaction(transaction_id, r)
 
-    def _handle_cancellation_is_about_to_expire(self, transaction_id: int, r: str):
-        # print("not gooddddddddddddddddddddddddddd!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        if transaction_id not in self._transaction_id_to_cancellation_contracts:
-            return
-
-        self.terminate_transaction(transaction_id, r)
-
     def send_forward_contract(self, transaction_id: int):
         """
         Sends a forward contract to the next node in the path of the transaction. All needed information is in the
@@ -398,7 +388,6 @@ class LightningNode:
         if info.next_node is not None:
             self.send_forward_contract(transaction_id)
         else:
-            # print("Transaction forward contracts construction successful!")
             self._resolve_transaction_after_receiving_forward_contract(info)
 
     def _resolve_transaction_after_receiving_forward_contract(self, transaction_info: 'TransactionInfo'):
@@ -484,7 +473,7 @@ class LightningNode:
         assert nodes_between
         node_to_send = nodes_between[0]
         total_fee = self._calculate_fee_for_route(nodes_between[:-1], amount_in_wei)
-        # self.log_avg_metric(TOTAL_FEE, total_fee)
+        self.log_avg_metric(TOTAL_FEE, total_fee)
 
         id = TransactionInfo.generate_id()
         delta_waiting_time = ((len(nodes_between) + 1) * BLOCKS_IN_DAY)
@@ -674,20 +663,6 @@ class LightningNodeSoftGriefing(LightningNodeAttacker):
         super(LightningNodeSoftGriefing, self).__init__(*args, block_amount_to_send_transaction=block_amount_to_send_transaction)
         self._block_number_to_resolve = 50
 
-    # def receive_forward_contract(self, transaction_id: int, contract: 'cn.ContractForward'):
-    #     if self._transaction_id_to_final_node.get(transaction_id) == self._peer:
-    #         if transaction_id not in self._transaction_id_to_transaction_info:
-    #             return
-    #         self.log_count_metric(PERFORM_SOFT_GRIEFING)
-    #         info = self._transaction_id_to_transaction_info[transaction_id]
-    #         r = self._hash_image_r_to_preimage[hash_image]
-    #         nodes_between = ((info.expiration_block_number - info.starting_block) / BLOCKS_IN_DAY) - 1
-    #         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
-    #                                            .terminate_transaction(transaction_id, r),
-    #                                            info.expiration_block_number - (nodes_between * self._delta))
-    #     else:
-    #         super(LightningNodeSoftGriefing, self).resolve_transaction(transaction_id, x)
-
     def _resolve_transaction_after_receiving_forward_contract(self, transaction_info: 'TransactionInfo'):
         self.log_count_metric(PERFORM_SOFT_GRIEFING)
         r = self._hash_image_r_to_preimage[transaction_info.hash_r]
@@ -698,7 +673,6 @@ class LightningNodeSoftGriefing(LightningNodeAttacker):
         FUNCTION_COLLECTOR_INSTANCE.append(lambda: super(LightningNodeSoftGriefing, self)
                                            .terminate_transaction(transaction_info.id, r),
                                            BLOCKCHAIN_INSTANCE.block_number + blocks_to_wait)
-    # TODO: maybe make peer to not get transactions (payments) so to not effect the balance?
 
 
 class LightningNodeDosAttack(LightningNodeAttacker):
@@ -728,17 +702,3 @@ class LightningNodeSoftDosAttack(LightningNodeAttacker):
                                                BLOCKCHAIN_INSTANCE.block_number + self._delta - self._number_of_spare_blocks)
         else:
             super(LightningNodeSoftDosAttack, self).receive_cancellation_contract(transaction_id, contract)
-
-        # class LightningNodeGriefing(LightningNodeAttacker):
-        #     # TODO: what to do with griefing??
-        #     def __init__(self, *args, probability_to_griefing):
-        #         super().__init__(*args)
-        #         self._probability_to_griefing = probability_to_griefing
-        #
-        #     def resolve_transaction(self, transaction_id: int, x: str):
-        #         if random.uniform(0, 1) < self._probability_to_griefing:
-        #             super(LightningNodeGriefing, self).resolve_transaction(transaction_id, x)
-        #
-        #     def resolve_htlc_transaction(self, transaction_id: int, x: str):
-        #         if random.uniform(0, 1) < self._probability_to_griefing:
-        #             super(LightningNodeGriefing, self).resolve_htlc_transaction(transaction_id, x)
