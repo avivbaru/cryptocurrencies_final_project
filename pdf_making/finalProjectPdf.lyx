@@ -4739,35 +4739,16 @@ Metrics Collector
 \begin_layout Quotation
 
 \size large
+הסברים לפני השינויים של אביב:
+\begin_inset Newline newline
+\end_inset
+
 תוצאה ראשונה עליה נרצה לפרט היא עומס הרשת.
  )להביא גרפים מעודכנים!!!!!!!!!!!!!(
 \begin_inset Newline newline
 \end_inset
 
-
-\begin_inset Graphics
-	filename pasted6.png
-	scale 80
-	rotateOrigin center
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Graphics
-	filename pasted7.png
-	scale 80
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-מאפיין לוואי של הפרוטוקול 
+ואי של הפרוטוקול 
 \lang english
 HTLC-GP
 \lang hebrew
@@ -4798,28 +4779,6 @@ Node
 \end_inset
 
 !(
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Graphics
-	filename pasted8.png
-	scale 80
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Graphics
-	filename pasted9.png
-	scale 80
-
-\end_inset
-
-
 \begin_inset Newline newline
 \end_inset
 
@@ -4885,17 +4844,6 @@ HTLC-GP
 \begin_inset Newline newline
 \end_inset
 
-
-\begin_inset Graphics
-	filename pasted11.png
-	scale 80
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
 )להציג גרף מעודכן!!( בגרף זה ניתן לראות את ההפרש בין ה-
 \lang english
 balance
@@ -4908,17 +4856,6 @@ balance
  ניתן לראות שעבור כל מספר של מתקיפים המאזן הוא חיובי, כלומר המתקפה משתלמת.
  נזכיר כי במתקפה זו אין סיכון כלל משום שהמתקיף לא משקיע כלל כסף, ולכן ניתן
  אף לשתק בצורה נרחבת יותר את הקורבן.
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Graphics
-	filename pasted13.png
-	scale 80
-
-\end_inset
-
-
 \begin_inset Newline newline
 \end_inset
 
@@ -4944,19 +4881,840 @@ balance
 \begin_layout Quotation
 
 \size large
-גרפים של יקיר!!
+גרפים של יקיר!! 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+לעשות: לדבר על אופן ההרצה )תקיפה ואז בלי תקיפה( ועל המיצוע, על זה שאם אין
+ גרף אז זה אומר שלא נאספו נתונים
+\end_layout
+
+\end_inset
+
+
 \begin_inset Newline newline
 \end_inset
 
 
 \begin_inset Graphics
 	filename pasted14.png
-	width 45page%
+	width 28page%
 	rotateOrigin rightBaseline
 
 \end_inset
 
 
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted15.png
+	width 30page%
+	rotateOrigin leftBaseline
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בגרף מימין ניתן לראות כי מספר הטרנזאקציות העוברות דרך
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+)ספרנו את אלו שלא קשורות למתקפה( כאשר הוא מותקף בעזרת
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Soft-Griefing
+\lang hebrew
+ היא משמעותית פחותה מאשר ללא המתקפה.
+ כלומר, בעזרת מתקפה זו, הצלחנו לגרום ל-
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+לקבל פחות טרנזאקציות, כלומר הוא ירוויח פחות.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בגרף משמאל אפשר לראות את כמות הכספים הנעולים ביחס לטרנזאקציות שעבור ב-
+\lang english
+Node
+\lang hebrew
+, עם ובלי מתקפה.
+ גם כאן אפשר לראות שהרבה יותר כספים ננעלו )ללא התחשבות בערוץ עם המתקיף(
+ - כלומר הצלחנו לגרום ל-
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+המותקף לנעול משמעותית יותר כספים ועל כן בעצם לחסום לו הרבה מהטרנזאקציות
+ שיכל לקבל )אכן קיבל פחות טרנזאקציות כמו שראינו בגרף הקודם(.
+ כלומר, בדומה ל-
+\lang english
+Griefing
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+קלאסי, ניתן להשתמש במתקפה זו כדי לתקוף
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Hub
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ובכך להסית טרנזאקציות )ובכך רווחים( אל התוקף 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+
+\size large
+לעשות: להוסיף רפרנס למאמר של אביב זוהר
+\end_layout
+
+\end_inset
+
+.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\bar under
+עבור מתקפת
+\family roman
+\series medium
+\shape up
+\emph off
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Lock liquidity in network
+\lang hebrew
+:
+\begin_inset Newline newline
+\end_inset
+
+
+\bar default
+
+\begin_inset Graphics
+	filename pasted16.png
+	scale 20
+	rotateOrigin rightBaseline
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted17.png
+	scale 20
+	rotateOrigin leftBaseline
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בגרף מימין ניתן לראות כי אכן הצלחנו לנעול הרבה יותר כסף בעזרת מתקפה זו ובעצם
+ לשחזר את ה
+\begin_inset Quotes erd
+\end_inset
+
+הצלחה
+\begin_inset Quotes erd
+\end_inset
+
+ שראינו במאמר של אביב זוהר עבור נעילת כספים ברשת.
+ כלומר - גם מתקפה זו ניתנת למימוש, גם אם באופן מעט שונה, גם עם הפרוטוקול
+ החדש.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בגרף משמאל ניתן לראות כי עם המתקפה מתבצעות הרבה יותר טרנזאקציות, זאת מכיוון
+ שאנחנו שולחים המון טרנזאקציות בין התוקפים והפרדה שלהן מבחינת איסוף המידע
+ היה דורש שינוי תשתיתי שלא היה לנו זמן לממש, בנוסף לזה, הרבה מטריקות מנורמלות
+ לפי ערך זה ולכן בעיתיות עבור המתקפה הספציפית הזו )בשאר המתקפות אנחנו כן
+ מבדילים בין טרנזאקציות של המתקפה לבין 
+\begin_inset Quotes eld
+\end_inset
+
+רגילות
+\begin_inset Quotes erd
+\end_inset
+
+(.
+ אך מה שבאמת חשוב הוא כמות הכספים שננעלו ואכן הצלחנו לנעול כמו ניכרת של
+ כספים.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\bar under
+עבור מתקפת
+\family roman
+\series medium
+\shape up
+\emph off
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Dos
+\lang hebrew
+:
+\bar default
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted19.png
+	scale 25
+	rotateOrigin rightBaseline
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted20.png
+	scale 20
+	rotateOrigin leftBaseline
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בגרף מימין ניתן לראות בדומה למתקפה המקורית כי המותקף מקבל פחות טרנזאקציות
+ ועל כן מרוויח פחות.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בגרף משמאל ניתן לראות כי כאשר ה-
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+מותקף הוא נועל הרבה יותר כספים - כלומר יש לנו פה תוצאות דומות ל-
+\lang english
+Soft Griefing
+\lang hebrew
+.
+\begin_inset Newline newline
+\end_inset
+
+ניזכר כי במתקפה זו התוקף אינו נועל כספים! אלא רק שולח טרנזאקציות למותקף
+ ומסרב להיענות לבקשה של לאשר את חוזה ה-
+\lang english
+Cancellation
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+- אך נזכור כי כאן המותקף יבטל את הטרנזאקציה כתלות ב-
+\begin_inset Formula $\delta$
+\end_inset
+
+ שהזכרנו למעלה.
+ אך מכיוון שאנחנו לא נועלים פה כסף, ניתן לבצע טרנזאקציות מרובות.
+\begin_inset Newline newline
+\end_inset
+
+בהמשך נחקור את המתקפה הזו יותק לעומק.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\bar under
+השפעת פרמטר ה-
+\lang english
+Busy Network
+\family roman
+\series medium
+\shape up
+\emph off
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+על הרשת:
+\bar default
+
+\begin_inset Newline newline
+\end_inset
+
+ניזכר כי כאשר אנחנו פותרים טרנזאקציות בסימולציה שלנו, אנחנו מגרילים עבור
+ כל
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+את מספר הבלוקים שיחכה לפני שיודיע ל
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+הבא על פתירת הטרנזאקציה.
+ התבוננו על איך פרמטר זה משפיע על הרשת, כאשר המחשבה מאחורי זה הייתה שבעיות
+ בתקשורת ייגרמו לנעילת כספים משמעותית הרבה יותר כאשר נשתמש בפרוטוקול החדש.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted21.png
+	scale 20
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+אכן ניתן לראות שלא רק שאנחנו נועלים הרבה יותר כספים עם הפרוטוקול החדש, אלא
+ שגם מתקיים שהכמות גדלה בקצב הרבה יותר מהיר מאשר עם הפרוטוקול הרגיל.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\bar under
+השפעת פרמטר 
+\begin_inset Formula $\delta$
+\end_inset
+
+ על מתקפת
+\family roman
+\series medium
+\shape up
+\emph off
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Dos
+\lang hebrew
+:
+\bar default
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted22.png
+	scale 40
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+כאן אנחנו מראים את ההשפעה של 
+\begin_inset Formula $\delta$
+\end_inset
+
+ על כמות הכספים שננעלים אצל הקורבן.
+ ניתן לראות עלייה שמתאזנת בין
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\numeric on
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+70
+\family roman
+\series medium
+\shape up
+\emph off
+\numeric off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ל-
+\numeric on
+100
+\numeric off
+.
+ כלומר נראה ש-
+\begin_inset Formula $\delta$
+\end_inset
+
+ משפיעה על האפקטיביות של המתקפה אבל לא באופן חד משמעי.
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+בניגוד למה שהיינו מצפים, נראה שעברו יותר טרנזאקציות דרך הקורבן כאשר ה-
+\begin_inset Formula $\delta$
+\end_inset
+
+ גדלה, אך אם אנחנו מנרמלים את כמות הכספים הנעולים לפי מספר הטרנזאקציות שעברו
+ אצל הקורבן, אנו מקבלים שאכן ישנה עלייה בכמות הכספים הנעולים:
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Graphics
+	filename pasted23.png
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+במקרה זה התוצאות לא אידיאליות, אך עם זאת שהראינו כי אכן המתקפה יעילה, גם
+ עבור 
+\begin_inset Formula $\delta$
+\end_inset
+
+ נמוכה, נקבל כי לדעתנו יש לגלות לגביה עניין רב בהקשר של מימוש פרוטוקול זה.
 \end_layout
 
 \begin_layout Section*
