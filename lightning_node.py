@@ -195,23 +195,23 @@ class LightningNode:
         """
         return self.base_fee + int(self._fee_percentage * amount_in_mast)
 
-    def establish_channel(self, other_node: 'LightningNode', amount_in_msat: int) -> cm.Channel:
+    def establish_channel(self, other_node: 'LightningNode', amount_in_msat: int, is_bad_channel=False) -> cm.Channel:
         """
         establishes a channel between this node and `other_node` and puts in the given amount.
         """
         channel_data = cm.ChannelData(self, other_node)
         default_split = cm.MessageState(amount_in_msat, 0)
-        channel = other_node.notify_of_channel(channel_data, default_split)
+        channel = other_node.notify_of_channel(channel_data, default_split, is_bad_channel)
         self._other_nodes_to_channels[other_node.address] = channel
         self._channels[channel_data.address] = channel
 
         return channel
 
-    def notify_of_channel(self, channel_data: cm.ChannelData, default_split: cm.MessageState) -> cm.Channel:
+    def notify_of_channel(self, channel_data: cm.ChannelData, default_split: cm.MessageState, is_bad_channel: bool) -> cm.Channel:
         """
         Used for notifying this node of a channel being created.
         """
-        channel = cm.Channel(channel_data, default_split)
+        channel = cm.Channel(channel_data, default_split, is_bad_channel)
         default_split.channel_address = channel_data.address
         self._other_nodes_to_channels[channel_data.owner1.address] = channel
         self._channels[channel_data.address] = channel

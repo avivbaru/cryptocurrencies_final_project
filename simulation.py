@@ -35,9 +35,9 @@ STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to crea
 GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 1
 SIGMA = 0.1
-# NUMBER_OF_NODES = 1000
-NUMBER_OF_NODES = 200
-NUMBER_OF_BLOCKS = 10 * 144
+NUMBER_OF_NODES = 1000
+# NUMBER_OF_NODES = 200
+NUMBER_OF_BLOCKS = 15 * 144
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 SOFT_GRIEFING_PROBABILITY = 0.5
 GRIEFING_PROBABILITY = 0.5
@@ -247,7 +247,7 @@ def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of
                 attacker.set_peer(attacker2)
                 attackers2.append(attacker2)
                 if attacker_node_type == NodeType.SOFT_GRIEFING:
-                    network.add_edge(attacker2, victim, 1050000000000)  # TODO: check if the balance is enough
+                    network.add_edge(attacker2, victim, CAPACITY_IN_CHANNEL_BETWEEN_VICTIM_ATTACKER2, True)
                 else:
                     network.add_node(attacker2)
     return attackers, victims, attackers2

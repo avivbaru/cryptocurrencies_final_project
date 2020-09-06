@@ -61,7 +61,7 @@ class Channel:
     """
     Class to represent a channel between two nodes in the network.
     """
-    def __init__(self, data: ChannelData, default_split: 'MessageState'):
+    def __init__(self, data: ChannelData, default_split: 'MessageState', is_bad_channel: bool):
         """
         Initializes a new `Channel`.
         @param data: the data of the channel.
@@ -77,6 +77,7 @@ class Channel:
         self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance
         self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_msat -
                                                       self._state.message_state.owner1_balance)
+        self._is_bad_channel = is_bad_channel
 
         BLOCKCHAIN_INSTANCE.add_channel(self)
 
@@ -124,7 +125,8 @@ class Channel:
         old_htlc_locked = self._owner1_htlc_locked
         self._owner1_htlc_locked = owner1_htlc_locked
         self._compute_amount_owner1_can_transfer_to_owner2()
-        self._state.channel_data.owner1.notify_of_change_in_locked_funds(self._owner1_htlc_locked - old_htlc_locked)
+        if not self._is_bad_channel:
+            self._state.channel_data.owner1.notify_of_change_in_locked_funds(self._owner1_htlc_locked - old_htlc_locked)
 
     def _compute_amount_owner1_can_transfer_to_owner2(self):
         self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance - self._owner1_htlc_locked
@@ -135,7 +137,8 @@ class Channel:
         old_htlc_locked = self._owner2_htlc_locked
         self._owner2_htlc_locked = owner2_htlc_locked
         self._compute_amount_owner2_can_transfer_to_owner1()
-        self._state.channel_data.owner2.notify_of_change_in_locked_funds(self._owner2_htlc_locked - old_htlc_locked)
+        if not self._is_bad_channel:
+            self._state.channel_data.owner2.notify_of_change_in_locked_funds(self._owner2_htlc_locked - old_htlc_locked)
 
     def _compute_amount_owner2_can_transfer_to_owner1(self):
         self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_msat -

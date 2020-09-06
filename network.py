@@ -14,10 +14,10 @@ class Network:
     def add_node(self, value):
         self.nodes.append(value)
 
-    def add_edge(self, from_node: LightningNode, to_node: LightningNode, channel_starting_balance: int):
+    def add_edge(self, from_node: LightningNode, to_node: LightningNode, channel_starting_balance: int, is_bad_channel=False):
         self.edges[from_node].append(to_node)
         self.edges[to_node].append(from_node)
-        channel = to_node.establish_channel(from_node, channel_starting_balance)
+        channel = to_node.establish_channel(from_node, channel_starting_balance, is_bad_channel)
         from_node.add_money_to_channel(channel, channel_starting_balance)
 
     def find_shortest_path(self, last_node: LightningNode, initial_node: LightningNode, amount_in_msat: int,
