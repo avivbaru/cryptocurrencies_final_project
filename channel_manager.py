@@ -39,7 +39,7 @@ class ChannelData:
         self.address = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         self.owner1 = owner1
         self.owner2 = owner2
-        self.total_wei = 0  # will be changed as owners deposit funds.
+        self.total_msat = 0  # will be changed as owners deposit funds.
 
 
 class ChannelState:
@@ -70,12 +70,12 @@ class Channel:
         self._owner1_htlc_locked: int = 0
         self._owner2_htlc_locked: int = 0
         self._state: ChannelState = ChannelState(data)
-        self._state.channel_data.total_wei = default_split.owner1_balance
+        self._state.channel_data.total_msat = default_split.owner1_balance
         default_split.channel_address = data.address
         self.update_message(default_split)
         self._open = True
         self._amount_owner1_can_transfer_to_owner2 = self._state.message_state.owner1_balance
-        self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_wei -
+        self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_msat -
                                                       self._state.message_state.owner1_balance)
 
         BLOCKCHAIN_INSTANCE.add_channel(self)
@@ -103,7 +103,7 @@ class Channel:
         """
         @return: the amount owner2 will get if the channel will be closed now.
         """
-        return self.channel_state.channel_data.total_wei - self._state.message_state.owner1_balance
+        return self.channel_state.channel_data.total_msat - self._state.message_state.owner1_balance
 
     @property
     def amount_owner1_can_transfer_to_owner2(self):
@@ -138,7 +138,7 @@ class Channel:
         self._state.channel_data.owner2.notify_of_change_in_locked_funds(self._owner2_htlc_locked - old_htlc_locked)
 
     def _compute_amount_owner2_can_transfer_to_owner1(self):
-        self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_wei -
+        self._amount_owner2_can_transfer_to_owner1 = (self.channel_state.channel_data.total_msat -
                                                       self._state.message_state.owner1_balance) - self._owner2_htlc_locked
         assert self._amount_owner2_can_transfer_to_owner1 >= 0
 
@@ -158,7 +158,7 @@ class Channel:
         self._compute_amount_owner2_can_transfer_to_owner1()
 
     def _check_new_message_state(self, message_state: 'MessageState'):
-        if message_state.serial_number < 0 or message_state.owner1_balance > self._state.channel_data.total_wei:
+        if message_state.serial_number < 0 or message_state.owner1_balance > self._state.channel_data.total_msat:
             raise ValueError("Invalid message state received.")
 
         if self._state.message_state is None:
@@ -172,7 +172,7 @@ class Channel:
         Adds `owner2_amount_in_msat` to the channel funds, as owner2 balance.
         """
         BLOCKCHAIN_INSTANCE.apply_transaction(self.channel_state.channel_data.owner2, owner2_amount_in_msat)
-        self._state.channel_data.total_wei += (owner2_amount_in_msat * (1 - BLOCKCHAIN_INSTANCE.fee))
+        self._state.channel_data.total_msat += (owner2_amount_in_msat * (1 - BLOCKCHAIN_INSTANCE.fee))
         self._compute_amount_owner2_can_transfer_to_owner1()
 
     def close_channel(self):
@@ -202,7 +202,7 @@ class Channel:
         if self.is_owner1(contract.payer):
             if self.amount_owner1_can_transfer_to_owner2 < contract.amount_in_msat:
                 contract.invalidate()
-                return False  # TODO: decide where to invalidate
+                return False
             self._owner1_htlc_locked_setter(self._owner1_htlc_locked + contract.amount_in_msat)
         else:
             if self.amount_owner2_can_transfer_to_owner1 < contract.amount_in_msat:
@@ -248,11 +248,10 @@ class Channel:
         elif contract.pre_image_r:
             BLOCKCHAIN_INSTANCE.report_pre_image(contract.pre_image_r)
 
-    def pay_amount_to_owner(self, owner: 'ln.LightningNode', contract: 'cn.ContractCancellation'):
+    def pay_amount_to_owner(self, contract: 'cn.ContractCancellation'):
         """
         Pays the amount in the contract `contract` to the payee `contract.payee`
         """
-        assert owner == contract.payee  # TODO: remove this line and owner argument after a few runs
         owner1_new_balance_delta = contract.amount_in_msat
         if self.is_owner1(contract.payee):
             self._owner2_htlc_locked_setter(int(self._owner2_htlc_locked - contract.amount_in_msat))

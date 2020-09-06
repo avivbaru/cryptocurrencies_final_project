@@ -34,8 +34,7 @@ class BlockChain:
         """
         @return: returns the total balance currently held in the blockchain.
         """
-        return int(sum(self._nodes_addresses_to_balances.values()))  # TODO: maybe don't calculate for all nodes each time -
-        # but keep an updating variable
+        return int(sum(self._nodes_addresses_to_balances.values()))
 
     @property
     def fee(self):
@@ -67,10 +66,8 @@ class BlockChain:
         """
         Closes the channel that corresponds to the given `message_state`.
         """
-        if message_state.channel_address not in self._open_channels:
-            return  # TODO: if we resolve all contracts of a closing channel, there is no need for this!!
         channel: cm.Channel = self._open_channels[message_state.channel_address]
-        owner2_balance = channel.channel_state.channel_data.total_wei - message_state.owner1_balance
+        owner2_balance = channel.channel_state.channel_data.total_msat - message_state.owner1_balance
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner1.address] += \
             message_state.owner1_balance * (1 - self._fee)
         self._nodes_addresses_to_balances[channel.channel_state.channel_data.owner2.address] += owner2_balance * (1 - self._fee)
@@ -92,7 +89,7 @@ class BlockChain:
         if node.address in self._nodes_addresses_to_balances:
             return
 
-        self._nodes_addresses_to_balances[node.address] = balance  # TODO: check if remove
+        self._nodes_addresses_to_balances[node.address] = balance
 
     def get_pre_image_if_exists_onchain(self, hash_image: int) -> Optional[str]:
         """
@@ -106,7 +103,6 @@ class BlockChain:
         """
         @return: applies (takes fee and reduces balance) a transaction with amount `amount_in_msat` with `node` as the sender.
         """
-        # TODO: change amount_in_wei to amount_in_msat!!!
         self._nodes_addresses_to_balances[node.address] -= amount_in_msat * (1 + self._fee)
         assert self._nodes_addresses_to_balances[node.address] >= 0
 

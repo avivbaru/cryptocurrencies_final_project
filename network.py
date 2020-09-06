@@ -39,7 +39,7 @@ class Network:
                 break
 
             nodes.remove(min_node)
-            current_wei = visited[min_node]
+            current_msat = visited[min_node]
 
             neighbors = self.edges[min_node].copy()
             for edge_node in neighbors:
@@ -48,31 +48,31 @@ class Network:
                     self.edges[min_node].remove(edge_node)
                     self.edges[edge_node].remove(min_node)
                     continue
-                new_wei = (current_wei + edge_node.base_fee) / (1 - edge_node.fee_percentage) if \
-                    edge_node != initial_node else current_wei
-                if capacity_between >= new_wei:
+                new_msat = (current_msat + edge_node.base_fee) / (1 - edge_node.fee_percentage) if \
+                    edge_node != initial_node else current_msat
+                if capacity_between >= new_msat:
                     # check if griefing is possible
                     is_griefing_possible = True
                     if is_gp_protocol and griefing_penalty_rate > 0:
                         is_griefing_possible = Network.is_griefing_possible(path[min_node], edge_node,
                                                                             visited,
-                                                                            griefing_penalty_rate, new_wei)
+                                                                            griefing_penalty_rate, new_msat)
 
-                    if (edge_node not in visited or new_wei < visited[edge_node]) and is_griefing_possible:
-                        visited[edge_node] = new_wei
+                    if (edge_node not in visited or new_msat < visited[edge_node]) and is_griefing_possible:
+                        visited[edge_node] = new_msat
                         path[edge_node] = path[min_node] + [edge_node]
 
         return visited, path
 
     @staticmethod
     def is_griefing_possible(nodes_in_path: List[LightningNode], final_node, visited, griefing_penalty_rate,
-                             new_wei):
+                             new_msat):
         length = len(nodes_in_path) + 1
         reversed_nodes_in_path = list(reversed(nodes_in_path))
         prev = final_node
         griefing_penalty_sum = 0
         for n in reversed_nodes_in_path:
-            amount_to_send = visited.get(prev, new_wei)
+            amount_to_send = visited.get(prev, new_msat)
             griefing_penalty_sum += int(amount_to_send * griefing_penalty_rate * length * 1440)
             if griefing_penalty_sum > n.get_capacity_left(prev):
                 return False
