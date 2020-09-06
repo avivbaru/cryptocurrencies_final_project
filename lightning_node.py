@@ -203,16 +203,16 @@ class LightningNode:
         """
         return self.base_fee + int(self._fee_percentage * amount_in_wei)
 
-    def establish_channel(self, other_node: 'LightningNode', amount_in_wei: int) -> cm.Channel:
+    def establish_channel(self, other_node: 'LightningNode', amount_in_msat: int) -> cm.Channel:
         """
         establishes a channel between this node and `other_node` and puts in the given amount.
         """
         channel_data = cm.ChannelData(self, other_node)
-        default_split = cm.MessageState(amount_in_wei, 0)
+        default_split = cm.MessageState(amount_in_msat, 0)
         channel = other_node.notify_of_channel(channel_data, default_split)
         self._other_nodes_to_channels[other_node.address] = channel
         self._channels[channel_data.address] = channel
-        self._balance -= amount_in_wei
+        self._balance -= amount_in_msat
 
         return channel
 
@@ -222,7 +222,7 @@ class LightningNode:
         """
         assert self._balance >= channel_data.total_wei
         channel = cm.Channel(channel_data, default_split)
-        default_split.channel_address = channel_data.address;
+        default_split.channel_address = channel_data.address
         self._other_nodes_to_channels[channel_data.owner1.address] = channel
         self._channels[channel_data.address] = channel
         return channel

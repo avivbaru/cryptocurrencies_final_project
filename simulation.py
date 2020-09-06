@@ -47,8 +47,8 @@ MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT = 6
 
 class NodeType(str, Enum):
     SOFT_GRIEFING = "soft griefing"
-    SOFT_GRIEFING_BUSY_NETWORK = "soft griefing busy network"
-    SOFT_GRIEFING_DOS_ATTACK = "soft griefing dos attack"
+    SOFT_GRIEFING_BUSY_NETWORK = "soft griefing - locking funds in network"
+    SOFT_GRIEFING_DOS_ATTACK = "dos attack"
 
 
 class NetworkType(str, Enum):
