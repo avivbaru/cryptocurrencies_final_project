@@ -283,26 +283,36 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
     nodes = {}
     network = Network()
     number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.SNAPSHOT].get(attacker_node_type, 1)
-    attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta,
-                                                             max_number_of_block_to_respond, number_of_attackers_to_create)
+    attackers, victims, attackers2 = create_attacker_and_victim(network, attacker_node_type, delta,
+                                                                max_number_of_block_to_respond, number_of_attackers_to_create)
 
     for pub_key in pub_key_to_create:
         nodes[pub_key] = create_node(delta, max_number_of_block_to_respond)
 
-    rand_numbers = random.sample(range(len(pub_key_to_create)), 3)
-    nodes[pub_key_to_create[rand_numbers[0]]] = attacker
-    if victim:
-        nodes[pub_key_to_create[rand_numbers[1]]] = victim
-    if attacker2 and attacker_node_type != NodeType.SOFT_GRIEFING:
-        nodes[pub_key_to_create[rand_numbers[2]]] = attacker2
+    number_of_special_nodes = len(attackers) + len(victims) + \
+                              (len(attackers2) if attacker_node_type != NodeType.SOFT_GRIEFING else 0)
+    rand_numbers = random.sample(range(len(pub_key_to_create)), number_of_special_nodes)
+    node_index = 0
+    for attacker in attackers:
+        nodes[pub_key_to_create[rand_numbers[node_index]]] = attacker
+        node_index += 1
+    for victim in victims:
+        nodes[pub_key_to_create[rand_numbers[node_index]]] = victim
+        node_index += 1
+    if attacker_node_type != NodeType.SOFT_GRIEFING:
+        for attacker2 in attackers2:
+            nodes[pub_key_to_create[rand_numbers[node_index]]] = attacker2
+            node_index += 1
 
     network.nodes = list(nodes.values())
     for edge in edges_to_create:
         network.add_edge(nodes[edge[0]], nodes[edge[1]], int(int(edges_to_create[edge]['capacity']) / 2))
 
-    if attacker2 and attacker2 not in network.nodes:
-        network.add_node(attacker2)
-    return network, attacker, victim
+    for attacker2 in attackers2:
+        if attacker2 not in network.nodes:
+            network.add_node(attacker2)
+
+    return network, attackers, victims
 
 
 # Redundancy network functions
@@ -358,7 +368,8 @@ def build_and_run_simulation(file_to_write, attacker_node_type, delta, max_numbe
 
 
 def run_multiple_simulation():
-    network_topologies = [NetworkType.REDUNDANCY, NetworkType.SNAPSHOT]
+    # network_topologies = [NetworkType.REDUNDANCY, NetworkType.SNAPSHOT]
+    network_topologies = [NetworkType.SNAPSHOT]
     node_types = [NodeType.SOFT_GRIEFING, NodeType.SOFT_GRIEFING_BUSY_NETWORK, NodeType.SOFT_GRIEFING_DOS_ATTACK]
     delta_node_type = NodeType.SOFT_GRIEFING_DOS_ATTACK
     deltas = [40, 70, 100]
