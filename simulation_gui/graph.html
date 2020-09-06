@@ -306,10 +306,10 @@
             var keyUse = "";
             var keyNotUse = "";
             if (xAxisOptions.value === "Attacks") {
-                // "Simulate attack", "Not simulate attack"
                 const isSimulate = val === "Simulate attack";
                 const valV = isSimulate? "True": "False";
                 keyUse = nodeType.value + '_' + delta + '_' + busyNetwork + '_' + topology.value + '_' + valV + '_True';
+                console.log(keyUse);
                 if (isSimulate) {
                     graphDataUseGp.push(all_data[keyUse][yAxisOptions.value]);
                 }

@@ -9,11 +9,12 @@ import inspect
 import lightning_node
 from datetime import datetime
 from network import Network
+import networkx as nx
 from singletons import *
 
 # metrics names
 
-# parameters ofr runs
+# parameters for runs
 MIN_TO_SEND = 100
 MAX_TO_SEND = 1000000000
 # MSAT_AMOUNTS_TO_SEND = [1000, 10000, 100000, 1000000, 10000000, 100000000]
@@ -56,6 +57,12 @@ class NetworkType(str, Enum):
     SNAPSHOT = "snapshot"
 
 
+NUMBER_OF_ATTACKERS_TO_CREATE = {NetworkType.REDUNDANCY: {NodeType.SOFT_GRIEFING: 2, NodeType.SOFT_GRIEFING_BUSY_NETWORK: 3,
+                                                          NodeType.SOFT_GRIEFING_DOS_ATTACK: 1},
+                                 NetworkType.SNAPSHOT: {NodeType.SOFT_GRIEFING: 2, NodeType.SOFT_GRIEFING_BUSY_NETWORK: 3,
+                                                        NodeType.SOFT_GRIEFING_DOS_ATTACK: 1}}
+
+
 def how_much_to_send():
     mu = random.choice(MSAT_AMOUNTS_TO_SEND)
     amount = int(min(max(random.gauss(mu, SIGMA), MIN_TO_SEND), MAX_TO_SEND))
@@ -85,10 +92,11 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
                                         max_number_of_block_to_respond)
 
 
-def run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack):
+def run_simulation(network, use_gp_protocol, attackers, victims, simulate_attack):
     counter = 0
-    attacker2 = None if attacker is None else attacker.get_peer()
-    nodes_to_simulate = [node for node in network.nodes if node != attacker and node != victim and node != attacker2]
+    attacker2 = [attacker.get_peer() for attacker in attackers]
+    nodes_to_simulate = [node for node in network.nodes if node not in attackers and node not in victims and node not in
+                         attacker2]
     while BLOCKCHAIN_INSTANCE.block_number < NUMBER_OF_BLOCKS:
         sender_node = random.choice(nodes_to_simulate)
         # find receiver node
@@ -97,35 +105,37 @@ def run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack):
             receiver_node = random.choice(nodes_to_simulate)
 
         amount_in_msat = how_much_to_send()
-        if simulate_attack and attacker.should_send_attack():
-            amount_to_send = attacker.how_much_to_send()
-            if attacker.get_peer():
-                if attacker.get_victim():
-                    # soft griefing to specific victim
-                    should_try_to_send_transaction = amount_to_send > 0
-                    while should_try_to_send_transaction:
-                        result = send_attack_transaction(network, attacker.get_victim(), attacker, attacker.get_peer(),
-                                                         use_gp_protocol, amount_to_send)
-                        amount_to_send = amount_to_send // 2
-                        should_try_to_send_transaction = amount_to_send > 0 and not result
-                else:
-                    # soft griefing to make busy network
-                    should_try_to_send_transaction = amount_to_send > 0
-                    while should_try_to_send_transaction:
-                        result = find_path_and_send_transaction(network, attacker.get_peer(), attacker, use_gp_protocol,
-                                                                amount_to_send)
-                        amount_to_send = amount_to_send // 2
-                        should_try_to_send_transaction = amount_to_send > 0 and not result
-            else:
-                # Dos attack to specific victim
-                find_path_and_send_transaction(network, attacker.get_victim(), attacker, use_gp_protocol,
-                                               attacker.how_much_to_send())
-                should_try_to_send_transaction = amount_to_send > 0
-                while should_try_to_send_transaction:
-                    result = find_path_and_send_transaction(network, attacker.get_victim(), attacker, use_gp_protocol,
-                                                            amount_to_send)
-                    amount_to_send = amount_to_send // 2
-                    should_try_to_send_transaction = amount_to_send > 0 and not result
+        if simulate_attack:
+            for attacker in attackers:
+                if attacker.should_send_attack():
+                    amount_to_send = attacker.how_much_to_send()
+                    if attacker.get_peer():
+                        if attacker.get_victim():
+                            # soft griefing to specific victim
+                            should_try_to_send_transaction = amount_to_send > 0
+                            while should_try_to_send_transaction:
+                                result = send_attack_transaction(network, attacker.get_victim(), attacker, attacker.get_peer(),
+                                                                 use_gp_protocol, amount_to_send)
+                                amount_to_send = amount_to_send // 2
+                                should_try_to_send_transaction = amount_to_send > 0 and not result
+                        else:
+                            # soft griefing to make busy network
+                            should_try_to_send_transaction = amount_to_send > 0
+                            while should_try_to_send_transaction:
+                                result = find_path_and_send_transaction(network, attacker.get_peer(), attacker, use_gp_protocol,
+                                                                        amount_to_send)
+                                amount_to_send = amount_to_send // 2
+                                should_try_to_send_transaction = amount_to_send > 0 and not result
+                    else:
+                        # Dos attack to specific victim
+                        find_path_and_send_transaction(network, attacker.get_victim(), attacker, use_gp_protocol,
+                                                       attacker.how_much_to_send())
+                        should_try_to_send_transaction = amount_to_send > 0
+                        while should_try_to_send_transaction:
+                            result = find_path_and_send_transaction(network, attacker.get_victim(), attacker, use_gp_protocol,
+                                                                    amount_to_send)
+                            amount_to_send = amount_to_send // 2
+                            should_try_to_send_transaction = amount_to_send > 0 and not result
         if find_path_and_send_transaction(network, receiver_node, sender_node, use_gp_protocol, amount_in_msat):
             METRICS_COLLECTOR_INSTANCE.count(SEND_TRANSACTION)
         else:
@@ -140,7 +150,7 @@ def run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack):
 
     increase_block(FUNCTION_COLLECTOR_INSTANCE.get_max_k())
     print(f"Final block number is {BLOCKCHAIN_INSTANCE.block_number}")
-    close_channel_and_log_metrics(network, attacker, victim)
+    close_channel_and_log_metrics(network, attackers, victims)
     metrics = METRICS_COLLECTOR_INSTANCE.get_metrics()
     add_more_metrics(metrics)
     metrics_str = '\n'.join([f'\t{k}: {v:,}' for k, v in metrics.items()])
@@ -211,36 +221,58 @@ def add_more_metrics(metrics):
 
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
     network = Network()
-    attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
-    number_of_nodes_to_create = NUMBER_OF_NODES - (0 if not attacker else (1 if not victim else 2))
+    number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.REDUNDANCY][attacker_node_type]
+    attackers, victims, attackers2 = create_attacker_and_victim(network, attacker_node_type, delta,
+                                                                max_number_of_block_to_respond, number_of_attackers_to_create)
+    number_of_special_nodes = len(attackers) + len(victims) + \
+                              (len(attackers2) if attacker_node_type != NodeType.SOFT_GRIEFING else 0)
+    number_of_nodes_to_create = NUMBER_OF_NODES - number_of_special_nodes
     for _ in range(number_of_nodes_to_create):
         network.add_node(create_node(delta, max_number_of_block_to_respond))
     random.shuffle(network.nodes)
-    return network, attacker, victim, attacker2
+    return network, attackers, victims, attackers2
 
 
-def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond):
-    attacker = None
-    victim = None
-    attacker2 = None
+def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond, number_of_attackers=1):
+    attackers = []
+    victims = []
+    attackers2 = []
     if attacker_node_type:
-        attacker = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
-        network.add_node(attacker)
-        if attacker_node_type != NodeType.SOFT_GRIEFING_BUSY_NETWORK:
-            victim = create_node(delta, max_number_of_block_to_respond)
-            victim.set_as_victim()
-            attacker.set_victim(victim)
-            attacker.set_fee_percentage(victim.fee_percentage)
-            attacker.set_base_fee(victim.base_fee)
-            network.add_node(victim)
-        if attacker_node_type != NodeType.SOFT_GRIEFING_DOS_ATTACK:
-            attacker2 = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
-            attacker.set_peer(attacker2)
-            if attacker_node_type == NodeType.SOFT_GRIEFING:
-                network.add_edge(attacker2, victim, 1050000000000)  # TODO: check if the balance is enough
-            else:
-                network.add_node(attacker2)
-    return attacker, victim, attacker2
+        for _ in range(number_of_attackers):
+            attacker = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
+            network.add_node(attacker)
+            attackers.append(attacker)
+            if attacker_node_type != NodeType.SOFT_GRIEFING_BUSY_NETWORK:
+                victim = create_node(delta, max_number_of_block_to_respond)
+                victim.set_as_victim()
+                attacker.set_victim(victim)
+                attacker.set_fee_percentage(victim.fee_percentage)
+                attacker.set_base_fee(victim.base_fee)
+                network.add_node(victim)
+                victims.append(victim)
+            if attacker_node_type != NodeType.SOFT_GRIEFING_DOS_ATTACK:
+                attacker2 = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
+                attacker.set_peer(attacker2)
+                attackers2.append(attacker2)
+                if attacker_node_type == NodeType.SOFT_GRIEFING:
+                    network.add_edge(attacker2, victim, 1050000000000)  # TODO: check if the balance is enough
+                else:
+                    network.add_node(attacker2)
+    return attackers, victims, attackers2
+
+
+def find_largest_connected_component(json_data):
+    G = nx.Graph()
+
+    for node in json_data['nodes']:
+        G.add_node(node['pub_key'])
+
+    for edge in json_data['edges']:
+        G.add_edge(edge['node1_pub'], edge['node2_pub'], capacity=edge['capacity'])
+    G.remove_nodes_from(list(nx.isolates(G)))
+
+    largest_connected_component = max(nx.connected_components(G), key=len)
+    return G.subgraph(largest_connected_component).copy()
 
 
 def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_block_to_respond):
@@ -249,24 +281,29 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
     json_data['edges'] = list(filter(lambda x: x['node1_policy'] and x['node2_policy'], json_data['edges']))
     json_data['edges'] = list(filter(lambda x: not (x['node1_policy']['disabled'] or
                                                     x['node2_policy']['disabled']), json_data['edges']))
+    largest_connected_component = find_largest_connected_component(json_data)
+    pub_key_to_create = list(largest_connected_component.nodes)
+    edges_to_create = largest_connected_component.edges
 
     nodes = {}
     network = Network()
-    attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond)
+    number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.SNAPSHOT][attacker_node_type]
+    attacker, victim, attacker2 = create_attacker_and_victim(network, attacker_node_type, delta,
+                                                             max_number_of_block_to_respond, number_of_attackers_to_create)
 
-    for node in json_data['nodes']:
-        nodes[node['pub_key']] = create_node(delta, max_number_of_block_to_respond)
+    for pub_key in pub_key_to_create:
+        nodes[pub_key] = create_node(delta, max_number_of_block_to_respond)
 
-    rand_numbers = random.sample(range(len(json_data['nodes'])), 3)
-    nodes[json_data['nodes'][rand_numbers[0]]['pub_key']] = attacker
+    rand_numbers = random.sample(range(len(pub_key_to_create)), 3)
+    nodes[pub_key_to_create[rand_numbers[0]]] = attacker
     if victim:
-        nodes[json_data['nodes'][rand_numbers[1]]['pub_key']] = victim
+        nodes[pub_key_to_create[rand_numbers[1]]] = victim
     if attacker2 and attacker_node_type != NodeType.SOFT_GRIEFING:
-        nodes[json_data['nodes'][rand_numbers[2]]['pub_key']] = attacker2
+        nodes[pub_key_to_create[rand_numbers[2]]] = attacker2
 
     network.nodes = list(nodes.values())
-    for edge in json_data['edges']:
-        network.add_edge(nodes[edge['node1_pub']], nodes[edge['node2_pub']], int(int(edge['capacity']) / 2))
+    for edge in edges_to_create:
+        network.add_edge(nodes[edge[0]], nodes[edge[1]], int(int(edges_to_create[edge]['capacity']) / 2))
 
     if attacker2 and attacker2 not in network.nodes:
         network.add_node(attacker2)
@@ -277,7 +314,7 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
 def generate_redundancy_network(attacker_node_type, delta, max_number_of_block_to_respond):
     # connect 2 nodes if differ by 10 to the power of n(1...floor(log_10(number_of_nodes))+1)
     #   modulo 10^floor(log_10(number_of_nodes))
-    network, attacker, victim, attacker2 = create_network(attacker_node_type, delta, max_number_of_block_to_respond)
+    network, attackers, victims, attackers2 = create_network(attacker_node_type, delta, max_number_of_block_to_respond)
     n = int(math.log(NUMBER_OF_NODES, 10))
     jump_indexes = [10 ** i for i in range(n + 1)]
     for i in range(NUMBER_OF_NODES):
@@ -291,9 +328,11 @@ def generate_redundancy_network(attacker_node_type, delta, max_number_of_block_t
                 # METRICS_COLLECTOR_INSTANCE.average(CHANNEL_STARTING_BALANCE, channel_starting_balance)
                 network.add_edge(network.nodes[i], network.nodes[next_index], channel_starting_balance)
 
-    if attacker2 and attacker2 not in network.nodes:
-        network.add_node(attacker2)
-    return network, attacker, victim
+    if attackers2:
+        for attacker2 in attackers2:
+            if attacker2 not in network.nodes:
+                network.add_node(attacker2)
+    return network, attackers, victims
 
 
 def build_and_run_simulation(file_to_write, attacker_node_type, delta, max_number_of_block_to_respond, network_topology):
@@ -302,9 +341,10 @@ def build_and_run_simulation(file_to_write, attacker_node_type, delta, max_numbe
     for change_param in [True, False]:
         random.seed(seed)
         if network_topology == NetworkType.REDUNDANCY:
-            network, attacker, victim = generate_redundancy_network(attacker_node_type, delta, max_number_of_block_to_respond)
+            network, attackers, victims = generate_redundancy_network(attacker_node_type, delta, max_number_of_block_to_respond)
         elif network_topology == NetworkType.SNAPSHOT:
-            network, attacker, victim = generate_network_from_snapshot(attacker_node_type, delta, max_number_of_block_to_respond)
+            network, attackers, victims = generate_network_from_snapshot(attacker_node_type, delta,
+                                                                         max_number_of_block_to_respond)
         else:
             raise Exception("got invalid network_topology name!")
         use_gp_protocol = attacker_node_type is not None or change_param
@@ -316,7 +356,7 @@ def build_and_run_simulation(file_to_write, attacker_node_type, delta, max_numbe
                       "max_number_of_block_to_respond": max_number_of_block_to_respond,
                       'network_topology': network_topology}
         print(f"parameters for the run: {parameters}")
-        metrics = run_simulation(network, use_gp_protocol, attacker, victim, simulate_attack)
+        metrics = run_simulation(network, use_gp_protocol, attackers, victims, simulate_attack)
         add_more_metrics(metrics)
         file_to_write.write(f"{json.dumps({'metrics': metrics, 'parameters': parameters})}\n")
         file_to_write.flush()

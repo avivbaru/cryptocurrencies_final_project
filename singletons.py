@@ -17,7 +17,7 @@ LOCKED_FUND_PER_TRANSACTION_NORMALIZE_BY_AMOUNT_SENT_AVG = "Locked fund (amount 
                                                            "(normalize by amount sent) avg"
 DURATION_OF_LOCKED_FUNDS_IN_BLOCKS = "Duration (in blocks) of Locked funds avg"  # TODO: this is a weird metric
 SEND_TRANSACTION = "Transactions tried to send"
-PATH_LENGTH_AVG = "Transaction's path length avg"
+PATH_LENGTH_AVG = "Transactions path length avg"
 NO_PATH_FOUND = "Amount of path not found for a transaction"
 TOTAL_FEE = "Total fee avg"
 PERFORM_SOFT_GRIEFING = "Perform soft griefing"
