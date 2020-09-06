@@ -76,11 +76,11 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
     if NodeType.SOFT_GRIEFING_BUSY_NETWORK == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, base_fee, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                        block_amount_to_send_transaction=10)
+                                                        block_amount_to_send_transaction=3)
     if NodeType.SOFT_GRIEFING_DOS_ATTACK == attacker_node_type:
         return lightning_node.LightningNodeDosAttack(STARTING_BALANCE, base_fee, fee_percentage,
                                                      GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
-                                                     block_amount_to_send_transaction=10)
+                                                     block_amount_to_send_transaction=7)
     return lightning_node.LightningNode(STARTING_BALANCE, base_fee, fee_percentage, GRIEFING_PENALTY_RATE, delta,
                                         max_number_of_block_to_respond)
 
@@ -205,7 +205,7 @@ def close_channel_and_log_metrics(network, attacker_nodes, victim):
 def add_more_metrics(metrics):
     metrics[LOCKED_FUND_PER_TRANSACTION_NORMALIZE_BY_AMOUNT_SENT_AVG] = metrics.get(LOCKED_FUND_PER_TRANSACTION_AVG, 0) / \
                                                                         metrics.get(TRANSACTION_AMOUNT_AVG, 1)
-    metrics.get()
+    # metrics.get()
 
 
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
