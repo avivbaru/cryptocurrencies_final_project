@@ -5,7 +5,7 @@ import fire
 
 
 def main():
-    files = os.listdir('.')
+    files = os.listdir('./GoodRuns/')
     all_data = []
     for f_name in reversed(files):
         if f_name.endswith(f'_rawdata'):
@@ -14,19 +14,24 @@ def main():
                 all_data.extend(f.readlines())
             break
     all_data = [json.loads(d.strip()) for d in all_data if d.strip()]
-    runs = {}
-    all_parameters = defaultdict(set)
+    runs_sum = defaultdict(lambda: defaultdict(float))
+    runs_count = defaultdict(lambda: defaultdict(float))
     for line in all_data:
-        for p in line['parameters']:
-            all_parameters[p].add(line['parameters'][p])
         parameters = [str(i[1]) for i in sorted(line['parameters'].items(), key=lambda x: x[0])]
-        runs['_'.join(parameters)] = line['metrics']
+        key = '_'.join(parameters)
+        for m in line['metrics']:
+            runs_sum[key][m] += line['metrics'][m]
+            runs_count[key][m] += 1
+    runs = defaultdict(lambda: defaultdict(float))
+    for k in runs_sum:
+        for m in runs_sum[k]:
+            runs[k][m] = runs_sum[k][m] / runs_count[k][m]
 
     for r in runs:
-        print(r, runs[r])
+        print(r, runs_sum[r])
 
     with open(f'../simulation_gui/runs.js', 'w') as f:
-        f.write(f"data_json = '{json.dumps(runs)}';")
+        f.write(f"data_json = '{json.dumps(runs_sum)}';")
 
 
 if __name__ == '__main__':
