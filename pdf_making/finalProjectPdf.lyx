@@ -306,13 +306,13 @@ status open
 
 \size large
 רשת 
-\begin_inset Formula $Lightning$
-\end_inset
-
+\lang english
+Lightning
+\lang hebrew
  היא רשת מבוזרת הפועלת על גבי רשת ה-
-\begin_inset Formula $Bitcoin$
-\end_inset
-
+\lang english
+Bitcoin
+\lang hebrew
  ומטרתה 
 \begin_inset Newline newline
 \end_inset
@@ -321,10 +321,33 @@ status open
 \lang english
 Grifeing
 \lang hebrew
- ברשת 
-\begin_inset Formula $Lightning$
-\end_inset
-
+ ברשת
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Lightning
+\lang hebrew
  בעזרת הטלת קנס על מבצעי המתקפה.
  הרעיון מוצג ב
 \begin_inset ERT
@@ -349,7 +372,7 @@ Grifeing
 \lang hebrew
  היא בעיה ידועה אשר בעזרתה תוקפים יכולים להשבית חלקים גדולים מרשת 
 \lang english
-lightning
+Lightning
 \lang hebrew
  ע
 \begin_inset Quotes erd
@@ -386,13 +409,13 @@ Griefing
 HTLC-GP
 \lang hebrew
  שמרחיב את פרוטוקול ה-
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
  הקיים כיום ב-
-\begin_inset Formula $Lightning\,Network$
-\end_inset
-
+\lang english
+Lightning Network
+\lang hebrew
  ובעצם חלק מהחוזה שנחתם בין כל 
 \lang english
 Node
@@ -410,14 +433,60 @@ Node
 \lang english
 Nodes
 \lang hebrew
- ישרים אשר משתתפים ברשת המשתמשת בפרוטוקול זה ובנוסף נציג מתקפת 
-\begin_inset Formula $Dos$
-\end_inset
-
- שמתאפשרת בעזרת פרוטוקול זה ואסטרטגיה חדשה שנקרא לה 
-\begin_inset Formula $soft-griefing$
-\end_inset
-
+ ישרים אשר משתתפים ברשת המשתמשת בפרוטוקול זה ובנוסף נציג מתקפת
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+DOS
+\lang hebrew
+ שמתאפשרת בעזרת פרוטוקול זה ואסטרטגיה חדשה שנקרא לה
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Soft Griefing
+\lang hebrew
  ונבדוק את הכדאיות וההשפעה שלה.
  
 \end_layout
@@ -450,61 +519,82 @@ Nodes
 \begin_layout Section*
 
 \size large
-\begin_inset Formula $Lightning\,Network$
-\end_inset
-
-
+\lang english
+Lightning Network
 \end_layout
 
 \begin_layout Quotation
 
 \size large
 רשת ה-
-\begin_inset Formula $Lightning$
-\end_inset
-
- היא רשת אנונית המשמשת כשכבה שנייה על גבי רשת מבוססת 
-\begin_inset Formula $Blockchain$
-\end_inset
-
+\lang english
+Lightning
+\lang hebrew
+ היא רשת אנונית המשמשת כשכבה שנייה על גבי רשת מבוססת
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Blockchain
+\lang hebrew
  כמו רשת ה-
-\begin_inset Formula $Bitcoin$
-\end_inset
-
+\lang english
+Bitcoin
+\lang hebrew
 .
  מטרת הרשת היא לפתור את בעית ה-
-\begin_inset Formula $scalability$
-\end_inset
-
+\lang english
+scalability
+\lang hebrew
  ע
 \begin_inset Quotes erd
 \end_inset
 
 י שימוש ב-
-\begin_inset Formula $Payment\,channels$
-\end_inset
-
+\lang english
+Payment Channels
+\lang hebrew
  דו כיווניים בין משתמשים כך שתשלומים נחתמים ע
 \begin_inset Quotes erd
 \end_inset
 
 י שני המשתתפים בטרנזקציה ויכולים להתבצע מחוץ ל-
-\begin_inset Formula $blockchain$
-\end_inset
-
+\lang english
+Blockchain
+\lang hebrew
  וכך להתבסס על רשת התקשורת בין המשתתפים.
  הרשת מאפשרת תשלום בין משתתפים להם אין 
-\begin_inset Formula $channel$
-\end_inset
-
+\lang english
+channel
+\lang hebrew
  ישיר ע
 \begin_inset Quotes erd
 \end_inset
 
 י שימוש בחוזה 
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
  המאפשר לעבור בין משתמשי ביניים מבלי לסמוך עליהם, אלא על ידי חתימות קריפטוגרפיות.
  
 \end_layout
@@ -532,28 +622,51 @@ Griefing Attack
 \lang english
 Griefing
 \lang hebrew
- שהיא מתקפה המתאפשרת ברשת שמשתמשת בפרוטוקול 
-\begin_inset Formula $HTLC$
-\end_inset
-
+ שהיא מתקפה המתאפשרת ברשת שמשתמשת בפרוטוקול
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+HTLC
+\lang hebrew
 .
  מתקפה זו היא בעיה ברשת 
-\begin_inset Formula $Lightning$
-\end_inset
-
+\lang english
+Lightning
+\lang hebrew
  וגורמת לה להיות פחות אטרקטיבית ולהוות פיתרון אמיתי לבעית ה-
-\begin_inset Formula $scalability$
-\end_inset
-
+\lang english
+scalability
+\lang hebrew
 .
  מטרת המתקפה היא לנעול כמות גדולה של כסף של משתמש הוגן ולגרום ל-
-\begin_inset Formula $Denail-Of-Service$
-\end_inset
-
+\lang english
+Denial Of Service
+\lang hebrew
 , בידוד של המשתמש מהרשת או נעילת 
-\begin_inset Formula $channel$
-\end_inset
-
+\lang english
+channel
+\lang hebrew
  לגמרי.
  ניזכר כי כאשר 
 \lang english
@@ -609,13 +722,13 @@ Nodes
  במשך הזמן שבו החוזה לא ממומש אבל גם עדיין בתוקף, ישנם סכומים אשר נעולים
  לשימוש.
  כלומר יוצר ה-
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
  נועל את הכספים בישביל ה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  אליו הוא מעביר את הכסף.
  תוקף המבצע 
 \lang english
@@ -631,9 +744,9 @@ HTLC
 \lang hebrew
 .
  בדרך זו הוא מסוגל לנעול כספים למספר גדול של 
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
 -ים, כאורך המסלול, ולאורך זמן של מספר ימים.
 \begin_inset Newline newline
 \end_inset
@@ -648,17 +761,17 @@ R
 \end_inset
 
 אחת המוטיבציות לביצוע מתקפה זו היא נעילת כספים של 
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
 -ים, כך לגרום לתשלומים ש-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
 -ים רוצים לבצע לא להיות מסוגלים לעבור דרך אותם 
-\begin_inset Formula $Channel$
-\end_inset
-
+\lang english
+channel
+\lang hebrew
 -ים עם כספים נעולים, ולהגדיל את הסיכוי שיעברו דרך התוקף, שיוכל להרוויח כסף
  מעמלה שהוא גובה.
 \end_layout
@@ -688,9 +801,9 @@ HTLC-GP Protocl
 HTLC
 \lang hebrew
  על מנת להטיל קנס על מבצע מתקפת ה-
-\begin_inset Formula $Griefing$
-\end_inset
-
+\lang english
+Griefing
+\lang hebrew
 .
  הרעיון הוא שמקבל החוזה ינעל כספים נוספים )בהתאם למיקומו במסלול התשלום(,
  אם החוזה פג תוקף, מקבל החוזה משלם את הסכום הנקוב לשולח החוזה )נאכף ע
@@ -777,9 +890,9 @@ Node
 \end_inset
 
  שמשולם ל-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
 (, צ'ארלי נועל 
 \begin_inset Formula $qp_{Alice}t+qp_{Dave}\left(t-1\right)$
 \end_inset
@@ -806,9 +919,9 @@ Griefing
 \end_inset
 
  ובכך כולם יקבלו תשלום על כך שנעלו כספים לשווא מבוב שביצע 
-\begin_inset Formula $Griefing$
-\end_inset
-
+\lang english
+Griefing
+\lang hebrew
 , והוא כמובן לא יקבל כלום.
 \begin_inset Newline newline
 \end_inset
@@ -832,9 +945,9 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
 בפרוטוקול הראשון, הוצג חוזה 
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
  חדש בו לפי הסיטואציה של התמונה למעלה, אם 
 \begin_inset Formula $Alice$
 \end_inset
@@ -856,9 +969,9 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  נועל מצידו את ה-
-\begin_inset Formula $penalty$
-\end_inset
-
+\lang english
+penalty
+\lang hebrew
  )כפי שהוצג קודם(.
  אם 
 \begin_inset Formula $Dave$
@@ -873,13 +986,13 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  )כמו בחוזה 
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
  רגיל( עד זמן שנקבע ב-
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
 , הוא יקבל את כל הכסף הנעול.
  אם לא הציג 
 \begin_inset Formula $x$
@@ -899,26 +1012,72 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  ובכך אם אחד מה-
-\begin_inset Formula $Node$
-\end_inset
-
- יבצע 
-\begin_inset Formula $Griefing$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
+ יבצע
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Griefing
+\lang hebrew
  הוא ישלם את הפיצוי כפי שהוצג קודם.
  הפרוטוקול אמנם פתר את 
-\begin_inset Formula $Griefing\,attack$
-\end_inset
-
+\lang english
+Griefing attack
+\lang hebrew
  ע
 \begin_inset Quotes erd
 \end_inset
 
-י כך שהפך את המתקפה ללא משתלמת משום שמבצע המתקפה ישלם 
-\begin_inset Formula $penalty$
-\end_inset
-
+י כך שהפך את המתקפה ללא משתלמת משום שמבצע המתקפה ישלם
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+penalty
+\lang hebrew
 , אבל מספר בעיות נוספו שנפרט בהמשך נוספו בעקבותו )האם לפרט על 
 \begin_inset Formula $reverse\,griefing$
 \end_inset
@@ -953,22 +1112,22 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  שולחת הודעה דרך כל המשתתפים בטרנזקציה שיוכלו לדעת מי ה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  שנמצא לפניהם ואחריהם.
  כעת, 
 \begin_inset Formula $Bob$
 \end_inset
 
  יוצר חוזה 
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
  שנקרא לו 
-\begin_inset Formula $Cancellation\,Contract$
-\end_inset
-
+\lang english
+Cancellation Contract
+\lang hebrew
  עם 
 \begin_inset Formula $Charlie$
 \end_inset
@@ -1012,9 +1171,9 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  יוצר בצורה דומה 
-\begin_inset Formula $Cancellation\,Contract$
-\end_inset
-
+\lang english
+Cancellation Contract
+\lang hebrew
  עם 
 \begin_inset Formula $Dave$
 \end_inset
@@ -1063,6 +1222,34 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  או שתוקף החוזה פג, היא מקבלת את הכסף הנעול.
+ לחוזה זה נקרא
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Foraward Contract
+\lang hebrew
+.
 \begin_inset Newline newline
 \end_inset
 
@@ -1091,9 +1278,9 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  כדי לקבל את תשלום הכסף, והם יבטלו את ה-
-\begin_inset Formula $cancellation\,contract$
-\end_inset
-
+\lang english
+Cancellation Contract
+\lang hebrew
  ו-
 \begin_inset Formula $charlie$
 \end_inset
@@ -1152,9 +1339,9 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  זהו חוזה ה-
-\begin_inset Formula $Cancellation\,Contract$
-\end_inset
-
+\lang english
+Cancellation Contract
+\lang hebrew
  ומכיוון 
 \begin_inset Formula $U_{0}$
 \end_inset
@@ -1167,19 +1354,65 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \begin_inset Newline newline
 \end_inset
 
-אלמנט חשוב נוסף בפרוטוקול הוא פרמטר 
-\begin_inset Formula $delta$
-\end_inset
-
+אלמנט חשוב נוסף בפרוטוקול הוא פרמטר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+delta
+\lang hebrew
 .
  הוא מגדיר את הזמן המקסימלי ש-
 \begin_inset Formula $Bob$
 \end_inset
 
- יחכה מרגע ששלח חוזה 
-\begin_inset Formula $Cancellation$
-\end_inset
-
+ יחכה מרגע ששלח חוזה
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Cancellation
+\lang hebrew
  ועד שקיבל את חוזה התשלום מ-
 \begin_inset Formula $Charlie$
 \end_inset
@@ -1194,9 +1427,9 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  יבטל את חוזה ה-
-\begin_inset Formula $Cancellation$
-\end_inset
-
+\lang english
+Cancellation
+\lang hebrew
 .
  
 \begin_inset Newline newline
@@ -1207,9 +1440,9 @@ href{https://arxiv.org/pdf/2005.09327v1.pdf}{בגירסא מוקדמת של המ
 \end_inset
 
  היה נועל את ה-
-\begin_inset Formula $Penalty$
-\end_inset
-
+\lang english
+penalty
+\lang hebrew
  לזמן רב.
 \end_layout
 
@@ -1320,9 +1553,9 @@ Node
 \end_inset
 
 בפרוטוקול של המאמר המעודכן, העובדה שאנחנו קודם יוצרים את חוזי ה-
-\begin_inset Formula $Cancellation$
-\end_inset
-
+\lang english
+Cancellation
+\lang hebrew
  מונעת את הבעיה משום שאם 
 \begin_inset Formula $F$
 \end_inset
@@ -1331,15 +1564,38 @@ Node
 \begin_inset Formula $E$
 \end_inset
 
-, הוא יצטרף לשלם לו 
-\begin_inset Formula $penalty$
-\end_inset
-
+, הוא יצטרף לשלם לו
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+penalty
+\lang hebrew
 .
- ואם יבטל את חוזה ה-
-\begin_inset Formula $Cancellation$
-\end_inset
-
+ ואם יבטל את חוזה ה-ה-
+\lang english
+Cancellation
+\lang hebrew
  שלו עם 
 \begin_inset Formula $E$
 \end_inset
@@ -1356,10 +1612,10 @@ Node
 \begin_inset Formula $E$
 \end_inset
 
- יוכל לבטל את חוזה ה-
-\begin_inset Formula $Cancellation$
-\end_inset
-
+ יוכל לבטל את חוזה ה-ה-
+\lang english
+Cancellation
+\lang hebrew
  שלו עם 
 \begin_inset Formula $D$
 \end_inset
@@ -1386,25 +1642,25 @@ Soft Griefing
 \begin_layout Quotation
 
 \size large
-בשרשור מיילים בנוגע למאמר, הוצג הרעיון של 
+בשרשור מיילים בנוגע למאמר , הוצג הרעיון של 
 \begin_inset Formula $Soft\,Griefing$
 \end_inset
 
 .
  מתקפה זו דומה ל-
-\begin_inset Formula $Griefing$
-\end_inset
-
+\lang english
+Griefing
+\lang hebrew
  הרגיל, ומנצלת חיסרון של הפרוטוקול בכך שהעונש המוטל על 
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  לא פרופורציונלי לכמות הזמן שהכסף היה נעול, אלא רק מתייחס להאם העברת הכסף
  בוצעה או שלא.
  רעיון המתקפה הוא שה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  הרשע ממשיך את מהלך התשלום הרגיל )כלומר חושף את 
 \begin_inset Formula $x$
 \end_inset
@@ -1412,32 +1668,59 @@ Soft Griefing
 ( ברגע האחרון לפני שהחוזה פג, כלומר הוא גורם לכסף להיות נעול במשך הזמן הכי
  ממושך שאפשר, כך שהתשלום עדיין עובר והוא לא צריך לשלם את הקנס.
  
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  מסוים יכול לנצל זאת וכשהעברת כספים עוברת דרכו, הוא יכול לחכות בעת העברת
- 
-\begin_inset Formula $Cancellation\,Contract$
-\end_inset
-
+ ה-
+\lang english
+Cancellation Contract
+\lang hebrew
  ל-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  הבא בשרשרת ולגרום לנעילת כספים.
- לחילופין הוא יכול לחכות בפיתרון 
-\begin_inset Formula $Forward\,Contract$
+ לחילופין הוא יכול לחכות בפיתרון )שליחת 
+\begin_inset Formula $x$
 \end_inset
 
+( ה-
+\lang english
+Forward Contract
+\lang hebrew
 , ובכך לגרום לכספים רבים להיות נעולים.
  
 \begin_inset Newline newline
 \end_inset
 
-כאשר הכספים עוברים דרכו הוא עלול להיות מוגבל בפרמטר 
-\begin_inset Formula $delta$
-\end_inset
-
+כאשר הכספים עוברים דרכו הוא עלול להיות מוגבל בפרמטר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+delta
+\lang hebrew
 , אך אם הוא מקבל התשלום, הוא יכול לבצע את המתקפה עד לזמן שסמוך לפקיעת החוזה.
 \end_layout
 
@@ -1462,112 +1745,296 @@ Griefing Dos Attack
 \size large
 כעת ברצונינו להציג מתקפה חדשה.
  נציג איך במתקפה זו התוקף לא צריך להתחייב ולנעול כסף ובכל זאת לגרום ל-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  ישר להתחייב ולנעול סכומי כסף משמעותיים.
 \begin_inset Newline newline
 \end_inset
 
 התוקף ישלח הודעה לקורבן שהוא מעוניין להעביר אליו סכום כסף מסוים, כך שהמסלול
  בניהם מכיל לפחות 
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  נוסף.
- הקורבן מעוניין לקבל את הכסף ולכן ישלח 
-\begin_inset Formula $Cencallation\,Contract$
-\end_inset
-
+ הקורבן מעוניין לקבל את הכסף ולכן ישלח
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Cancellation Contract
+\lang hebrew
  ל-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  שלפניו במסלול התשלום, שיאשר את החוזה וישלח חוזה משלו ל-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  הבא, כך עד שהחוזה יגיע לתוקף )מה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  הראשון במסלול(.
- כעת התוקף יבצע 
-\begin_inset Formula $griefing$
-\end_inset
-
+ כעת התוקף יבצע
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+griefing
+\lang hebrew
  ויתעלם מההודעה ליצירת החוזה.
- בשלב זה הקורבן יזהה שלא קיבל הודעת 
-\begin_inset Formula $Forward$
-\end_inset
-
- תוך זמן של 
-\begin_inset Formula $delta$
-\end_inset
-
+ בשלב זה הקורבן יזהה שלא קיבל הודעת
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Forward
+\lang hebrew
+ תוך זמן של
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+delta
+\lang hebrew
 , ויבקש מה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  שלפניו לבטל את חוזה ה-
-\begin_inset Formula $Cencallation$
-\end_inset
-
+\lang english
+Cancellation
+\lang hebrew
  בניהם, שמצידו שיבטל את החוזה הבא, וכך הלאה.
  
 \begin_inset Newline newline
 \end_inset
 
 נשים לב שמלבד התוקף וה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  הראשון במסלול, כל ה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
 -ים במסלול ובניהם הקורבן נועלים סכום כסף גבוה ביחס לסכום שהתוקף הכריז שישלח
- )כתשלום 
-\begin_inset Formula $penalty$
-\end_inset
-
- לכל אחד מהמשתתפים לפניו(, לזמן מוגדר מראש - 
-\begin_inset Formula $delta$
-\end_inset
-
+ )כתשלום
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+penalty
+\lang hebrew
+ לכל אחד מהמשתתפים לפניו(, לזמן מוגדר מראש -
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+delta
+\lang hebrew
 , והקורבן נועל את הסכום הגבוה ביותר.
  
 \begin_inset Newline newline
 \end_inset
 
-התוקף לא היה צריך שום סכום התחלתי, אלא רק 
-\begin_inset Formula $channel$
-\end_inset
-
+התוקף לא היה צריך שום סכום התחלתי, אלא רק
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+channel
+\lang hebrew
  עם מסלול לקורבן, ואין מניעה שיתחיל שליחות נוספת כאלו.
  
 \begin_inset Newline newline
 \end_inset
 
 כלומר, הוא יכול דרך מספר 
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
 -ים שונים שבשליטתו לבצע את המתקפה על הקורבן, שינעל עבור כל הודעה סכום גדול
- של כסף למשך זמן של 
-\begin_inset Formula $delta$
-\end_inset
-
+ של כסף למשך זמן של
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+delta
+\lang hebrew
 .
  כך נוכל לגרום ל-
-\begin_inset Formula $Denail\,Of\,Service$
-\end_inset
-
+\lang english
+Denial Of Service
+\lang hebrew
  עבור אותו קורבן משום שהוא עלול לא להיות מסוגל להעביר כסף או לקבל כסף דרך
  אותם 
-\begin_inset Formula $channel$
-\end_inset
-
+\lang english
+channel
+\lang hebrew
 -ים שנעל בהם כסף )גם לצורך שליחה של כסף וגם לקבלה יש צורך לנעול כסף מצידו(.
  
 \begin_inset Newline newline
@@ -1575,13 +2042,13 @@ Griefing Dos Attack
 
 כמו כן, נוכל לבצע מתקפה דומה גם עבור תשלומים שלא מיועדים לאותו קורבן, אלא
  שהוא אחד מה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  בדרך, כך שגם אם יחליט להתעלם מהודעות תשלום מ-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  מסוים נוכל עדיין לגרום לאפקט דומה )אם כי בצורה זו הוא לא נועל את הסכום
  המקסימלי של כסף(.
 \begin_inset Newline newline
@@ -1610,18 +2077,40 @@ Penalty Risk
 
 \size large
 כדי לפתור את בעית ה-
-\begin_inset Formula $Griefing$
-\end_inset
-
+\lang english
+Griefing
+\lang hebrew
 , 
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
+\lang english
+HTLC-GP
+\lang hebrew
  מציע לנעול כמות גדולה מאד של כספים ביחס לכסף הנשלח )לפי המאמר בו צוין יחס
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
  
-\begin_inset Formula $griefing\,penalty$
-\end_inset
-
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Griefing penalty
+\lang hebrew
  של 
 \begin_inset Formula $0.001$
 \end_inset
@@ -1629,44 +2118,67 @@ Penalty Risk
 ( מה שעלול לחשוף את המשתתפים במסלול התשלומים לסיכון גבוה.
  חלק מהמתקפות שהצגנו מסתמכות על כך.
  למשל, נעילת ה-
-\begin_inset Formula $penalty$
-\end_inset
-
- עלולה לגרום למתקפת 
-\begin_inset Formula $dos$
-\end_inset
-
+\lang english
+penalty
+\lang hebrew
+ עלולה לגרום למתקפת
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+DOS
+\lang hebrew
  רגילה על 
-\begin_inset Formula $node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  ברשת להיות אטרקטיבית יותר.
  לאחר ש-
-\begin_inset Formula $node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  מסוים נועל כסף ל-
-\begin_inset Formula $penalty$
-\end_inset
-
+\lang english
+penalty
+\lang hebrew
 , ניתן לתקוף את המכשיר ממנו ה-
-\begin_inset Formula $node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  פועל )או את מערכת התקשורת בה הוא משתמש( כדי שלא יוכל להגיב בזמן, ויאלץ
  לשלם את ה-
-\begin_inset Formula $penalty$
-\end_inset
-
+\lang english
+penalty
+\lang hebrew
 .
  בנוסף, ישנו סיכון שמשתמשי הרשת צריכים לקחת בחשבון, אם ה-
-\begin_inset Formula $node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  נופל באמצע מעבר של טרנזקציה, הוא עלול לשלם 
-\begin_inset Formula $penalty$
-\end_inset
-
+\lang english
+penalty
+\lang hebrew
  גבוה.
 \end_layout
 
@@ -1695,38 +2207,61 @@ Penalty Risk
 
 \size large
 בחרנו למממש סימולציה של רשת 
-\begin_inset Formula $Lightning$
-\end_inset
-
+\lang english
+Lightning
+\lang hebrew
  עם פרוטוקול 
-\begin_inset Formula $HTLC$
-\end_inset
-
+\lang english
+HTLC
+\lang hebrew
  המוטמע כרגע ועם הפרוטוקול 
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
+\lang english
+HTLC-GP
+\lang hebrew
  החדש ולבחון את השפעות השינוי.
 \begin_inset Newline newline
 \end_inset
 
 תחילה רצינו להתמקד באפקטיביות מתקפת ה-
-\begin_inset Formula $Reverse\,Griefing$
-\end_inset
-
+\lang english
+Reverse Griefing
+\lang hebrew
  אבל לאחר העדכון של המאמר שפותר את הבעיה )או לפחות הופך אותה לפחות אקרקטיבית(
  העדפנו להתמקד בפרוטוקול החדש וביעילותו.
 \begin_inset Newline newline
 \end_inset
 
-נראה את האפקטיביות של המתקפות 
-\begin_inset Formula $Soft\,Griefing$
-\end_inset
-
+נראה את האפקטיביות של המתקפות
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Soft Griefing
+\lang hebrew
  ו-
-\begin_inset Formula $Griefing\,Dos$
-\end_inset
-
+\lang english
+Dos attack
+\lang hebrew
  ואת השפעות השינוי על עומס הרשת, זמן ביצוע טרנזקציה, כמות הכסף שננעל ומציאת
  מסלולי תשלום.
 \end_layout
@@ -1795,6 +2330,61 @@ Node
 \begin_inset Newline newline
 \end_inset
 
+בחרנו לבדוק את התמודדות הפרוטוקול החדש עם עיכובים ברשת לעומת הפרוטוקול הקיים
+ ואת התמודדותו עם המתקפות
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Dos attack, soft griefing
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+שהצגנו קודם.
+\begin_inset Newline newline
+\end_inset
+
 בפרויקט 3 חלקים מרכזיים:
 \end_layout
 
@@ -1802,21 +2392,44 @@ Node
 
 \size large
 מידול רשת ה-
-\begin_inset Formula $Lightning$
-\end_inset
-
- על גבי 
-\begin_inset Formula $Blockchain$
-\end_inset
-
+\lang english
+Lightning
+\lang hebrew
+ על גבי
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Blockchain
+\lang hebrew
 , כולל מידול 
-\begin_inset Formula $Node$
-\end_inset
-
- הוגן ו
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
+ הוגן ו-
+\lang english
+Node
+\lang hebrew
  עבור כל מתקפה שרצינו לבחון.
 \end_layout
 
@@ -1830,384 +2443,81 @@ Node
 \begin_layout Itemize
 
 \size large
-עמוד 
-\begin_inset Formula $UI$
-\end_inset
-
+עמוד
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+UI
+\lang hebrew
  בו ניתן לראות את נתוני הסימולציות וגרפים רלוונטים.
  
-\begin_inset Newline newline
-\end_inset
+\end_layout
 
+\begin_layout Paragraph*
 
-\begin_inset Newline newline
-\end_inset
+\size large
+\bar under
+מידול רשת ה-
+\lang english
+Lightning
+\lang hebrew
+:
+\end_layout
 
-נרחיב על החיבור בין המידול לסימולציה.
- בחרנו להריץ את הסימולציה על 
-\begin_inset Formula $thread$
-\end_inset
+\begin_layout Quotation
 
- יחיד כדי לפשט את הכתיבה והדיבוג.
- סימלצנו את התקשורת הא-סנכרונית בין ה-
-\begin_inset Formula $Node$
-\end_inset
-
--ים ע
+\size large
+רוב הלוגיקה הקשורה לפרוטוקול נמצאת באובייקט 
+\lang english
+LightningNode
+\lang hebrew
+.
+ התקשורת בין האובייקטים השונים נעשית ע
 \begin_inset Quotes erd
 \end_inset
 
-י כך שבמקרה הצורך כל 
-\begin_inset Formula $Node$
+י קריאה לפונקציות של כל אובייקט.
+ למרות הנחות הנכונות על הפרמטרים שעוברים לכל פונקציה, הוספנו הרבה 
+\begin_inset Formula $Assert$
 \end_inset
 
- רושם פונקציה שהוא מעוניין להריץ ומתי צריך להריץ אותה )לפי הגעה למספר בלוק
- מסוים( לסינגלטון מסוג 
-\begin_inset Formula $Function\,Collector$
-\end_inset
-
-, כך שבכל איטרציה הסימולציה מעלה את מספר הבלוק ומריצה את כל הפונקציות שצריך.
- כך, יכולנו לסמלץ עיכובים או נפילות של 
-\begin_inset Formula $Node$
-\end_inset
-
--ים.
- כלומר 
-\begin_inset Formula $Node$
-\end_inset
-
- או הסימולציה לא מסתמכים כלל על ערך החזרה של פונקציות של מחלקת ה-
-\begin_inset Formula $Node$
-\end_inset
-
-.
+ על מנת לוודא זאת במהלך הרצת הסימולציות.
 \begin_inset Newline newline
 \end_inset
 
-כמו כן, כדי לאסוף נתונים על הריצה, השתמשנו בסינגלטון מסוג 
-\begin_inset Formula $Metrics\,Collector$
-\end_inset
-
- וכך רשמנו נתונים מכל מקום שהיה צריך )נאסוף ממוצע, סכום, ספירה וכו'(.
+המחלקות העיקריות הן: 
 \begin_inset Newline newline
 \end_inset
 
 
-\begin_inset Newline newline
-\end_inset
-
-מהלך הסימולציה הוא יצירת רשת ב3 טופולוגיות אפשריות )נפרט בהמשך( של 
-\begin_inset Formula $Node$
-\end_inset
-
--ים עם ה-
-\begin_inset Formula $channel$
-\end_inset
-
--ים בניהם, כך שהפרמטרים לריצה - ה-
-\begin_inset Formula $capacity$
-\end_inset
-
- באותו 
-\begin_inset Formula $channel$
-\end_inset
-
-, ה-
-\begin_inset Formula $fee$
-\end_inset
-
- )תשלום בסיס ואחוז מהסכום שעובר( והכמות כסף ש-
-\begin_inset Formula $Node$
-\end_inset
-
- בוחר לשלוח, נדגמו בהתפלגות שדומה לרשת 
-\begin_inset Formula $Lightning$
-\end_inset
-
- האמיתית )אחרי ניתוח של 
-\begin_inset Formula $snapshot$
-\end_inset
-
- של הרשת( או שהם פרמטרים שאנחנו רוצים לבדוק על גבי מספר אפשרויות.
-\begin_inset Newline newline
-\end_inset
-
-בנוסף, ישנם מספר פרמטרים שקבענו באופן שרירותי, מספר ה-
-\begin_inset Formula $Node$
-\end_inset
-
--ים ברשת הוא 
-\begin_inset Formula $1000$
-\end_inset
-
- )לשנות?(, הסימולציה רצה במשך 
-\begin_inset Formula $1440$
-\end_inset
-
- בלוקים )10 ימים( ועם פרמטר 
-\begin_inset Formula $Griefing\,Penalty$
-\end_inset
-
- של 
-\begin_inset Formula $0.001$
-\end_inset
-
- כפי שנקבע והורץ במאמר.
-\begin_inset Newline newline
-\end_inset
-
-בכל בלוק נבחר 
-\begin_inset Formula $Node$
-\end_inset
-
- אקראי לשליחת כסף, 
-\begin_inset Formula $Node$
-\end_inset
-
- אקראי לקבלת הכסף, ואת הכמות שנרצה להעביר, ונחפש מסלול עם תשלום 
-\begin_inset Formula $fee$
-\end_inset
-
- מינימלי בעזרת אלגוריתם דומה ל-
-\begin_inset Formula $Dijkstra$
-\end_inset
-
-.
- נעלה את מספר הבלוק, ונריץ את הפונקציות הרלוונטיות ב-
-\begin_inset Formula $Function\,Collector$
-\end_inset
-
- כפי שהוסבר בפיסקה הקודמת.
-\begin_inset Newline newline
-\end_inset
-
-אם מדובר על ריצה עם 
-\begin_inset Formula $Node$
-\end_inset
-
--ים עוינים, נבחר מספר 
-\begin_inset Formula $Node$
-\end_inset
-
--ים שיהיו התוקפים, ועבור כל אחד, נבחר קורבן ונדאג שלא יבחרו לשליחה או קבלה
- ישירה של כסף )באיטרציה שהוסברה קודם(.
- כך שהאופציה היחידה לקבלת תשלום היא בעזרת 
-\begin_inset Formula $fee$
-\end_inset
-
- מתשלומים שעוברים דרכם.
- 
-\begin_inset Newline newline
-\end_inset
-
-הפרמטרים אותם ביקשנו לבדוק והרצנו עם מספר אפשרויות הם: 
-\end_layout
-
-\begin_layout Itemize
-
-\size large
-כמה התקשורת ברשת עמוסה - עבור פונקציות מסוימות במהלך טרנזקציה בין 
-\begin_inset Formula $Node$
-\end_inset
-
--ים יצרנו עיכוב יזום בהסתברות קבועה של )להוסיף!!!(, כך שעבור כל פונקציה
- נדגום באופן אחיד כמה בלוקים נתעכב.
- מבלוק אחד ועד לפרמטר אותו נבדוק.
- בדקנו את הערכים 2, 6 ו-10.
-\end_layout
-
-\begin_layout Itemize
-
-\size large
-כמות התוקפים , ומאיזה סוג - נבדוק תוקף אחד, 3 ו-5 תוקפים.
- כאשר סוגיהם הם 
-\begin_inset Formula $Soft\,Griefing$
-\end_inset
-
-, 
-\begin_inset Formula $Griefing\,Dos$
-\end_inset
-
-.
-\end_layout
-
-\begin_layout Itemize
-
-\size large
-פרוטוקול 
-\begin_inset Formula $HTLC$
-\end_inset
-
-- האם בפרוטוקול הרגיל או ב-
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
-.
-\end_layout
-
-\begin_layout Itemize
-
-\size large
-טופולוגית הרשת: 
-\end_layout
-
-\begin_deeper
-\begin_layout Itemize
-
-\size large
-רשת בעלת יתירות.
- עבור רשת בעלת 
-\begin_inset Formula $n$
-\end_inset
-
- 
-\begin_inset Formula $node$
-\end_inset
-
--ים, ניצור 
-\begin_inset Formula $channel$
-\end_inset
-
- בין שניים אם המספר הסידורי שלהם שונה ב-
-\begin_inset Formula $10$
-\end_inset
-
- בחזקת 
-\begin_inset Formula $0...\lfloor\log_{10}n\rfloor+1$
-\end_inset
-
- מודולו 
-\begin_inset Formula $\lfloor\log_{10}n\rfloor$
-\end_inset
-
-.
- כך ניצור רשת שהמרחק בין כל שני קודקודים לא גדול מידי.
- )להוסיף הסבר!!( מקור: 
-\begin_inset Formula $https://hackernoon.com/simulating-a-decentralized-lightning-network-with-10-million-users-9a8b5930fa7a$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Itemize
-
-\size large
-רשת אמיתית.
- נעזרנו בקוד שצורף למאמר המעודכן ויצרנו רשת לפי 
-\begin_inset Formula $snapshot$
-\end_inset
-
- של הרשת, כולל הפרטים על ה-
-\begin_inset Formula $capacity$
-\end_inset
-
- ו-
-\begin_inset Formula $fee$
-\end_inset
-
- של כל 
-\begin_inset Formula $channel$
-\end_inset
-
-.
-\end_layout
-
-\end_deeper
-\begin_layout Itemize
-
-\size large
-פרמטר 
-\begin_inset Formula $delta$
-\end_inset
-
-- הפרמטר קובע כמה זמן מקבל הכסף יחכה לקבלת 
-\begin_inset Formula $Forward\,Contract$
-\end_inset
-
- לפני שהוא יבטל את ה-
-\begin_inset Formula $Cancellation\,Contract$
-\end_inset
-
- שלו.
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-את ה-
-\begin_inset Formula $Metrics$
-\end_inset
-
- של הריצות שמרנו בקובץ 
-\begin_inset Formula $json$
-\end_inset
-
-.
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-יצרנו עמוד 
-\begin_inset Formula $web$
-\end_inset
-
- שמציג את תוצאות הריצות בצורה נוחה.
- בעזרת 
-\begin_inset Formula $script$
-\end_inset
-
- העברנו את קבצי ה-
-\begin_inset Formula $json$
-\end_inset
-
- לפורמט נוח יותר לעיבוד.
- בעמוד ניתן לבחור פרמטר אינפוט לריצה )שהוסברו למעלה( בתור ציר 
-\begin_inset Formula $X$
-\end_inset
-
- ובנוסף מטריקה שנאספה במהלך הריצות בתור ציר 
-\begin_inset Formula $Y$
-\end_inset
-
-, ובעזרת גרף לראות את הקורלציה בניהם עבור ריצה עם פרוטוקול 
-\begin_inset Formula $HTLC$
-\end_inset
-
- וריצה עם פרוטוקול 
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
-.
- בנוסף צירפנו טבלאות לתוצאות שאר המטריקות.
- כמו כן, ניתן לבחור אם להראות תוצאות ריצה בטופולוגיות השונות ועבור 
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-מחלקות עיקריות:
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Formula $BlockChain$
-\end_inset
-
+\lang english
+Blockchain
+\lang hebrew
 : מייצג 
-\begin_inset Formula $Blockchain$
-\end_inset
-
+\lang english
+Blockchain
+\lang hebrew
 .
 \begin_inset Newline newline
 \end_inset
@@ -2223,6 +2533,130 @@ Node
  ברשת 
 \lang english
 lightning
+\lang hebrew
+.
+\begin_inset Newline newline
+\end_inset
+
+
+\lang english
+LightningNodeSoftGriefing
+\lang hebrew
+: מייצגת 
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+רשע שעושה
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Soft Griefing
+\lang hebrew
+.
+\begin_inset Newline newline
+\end_inset
+
+
+\lang english
+LightningNodeDosAttack
+\lang hebrew
+: מייצגת 
+\lang english
+Node
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+רשע שעושה
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Dos Attack
 \lang hebrew
 .
 \begin_inset Newline newline
@@ -2302,51 +2736,1146 @@ MetricsCollector
 FunctionCollector
 \lang hebrew
 : אובייקט סינגלטון שפונקציות ואת התנאי להריץ אותם.
-\begin_inset Newline newline
-\end_inset
-
-הזכרה של כבוד למרות שזה לא מחלקה:
-\begin_inset Newline newline
-\end_inset
-
-
-\lang english
-simulation.py
-\lang hebrew
-: שם בעצם מתבצעת כל הסימולציה שלנו לפי פרמטרים מסוימים.
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-במהלך העבודה דאגנו שלכל אחד יש מה לעשות )למרות שרוב הזמן ישבנו ביחד(:
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Graphics
-	filename pasted4.png
-	scale 30
-	rotateOrigin center
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-
-\lang english
-TODO: put in more classes and talk about the GUI
 \end_layout
 
+\begin_layout Subsection*
+
+\size large
+\bar under
+סימולציה:
+\end_layout
+
+\begin_layout Quotation
+
+\size large
+הקוד של הסימולציה נמצא בקובץ
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+simulation
+\lang hebrew
+.
+ מהלך הסימולציה הוא יצירת רשת ב-
+\numeric on
+2
+\numeric off
+ טופולוגיות אפשריות )נפרט בהמשך( של 
+\lang english
+Node
+\lang hebrew
+-ים עם ה-
+\lang english
+channel
+\lang hebrew
+-ים בניהם, כך שהפרמטרים לריצה הם ה-
+\lang english
+capacity
+\lang hebrew
+ באותו
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+channel
+\lang hebrew
+, ה-
+\lang english
+fee
+\lang hebrew
+ )תשלום בסיס ואחוז מהסכום שעובר( והכמות כסף ש-
+\lang english
+Node
+\lang hebrew
+ בוחר לשלוח, נבחרו בהתפלגות שדומה לרשת 
+\lang english
+Lightning
+\lang hebrew
+ האמיתית )אחרי ניתוח של 
+\lang english
+snapshot
+\lang hebrew
+ של הרשת( או שהם פרמטרים שאנחנו רוצים לבדוק על גבי מספר אפשרויות.
+\begin_inset Newline newline
+\end_inset
+
+בנוסף, ישנם מספר פרמטרים שקבענו באופן שרירותי, הסימולציה רצה במשך 1440 בלוקים
+ )10 ימים( ועם פרמטר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Griefing Penalty
+\lang hebrew
+ של 
+\begin_inset Formula $0.001$
+\end_inset
+
+ כפי שנקבע והורץ במאמר.
+\begin_inset Newline newline
+\end_inset
+
+בכל בלוק נבחר 
+\lang english
+Node
+\lang hebrew
+ אקראי לשליחת כסף, 
+\lang english
+Node
+\lang hebrew
+ אקראי לקבלת הכסף, ואת הכמות שנרצה להעביר, ונחפש מסלול עם תשלום 
+\lang english
+fee
+\lang hebrew
+ מינימלי בעזרת אלגוריתם דומה ל-
+\lang english
+Dijkstra
+\lang hebrew
+.
+ נעלה את מספר הבלוק, ונריץ את הפונקציות הרלוונטיות ב-
+\lang english
+Function Collector
+\lang hebrew
+ )נסביר בהמשך(.
+\begin_inset Newline newline
+\end_inset
+
+אם מדובר על ריצה עם 
+\lang english
+Node
+\lang hebrew
+-ים עוינים, ניצור את אותם 
+\lang english
+Node
+\lang hebrew
+-ים, ואת הקורבנות הרלוונטים למתקפה.
+ נדאג שהתוקפים והקורבנות לא יבחרו לשליחה או קבלה ישירה של כסף )באיטרציה
+ שהוסברה קודם(.
+ כך שהאופציה היחידה לקבלת תשלום היא בעזרת 
+\lang english
+fee
+\lang hebrew
+ מתשלומים שעוברים דרכם.
+ 
+\begin_inset Newline newline
+\end_inset
+
+בכל שלב הריצה נאסוף מטריקות באובייקט
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Metrics Collector
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+שנפרט עליו בהמשך.
+\begin_inset Newline newline
+\end_inset
+
+נפרט על כל סוגי הריצות שהרצנו, הפרמטרים שבדקנו ובאילו אפשרויות בחרנו:
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+\bar under
+כמה התקשורת ברשת עמוסה
+\bar default
+: עבור פונקציות מסוימות במהלך טרנזקציה בין 
+\lang english
+Node
+\lang hebrew
+-ים יצרנו עיכוב יזום בהסתברות קבועה של )להוסיף!!!!!!!(, כך שעבור כל פונקציה
+ נדגום באופן אחיד כמה בלוקים נתעכב.
+ מבלוק אחד ועד לפרמטר אותו נבדוק.
+ בדקנו את הערכים 2, 6 ו-10.
+ עבור ריצות אילו, לא הרצנו עם המתקפות, אלא הנחנו שהרשת מתפקדת היטב.
+ כל ריצה הרצנו עם פרוטוקול 
+\lang english
+HTLC
+\lang hebrew
+ הרגיל ועם פרוטוקול 
+\lang english
+HTLC-GP
+\lang hebrew
+.
+ הפרמטר הדיפולטי עבור שאר הריצות הוא 6.
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+\bar under
+איזה סוג תקיפה
+\bar default
+: עבור כל סוגי התקיפות נריץ את אותה הרשת בידיוק, עם אותה בחירה של שולחים
+ ומקבלים )כלומר כל בחירה רנדומלית שמתבצעת תשוכפל(, כאשר הריצות הן עם פרוטוקול
+ 
+\lang english
+HTLC-GP
+\lang hebrew
+ ובריצה הראשונה נבצע את המתקפה ובשנייה נרוץ ללא ביצוע המתקפה.
+ כמו כן, נבחר את הקורבן והתוקף באופן רנדומלי )באופן זהה עבור הריצות(.
+ נבדוק את סוגי התקיפות הבאות - 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\size large
+תקיפה של קורבן אחד ע
+\begin_inset Quotes erd
+\end_inset
+
+י 
+\lang english
+Node
+\lang hebrew
+ מסוג 
+\lang english
+Dos attack
+\lang hebrew
+.
+ כפי שהוסבר בחלק הרלוונטי, ה-
+\lang english
+Node
+\lang hebrew
+ שולח בכל מספר קבוע של בלוקים הודעה על תשלום לקורבן ומתעלם מחוזה ה-
+\lang english
+Cancellation
+\lang hebrew
+.
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+תקיפה של קורבן אחד ע
+\begin_inset Quotes erd
+\end_inset
+
+י 2 
+\lang english
+Node
+\lang hebrew
+-ים מסוג 
+\lang english
+Soft Griefing
+\lang hebrew
+.
+ במתקפה זו נגריל את התוקף הראשון והקורבן כפי שנעשה בכל שאר המתקפות, אך ניצור
+ את התוקף השני כך שיש לו 
+\lang english
+channel
+\lang hebrew
+ רק עם הקורבן, עם 
+\lang english
+capacity
+\lang hebrew
+ יחסית גבוה.
+ כעת בכל מספר קבוע של בלוקים נשלח לכסף מהתוקף הראשון לשני.
+ כמובן שהתשלום יעבור דרך הקורבן )הוא הקשר היחיד של התוקף השני לרשת(, ולאחר
+ העברת החוזים הרלוונטים, התוקף השני יחכה לזמן מינימלי הנדרש כדי שהתשלום
+ יתבצע.
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+תקיפה של הרשת כולה ע
+\begin_inset Quotes erd
+\end_inset
+
+י 2 
+\lang english
+Node
+\lang hebrew
+-ים מסוג 
+\lang english
+Soft Griefing
+\lang hebrew
+.
+ במתקפה זו נגריל את התוקפים באופן רנדומלי, וכל מספר קבוע של בלוקים נבצע
+ תשלום בין התוקפים כך שנחסום את המספר המקסימלי של כספים עבור 
+\lang english
+Node
+\lang hebrew
+-ים בדרך.
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+)אופציונלי( להוסיף על המתקפה הרביעית!!!!!!!!!!!!!!!!!!!!!!
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\size large
+\bar under
+פרמטר 
+\lang english
+delta
+\bar default
+\lang hebrew
+: הפרמטר קובע כמה זמן מקבל הכסף יחכה לקבלת ה-
+\lang english
+Forward Contract
+\lang hebrew
+ לפני שהוא יבטל את ה-
+\lang english
+Cancellation Contract
+\lang hebrew
+ שלו.
+ נרוץ עם הפרמטר 40, 70 ו-100.
+ עבור כל פרמטר נריץ את המתקפה 
+\lang english
+Dos attack
+\lang hebrew
+ כפי שפירטנו בסעיף הקודם.
+ בצורה זו נוכל לבדוק כמה משפיע פרמטר זה על האפשרות לבצע את המתקפה.
+ הפרמטר הדיפולטי עבור שאר הריצות הוא
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\numeric on
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+70
+\numeric off
+.
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+\bar under
+טופולוגית הרשת:
+\bar default
+ כל אחת מהריצות שעליהן פירטנו נריץ בשתי הטופולוגיות הבאות:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\size large
+רשת בעלת יתירות.
+ עבור רשת בעלת 
+\begin_inset Formula $n$
+\end_inset
+
+ 
+\lang english
+Node
+\lang hebrew
+-ים, ניצור 
+\lang english
+channel
+\lang hebrew
+ בין שניים אם המספר הסידורי שלהם שונה ב-
+\begin_inset Formula $10^{i}\mod\left(\lfloor\log_{10}n\rfloor\right)$
+\end_inset
+
+ עבור 
+\begin_inset Formula $i\in[0,\lfloor\log_{10}n\rfloor+1]$
+\end_inset
+
+.
+ כך ניצור רשת שהמרחק בין כל שני קודקודים לא גדול מידי.
+ )להוסיף הסבר!!( מקור: 
+\begin_inset Formula $https://hackernoon.com/simulating-a-decentralized-lightning-network-with-10-million-users-9a8b5930fa7a$
+\end_inset
+
+.
+ )להעביר לינקים לסוף!!(
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+רשת אמיתית.
+ נעזרנו בקוד שצורף למאמר המעודכן ויצרנו רשת לפי 
+\lang english
+snapshot
+\lang hebrew
+ של הרשת מהתאריך 
+\lang english
+21/5/2020
+\lang hebrew
+, כולל הפרטים על ה-
+\lang english
+capacity
+\lang hebrew
+ ו-
+\lang english
+fee
+\lang hebrew
+ של כל 
+\lang english
+channel
+\lang hebrew
+.
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size large
+לא נפרט את כל סוגי המטריקות שאספנו כי יש הרבה )ניתן לראות את כולם בעמוד
+ ה-
+\lang english
+UI
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+עליו נפרט בפסקה הבאה(, אך הם מאפשרים לנו לדעת מה מצב הרשת בכל שלב שנרצה
+ ובסוף כל ריצה הם נכתבים לקובץ 
+\lang english
+json
+\lang hebrew
+.
+\end_layout
+
+\begin_layout Paragraph*
+
+\size large
+\bar under
+עמוד 
+\lang english
+UI
+\lang hebrew
+:
+\end_layout
+
+\begin_layout Quotation
+
+\size large
+יצרנו עמוד
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+web
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+שכתוב ב-
+\lang english
+javascript
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ומשתמש בסיפריית
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+chartjs
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ומציג את תוצאות הריצות בצורה נוחה האפשרת לבחון קורלציה בין נתונים ואת השפעות
+ המתקפות שבחרנו לבדוק.
+ בעזרת
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+script
+\lang hebrew
+ העברנו את קבצי ה-
+\lang english
+json
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+של כל ריצה ל-
+\lang english
+json
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+עימו נוח יותר לשלוף נתונים.
+ בעמוד ניתן לבחור פרמטר אינפוט לריצה )עומס הרשת, פרמטר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+delta
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ומתקפות( בתור ציר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+X
+\lang hebrew
+ ובנוסף מטריקה שנאספה במהלך הריצות בתור ציר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Y
+\lang hebrew
+.
+ עבור עומס הרשת נוכל לראות בגרף את הקורלציה בניהם עבור ריצה עם פרוטוקול
+ 
+\lang english
+HTLC
+\lang hebrew
+ וריצה עם פרוטוקול 
+\lang english
+HTLC-GP
+\lang hebrew
+.
+ עבור פרמטר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+delta
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+נראה את הקורלציה בניהם עבור ריצה עם המתקפה ובלי.
+ ועבור המתקפות נראה עמודה שמשווה את המטריקה הנבחרת בין הריצות עם המתקפה
+ ובלי.
+ בנוסף, נוכל לבחור את המתקפה הרלוונטית.
+ בנוסף, ניתן לבחור את טופולוגיה שהסימולציה רצה עליה.
+\begin_inset Newline newline
+\end_inset
+
+בנוסף צירפנו טבלאות לתוצאות שאר המטריקות.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Separator plain
+\end_inset
+
+
+\end_layout
+
+\begin_layout Quotation
+
+\size large
+נרחיב על החיבור בין מידול הרשת לסימולציה.
+ בחרנו להריץ את הסימולציה על
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+thread
+\lang hebrew
+ יחיד כדי לפשט את הכתיבה והדיבוג.
+ סימלצנו את התקשורת הא-סנכרונית בין ה-
+\lang english
+Node
+\lang hebrew
+-ים ע
+\begin_inset Quotes erd
+\end_inset
+
+י כך שבמקרה הצורך כל
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\lang hebrew
+ רושם פונקציה שהוא מעוניין להריץ ומתי צריך להריץ אותה )לפי הגעה למספר בלוק
+ מסוים( לסינגלטון מסוג
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Function Collector
+\lang hebrew
+, כך שבכל איטרציה הסימולציה מעלה את מספר הבלוק ומריצה את כל הפונקציות שצריך
+ )שמספר הבלוק הרלוונטי הגיע(.
+ כך, יכולנו לסמלץ עיכובים, נפילות של
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\lang hebrew
+-ים או לבצע מתקפות.
+ כלומר
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\lang hebrew
+ או הסימולציה לא מסתמכים כלל על ערך החזרה של פונקציות של מחלקת ה-
+\lang english
+Node
+\lang hebrew
+.
+\begin_inset Newline newline
+\end_inset
+
+כמו כן, כדי לאסוף נתונים על הריצה, השתמשנו בסינגלטון מסוג
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Metrics Collector
+\lang hebrew
+ וכך רשמנו נתונים מכל מקום שהיה צריך )נאסוף ממוצע, סכום, ספירה וכו'(.
+\begin_inset Newline newline
 \end_inset
 
 
@@ -2363,6 +3892,7 @@ TODO: put in more classes and talk about the GUI
 
 \begin_layout Section*
 
+\series bold
 \size large
 תוצאות
 \end_layout
@@ -2399,13 +3929,13 @@ TODO: put in more classes and talk about the GUI
 \end_inset
 
 מאפיין לוואי של הפרוטוקול 
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
+\lang english
+HTLC-GP
+\lang hebrew
  הוא כמות נוספת של הודעות בין ה-
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
 -ים בשרשרת התשלום כדי לבצע טרנזקציה.
  ניתן לראות בגרף שכאשר הרשת מסומלצת עם יותר 
 \begin_inset Formula $delay$
@@ -2454,30 +3984,53 @@ TODO: put in more classes and talk about the GUI
 \begin_inset Newline newline
 \end_inset
 
-כאן ניתן לראות שרשת עם תנאים דומים הפועלת עם פרוטוקול 
-\begin_inset Formula $HTLC$
-\end_inset
-
+כאן ניתן לראות שרשת עם תנאים דומים הפועלת עם פרוטוקול
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+HTLC
+\lang hebrew
  תצליח להעביר כמות הגדולה בערך ב-
 \begin_inset Formula $30\%$
 \end_inset
 
  של טרנזקציות מאשר רשת הפועלת בפרוטוקול 
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
+\lang english
+HTLC-GP
+\lang hebrew
  כאשר הסיבות לכישלון הן לרוב אי מציאת מסלול אל 
-\begin_inset Formula $Node$
-\end_inset
-
+\lang english
+Node
+\lang hebrew
  היעד.
 \begin_inset Newline newline
 \end_inset
 
 בגרף השני ניתן לראות מיקוד על פרוטוקול 
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
+\lang english
+HTLC-GP
+\lang hebrew
 .
  כאשר התקשורת ברשת עמוסה יותר, ראינו שתוצאת הלוואי היא נעילת כמות גדולה
  יותר של כסף שעלולה לגרום לכך שלא ניתן למצוא מסלול שמסוגל להעביר את הטרנזקציה
@@ -2505,13 +4058,13 @@ TODO: put in more classes and talk about the GUI
 \end_inset
 
 )להציג גרף מעודכן!!( בגרף זה ניתן לראות את ההפרש בין ה-
-\begin_inset Formula $balance$
-\end_inset
-
+\lang english
+balance
+\lang hebrew
  של המתקיף ל-
-\begin_inset Formula $balace$
-\end_inset
-
+\lang english
+balance
+\lang hebrew
  של הקורבן.
  ניתן לראות שעבור כל מספר של מתקיפים המאזן הוא חיובי, כלומר המתקפה משתלמת.
  נזכיר כי במתקפה זו אין סיכון כלל משום שהמתקיף לא משקיע כלל כסף, ולכן ניתן
@@ -2553,6 +4106,7 @@ TODO: put in more classes and talk about the GUI
 
 \begin_layout Section*
 
+\series bold
 \size large
 מסקנות
 \end_layout
@@ -2560,22 +4114,242 @@ TODO: put in more classes and talk about the GUI
 \begin_layout Quotation
 
 \size large
-כפי שהוצג בתוצאות, פרוטוקול 
-\begin_inset Formula $HTLC-GP$
-\end_inset
-
+כפי שהוצג בתוצאות, פרוטוקול
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+HTLC-GP
+\lang hebrew
  דורש נעילה גדולה של כספים ביחס לכסף הנשלח, מה שעשוי להעמיס על הרשת, לגרום
- לתשלום 
-\begin_inset Formula $fee$
-\end_inset
-
+ לתשלום
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+fee
+\lang hebrew
  גבוה או אי מציאת מסלול.
- בנוסף, ישנם השלכות אינדיבידואליות נוספות לכסף נעול של 
-\begin_inset Formula $Node$
-\end_inset
-
+ בנוסף, ישנם השלכות אינדיבידואליות נוספות לכסף נעול של
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\lang hebrew
  כמו אי היכולת לשלם או להשקיע את הכסף, או אי יכולת לקבל כסף מאדם אחר )אין
  מספיק כסף לנעול(.
+ 
+\begin_inset Newline newline
+\end_inset
+
+הפרוטוקול גורם ל-
+\lang english
+Node
+\lang hebrew
+-ים ברשת לסכן הרבה מהכספים שלהם כדי לבצע תשלומים רגילים עבור משתמשים אחרים,
+ ואולי להרוויח מה-
+\lang english
+fee
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+.
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+כך שבשילוב עם המתקפות שהראנו,
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Node
+\lang hebrew
+-ים עשויים לא לרצות להעביר תשלומים או להעלות את ה-
+\lang english
+fee
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+שלהם על מנת שזה ישתלם להם.
+\begin_inset Newline newline
+\end_inset
+
+בנוסף, האפקטיביות של המתקפות שהראנו עשויה לגרום ל-
+\lang english
+Node
+\lang hebrew
+-ים תמימים לאבד כספים, או לא להיות מסוגלים לתפקד.
+ ובמקרה של
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Dos attack
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+\lang hebrew
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+ללא השקעה ראשונית מצד המתקיף.
  
 \end_layout
 
@@ -2590,6 +4364,7 @@ TODO: put in more classes and talk about the GUI
 
 \begin_layout Section*
 
+\series bold
 \size large
 \lang english
 Future Work
@@ -2605,60 +4380,200 @@ Future Work
  אנחנו חושבים שיש ערך לנסות לבדוק את הסימולציה בעזרת מנגנון של פיצול טרנזקציות,
  מאחר וזה מה שמפרסמי המאמר הציעו כששאלנו אותם על הנושא.
  מעניין לראות את השפעת הפיצול על ה-
-\begin_inset Formula $fee$
-\end_inset
-
+\lang english
+fee
+\lang hebrew
  שנצטרך לשלם.
- מצד אחד, יכול להיות שנגלה מסלולים עם 
-\begin_inset Formula $fee$
-\end_inset
-
- נמוך שלא יכולנו להשתמש בגלל 
-\begin_inset Formula $capacity$
-\end_inset
-
+ מצד אחד, יכול להיות שנגלה מסלולים עם
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+fee
+\lang hebrew
+ נמוך שלא יכולנו להשתמש בגלל
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+capacity
+\lang hebrew
  נמוך, אך מצד שני, כנראה שנצטרך לשלם יותר פעמים את ה-
-\begin_inset Formula $base\,fee$
-\end_inset
-
+\lang english
+base fee
+\lang hebrew
  וכך להסתכם בלשלם יותר.
+ בנוסף, פיתרון זה עשוי לעזור כאשר לא מוצאים מסלולים.
 \end_layout
 
 \begin_layout Itemize
 
 \size large
-נרצה לתרגם את העבודה לאנגלית )החלטנו לכתוב בעברית בגלל חוסר זמן( על מנת
+האופן שבו בנינו את סימולציה והאובייקטים מאפשר להמשיך לחקור את
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+HTLC-GP
+\lang hebrew
+, ואף פרוטוקולים אחרים עם שינוים מסוימים בקוד.
+ ניתן ליצור 
+\lang english
+Node
+\lang hebrew
+ אחרים שמתנהגים באופן שונה ממה שהגדרנו ולבחון את ההתנהגות שלהם בסימולציה.
+ בנוסף, ניתן להוסיף מטריקות שאנחנו לא חשבנו עליהם שיתווספו ל-
+\lang english
+UI
+\lang hebrew
+ שבנינו באופן אוטומטי וכך לחקור אספקטים שונים ממה שאנחנו בחרנו.
+ כמו כן, אפשר לבחון מספר גדול יותר של אפשרויות לפרמטרים או פרמטרים שונים
+ ממה שאנחנו בחרנו, כמו למשל
+\family roman
+\series medium
+\shape up
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+ 
+\family default
+\series default
+\shape default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
+\lang english
+Griefing Penalty
+\lang hebrew
+.
+\end_layout
+
+\begin_layout Itemize
+
+\size large
+נרצה לתרגם את העבודה לאנגלית )החלטנו לכתוב בעברית בגלל חוסר בזמן( על מנת
  שיגיע לתפוצה רחבה יותר )כולל כותבי המאמר(.
 \end_layout
 
-\begin_layout Itemize
-
-\size large
-האופן שבו בנינו את סימולציה והאובייקטים מאפשר להמשיך לחקור את 
-\begin_inset Formula $HTLC-GP$
+\begin_layout Standard
+\begin_inset Separator plain
 \end_inset
 
-, ואף פרוטוקולים אחרים עם שינוים מסוימים בקוד.
- ניתן ליצור 
-\begin_inset Formula $Node$
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-1"
+
 \end_inset
 
- אחרים שמתנהגים באופן שונה ממה שהגדרנו ולבחון את ההתנהגות שלהם בסימולציה.
- בנוסף, ניתן להוסיף 
-\begin_inset Formula $Metrics$
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-2"
+
 \end_inset
 
- שאנחנו לא חשבנו עליהם שיתווספו ל-
-\begin_inset Formula $UI$
+שדג
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-3"
+
 \end_inset
 
- שבנינו באופן אוטומטי וכך לחקור אספקטים שונים ממה שאנחנו בחרנו.
- כמו כן, אפשר לבחון מספר גדול יותר של אפשרויות לפרמטרים או פרמטרים שונים
- ממה שאנחנו בחרנו, כמו למשל 
-\begin_inset Formula $Griefing\,Penaly$
-\end_inset
 
+\lang english
+https://www.mail-archive.com/lightning-dev@lists.linuxfoundation.org/msg01983.html
+\lang hebrew
 .
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-4"
+
+\end_inset
+
+שדג
 \end_layout
 
 \end_body
