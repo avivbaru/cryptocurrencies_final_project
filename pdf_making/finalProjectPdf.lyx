@@ -1849,8 +1849,7 @@ Soft Griefing
 \lang english
 Dos attack
 \lang hebrew
- ואת השפעות השינוי על עומס הרשת, זמן ביצוע טרנזקציה, כמות הכסף שננעל ומציאת
- מסלולי תשלום.
+ ואת השפעות השינוי על עומס הרשת, כמות הכסף שננעל ומציאת מסלולי תשלום.
 \end_layout
 
 \begin_layout Standard
@@ -3401,7 +3400,7 @@ Dos
 
 
 \begin_inset Graphics
-	filename pasted38.png
+	filename pasted39.png
 	scale 70
 
 \end_inset

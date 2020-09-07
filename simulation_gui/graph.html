@@ -297,6 +297,7 @@
             trNotUse.appendChild(tbCurrNotUse);
             tbodyNotUse.appendChild(trNotUse);
         }
+        var simulateAttack = false;
 
         // Get data for the graph
         for (var i = 0; i < options.length; i++) {
@@ -321,6 +322,7 @@
                 if (xAxisOptions.value === "delta") {
                     keyUse = DeltaDefaultNodeType + '_' + val + '_' + busyNetwork + '_' + topology.value + '_True_True';
                     keyNotUse = DeltaDefaultNodeType + '_' + val + '_' + busyNetwork + '_' + topology.value + "_False_True";
+                    simulateAttack = true;
                 } else if (xAxisOptions.value === "busy network") {
                     keyUse = busyNetworkDefaultNodeType + '_' + delta + '_' + val + '_' + topology.value + '_False_True';
                     keyNotUse = busyNetworkDefaultNodeType + '_' + delta + '_' + val + '_' + topology.value + '_False_False';
@@ -364,7 +366,7 @@
 
         }
         if (graphChart) {
-            createGraph(labels, graphDataUseGp, graphDataNotUseGp);
+            createGraph(labels, graphDataUseGp, graphDataNotUseGp,simulateAttack);
         }
         else {
             createBar(labels, graphDataUseGp, graphDataNotUseGp);
@@ -448,9 +450,11 @@
 
     }
 
-    function createGraph(labels, graphDataUseGp, graphDataNotUseGp) {
+    function createGraph(labels, graphDataUseGp, graphDataNotUseGp, simulateAttack) {
         removeCharts();
         const canvas = createCanvas("myChart");
+        var label1 = simulateAttack? "Simulate Attack":"Use GP Protocol";
+        var label2 = simulateAttack? "Not simulate Attack":"Not use GP Protocol";
         new Chart(canvas,
             {
                 type: "line",
@@ -458,14 +462,14 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: "Use GP Protocol",
+                            label: label1,
                             data: graphDataUseGp,
                             fill: false,
                             borderColor: "rgb(3, 148, 252)",
                             lineTension: 0.1
                         },
                         {
-                            label: "Not Use GP Protocol",
+                            label: label2,
                             data: graphDataNotUseGp,
                             fill: false,
                             borderColor: "rgb(252, 186, 3)",
