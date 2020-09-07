@@ -8,6 +8,7 @@ __pycache__/*
 venv/*
 simulation_results/old/*
 simulation_results/good/*
+simulation_results/GoodRuns/me/*
 simulation_results/*_rawdata
 simulation_gui/node_modules/*
 simulation_gui/.idea/*

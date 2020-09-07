@@ -642,6 +642,9 @@ class LightningNodeSoftGriefing(LightningNodeAttacker):
         self._block_number_to_resolve = 50
 
     def _resolve_transaction_after_receiving_forward_contract(self, transaction_info: 'TransactionInfo'):
+        """
+        This function only called when attacking, so use function collector to terminate the transaction in the latest time.
+        """
         r = self._hash_image_r_to_preimage[transaction_info.hash_r]
         blocks_to_wait = transaction_info.expiration_block_number - \
                          (transaction_info.path_length * self._block_amount_to_send_transaction)
@@ -656,6 +659,9 @@ class LightningNodeDosAttack(LightningNodeAttacker):
         super(LightningNodeDosAttack, self).__init__(*args, block_amount_to_send_transaction=block_amount_to_send_transaction)
 
     def receive_cancellation_contract(self, transaction_id: id, contract: 'cn.ContractCancellation'):
+        """
+        Ignore messages from the node_to_attack, otherwise, ack normal.
+        """
         if self._transaction_id_to_final_node.get(transaction_id) == self._node_to_attack:
             return
         else:
