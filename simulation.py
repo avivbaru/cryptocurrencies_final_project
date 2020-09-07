@@ -1,7 +1,6 @@
 import random
 import math
 from enum import Enum
-
 import fire
 import json
 import lightning_node
@@ -10,33 +9,21 @@ from network import Network
 import networkx as nx
 from singletons import *
 
-# metrics names
 
 # parameters for runs
+VERY_LARGE_NUMBER = 10000000000000000000000000
 CAPACITY_IN_CHANNEL_BETWEEN_VICTIM_ATTACKER2 = 1050000000000
 MIN_TO_SEND = 100
 MAX_TO_SEND = 1000000000
-# MSAT_AMOUNTS_TO_SEND = [1000, 10000, 100000, 1000000, 10000000, 100000000]
 MSAT_AMOUNTS_TO_SEND = 10000
-# MSAT_CHANNEL_CAPACITY = [500000000, 1000000000, 1500000000, 2000000000, 2500000000, 3000000000, 3500000000, 4500000000,
-#                          5000000000, 5500000000, 8500000000, 10500000000]
 MSAT_CHANNEL_CAPACITY = 550000
-# MSAT_CHANNEL_CAPACITY_PROB = [0.477, 0.110, 0.109, 0.019, 0.051, 0.013, 0.023, 0.015, 0.007, 0.044, 0.015, 0.024]
-# MSAT_CHANNEL_CAPACITY_PROB = [1]
-# BASE_FEE = [100, 200, 300, 400, 500, 600, 800, 900, 1000]
-# BASE_FEE_PROB = [0.019, 0.003, 0.005, 0.019, 0.011, 0.002, 0.011, 0.012, 0.591]
 BASE_FEE = 100
-# BASE_FEE_PROB = [1]
-# FEE_RATE = [100, 200, 500, 1000]
-# FEE_RATE_PROB = [0.597, 0.007, 0.006, 0.046]
 FEE_RATE = 500
-# FEE_RATE_PROB = [1]
 STARTING_BALANCE = 17000000000 * 1000  # so the node have enough balance to create all channels
 GRIEFING_PENALTY_RATE = 0.001
 HTLCS_PER_BLOCK = 1
 SIGMA = 0.1
 NUMBER_OF_NODES = 1000
-# NUMBER_OF_NODES = 200
 NUMBER_OF_BLOCKS = 15 * 144
 SNAPSHOT_PATH = 'snapshot/LN_2020.05.21-08.00.01.json'
 SOFT_GRIEFING_PROBABILITY = 0.5
@@ -45,41 +32,53 @@ DELTA_DEFAULT = 70
 MAX_NUMBER_OF_BLOCKS_TO_RESPONSE_DEFAULT = 6
 
 
-class NodeType(str, Enum):
+class AttackerNodeType(str, Enum):
+    """
+    The types of attackers.
+    """
     SOFT_GRIEFING = "soft griefing"
     SOFT_GRIEFING_BUSY_NETWORK = "soft griefing - locking funds in network"
     SOFT_GRIEFING_DOS_ATTACK = "dos attack"
 
 
 class NetworkType(str, Enum):
+    """
+    The type of network topology.
+    """
     REDUNDANCY = "redundancy"
     SNAPSHOT = "snapshot"
 
 
-NUMBER_OF_ATTACKERS_TO_CREATE = {NetworkType.REDUNDANCY: {NodeType.SOFT_GRIEFING: 2, NodeType.SOFT_GRIEFING_BUSY_NETWORK: 3,
-                                                          NodeType.SOFT_GRIEFING_DOS_ATTACK: 1},
-                                 NetworkType.SNAPSHOT: {NodeType.SOFT_GRIEFING: 2, NodeType.SOFT_GRIEFING_BUSY_NETWORK: 3,
-                                                        NodeType.SOFT_GRIEFING_DOS_ATTACK: 1}}
+NUMBER_OF_ATTACKERS_TO_CREATE = {NetworkType.REDUNDANCY: {AttackerNodeType.SOFT_GRIEFING: 2, AttackerNodeType.SOFT_GRIEFING_BUSY_NETWORK: 3,
+                                                          AttackerNodeType.SOFT_GRIEFING_DOS_ATTACK: 1},
+                                 NetworkType.SNAPSHOT: {AttackerNodeType.SOFT_GRIEFING: 2, AttackerNodeType.SOFT_GRIEFING_BUSY_NETWORK: 3,
+                                                        AttackerNodeType.SOFT_GRIEFING_DOS_ATTACK: 1}}
 
 
 def how_much_to_send():
+    """
+    Choose how much to send.
+    """
     amount = int(min(max(random.gauss(MSAT_AMOUNTS_TO_SEND, SIGMA), MIN_TO_SEND), MAX_TO_SEND))
     METRICS_COLLECTOR_INSTANCE.average(TRANSACTION_AMOUNT_AVG, amount)
     return amount
 
 
 def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
+    """
+    Create node according to the type.
+    """
     # divide by million to get the rate per msat
     fee_percentage = FEE_RATE / 1000000
-    if NodeType.SOFT_GRIEFING == attacker_node_type:
+    if AttackerNodeType.SOFT_GRIEFING == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, BASE_FEE, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
                                                         block_amount_to_send_transaction=10)
-    if NodeType.SOFT_GRIEFING_BUSY_NETWORK == attacker_node_type:
+    if AttackerNodeType.SOFT_GRIEFING_BUSY_NETWORK == attacker_node_type:
         return lightning_node.LightningNodeSoftGriefing(STARTING_BALANCE, BASE_FEE, fee_percentage,
                                                         GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
                                                         block_amount_to_send_transaction=3)
-    if NodeType.SOFT_GRIEFING_DOS_ATTACK == attacker_node_type:
+    if AttackerNodeType.SOFT_GRIEFING_DOS_ATTACK == attacker_node_type:
         return lightning_node.LightningNodeDosAttack(STARTING_BALANCE, BASE_FEE, fee_percentage,
                                                      GRIEFING_PENALTY_RATE, delta, max_number_of_block_to_respond,
                                                      block_amount_to_send_transaction=7)
@@ -88,6 +87,11 @@ def create_node(delta, max_number_of_block_to_respond, attacker_node_type=None):
 
 
 def run_simulation(network, use_gp_protocol, attackers, victims, simulate_attack):
+    """
+    Run the simulation itself. Choose each block sender and receiver, and send transaction. In addition, if there is attackers,
+    let them choose if needed to send attack, and then send the attack. run until reach NUMBER_OF_BLOCKS and then wait for the
+    last block that function in Function Collector needs. Return all metrics from the simulation.
+    """
     counter = 0
     attacker2 = [attacker.get_peer() for attacker in attackers]
     nodes_to_simulate = [node for node in network.nodes if node not in attackers and node not in victims and node not in
@@ -154,6 +158,10 @@ def run_simulation(network, use_gp_protocol, attackers, victims, simulate_attack
 
 
 def send_attack_transaction(network, victim_node, sender_node, peer_sender_node, use_gp_protocol, amount_in_msat):
+    """
+     Find a path from sender_node to victim_node, then check if can send using this path to peer_sender_node. Check that nodes
+     can lock the Griefing penalty.
+    """
     node_to_min_to_send, node_to_path = network.find_shortest_path(victim_node, sender_node, amount_in_msat,
                                                                    GRIEFING_PENALTY_RATE, use_gp_protocol)
     nodes_between = node_to_path.get(sender_node)
@@ -167,12 +175,18 @@ def send_attack_transaction(network, victim_node, sender_node, peer_sender_node,
 
 
 def find_path_and_send_transaction(network, receiver_node, sender_node, use_gp_protocol, amount_in_msat):
+    """
+    Find path from sender_node to receiver_node and call send_transaction.
+    """
     node_to_min_to_send, node_to_path = network.find_shortest_path(receiver_node, sender_node, amount_in_msat,
                                                                    GRIEFING_PENALTY_RATE, use_gp_protocol)
     return send_transaction(receiver_node, sender_node, use_gp_protocol, amount_in_msat, node_to_path)
 
 
 def send_transaction(receiver_node, sender_node, use_gp_protocol, amount_in_msat, node_to_path):
+    """
+    Check if there is path from sender_node to the receiver_node, if so, send transaction according to the protocol.
+    """
     if sender_node in node_to_path:
         nodes_between = list(reversed(node_to_path[sender_node]))[1:]
         nodes_between.append(receiver_node)
@@ -186,6 +200,10 @@ def send_transaction(receiver_node, sender_node, use_gp_protocol, amount_in_msat
 
 
 def increase_block(block_number_to_increase):
+    """
+    Increase block number to the min block number needed (to run the next function) from Function Collector, until reach
+    block_number_to_increase.
+    """
     block_number_to_reach = BLOCKCHAIN_INSTANCE.block_number + (block_number_to_increase or 0)
     while BLOCKCHAIN_INSTANCE.block_number < block_number_to_reach:
         min_block_to_reach = FUNCTION_COLLECTOR_INSTANCE.get_min_k() if FUNCTION_COLLECTOR_INSTANCE.get_min_k() is not None \
@@ -196,6 +214,9 @@ def increase_block(block_number_to_increase):
 
 
 def close_channel_and_log_metrics(network, victims):
+    """
+    Close all channels and log balance of nodes according to the type.
+    """
     for node in network.nodes:
         for other_node in network.edges[node]:
             node.close_channel(other_node)
@@ -207,20 +228,28 @@ def close_channel_and_log_metrics(network, victims):
 
 
 def add_more_metrics(metrics):
+    """
+    Add more metrics to the Metrics map.
+    """
+    prefix = "Victim: "
+    # divide by very large number to get zero if no transactions
     metrics[LOCKED_FUND_PER_TRANSACTION] = metrics.get(TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, 0) / \
-                                           metrics.get(TRANSACTIONS_PASSED_THROUGH, 10000000000000000000000000)
-    metrics["Victim: " + LOCKED_FUND_PER_TRANSACTION] = metrics.get("Victim: " + TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, 0) / \
-                                                        metrics.get("Victim: " + TRANSACTIONS_PASSED_THROUGH,
-                                                                    10000000000000000000000000) # to get zero if no transactions
+                                           metrics.get(TRANSACTIONS_PASSED_THROUGH, VERY_LARGE_NUMBER)
+    metrics[prefix + LOCKED_FUND_PER_TRANSACTION] = metrics.get(prefix + TOTAL_LOCKED_FUND_IN_EVERY_BLOCKS, 0) / \
+                                                    metrics.get(prefix + TRANSACTIONS_PASSED_THROUGH, VERY_LARGE_NUMBER) #
+
 
 
 def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
+    """
+    Create network without the edges. With attackers and victim in needed.
+    """
     network = Network()
     number_of_attackers_to_create = NUMBER_OF_ATTACKERS_TO_CREATE[NetworkType.REDUNDANCY].get(attacker_node_type, 1)
     attackers, victims, attackers2 = create_attacker_and_victim(network, attacker_node_type, delta,
                                                                 max_number_of_block_to_respond, number_of_attackers_to_create)
     number_of_special_nodes = len(attackers) + len(victims) + \
-                              (len(attackers2) if attacker_node_type != NodeType.SOFT_GRIEFING else 0)
+                              (len(attackers2) if attacker_node_type != AttackerNodeType.SOFT_GRIEFING else 0)
     number_of_nodes_to_create = NUMBER_OF_NODES - number_of_special_nodes
     for _ in range(number_of_nodes_to_create):
         network.add_node(create_node(delta, max_number_of_block_to_respond))
@@ -229,6 +258,9 @@ def create_network(attacker_node_type, delta, max_number_of_block_to_respond):
 
 
 def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of_block_to_respond, number_of_attackers=1):
+    """
+    Create attacker and victim nodes according to the attacker type (not all attacker need victim or 2 attackers).
+    """
     attackers = []
     victims = []
     attackers2 = []
@@ -237,7 +269,7 @@ def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of
             attacker = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
             network.add_node(attacker)
             attackers.append(attacker)
-            if attacker_node_type != NodeType.SOFT_GRIEFING_BUSY_NETWORK:
+            if attacker_node_type != AttackerNodeType.SOFT_GRIEFING_BUSY_NETWORK:
                 victim = create_node(delta, max_number_of_block_to_respond)
                 victim.set_as_victim()
                 attacker.set_victim(victim)
@@ -245,11 +277,11 @@ def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of
                 attacker.set_base_fee(victim.base_fee)
                 network.add_node(victim)
                 victims.append(victim)
-            if attacker_node_type != NodeType.SOFT_GRIEFING_DOS_ATTACK:
+            if attacker_node_type != AttackerNodeType.SOFT_GRIEFING_DOS_ATTACK:
                 attacker2 = create_node(delta, max_number_of_block_to_respond, attacker_node_type)
                 attacker.set_peer(attacker2)
                 attackers2.append(attacker2)
-                if attacker_node_type == NodeType.SOFT_GRIEFING:
+                if attacker_node_type == AttackerNodeType.SOFT_GRIEFING:
                     network.add_edge(attacker2, victim, CAPACITY_IN_CHANNEL_BETWEEN_VICTIM_ATTACKER2, True)
                 else:
                     network.add_node(attacker2)
@@ -257,6 +289,9 @@ def create_attacker_and_victim(network, attacker_node_type, delta, max_number_of
 
 
 def find_largest_connected_component(json_data):
+    """
+    Return largest connected component from json object contain snapshot.
+    """
     G = nx.Graph()
 
     for node in json_data['nodes']:
@@ -271,6 +306,9 @@ def find_largest_connected_component(json_data):
 
 
 def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_block_to_respond):
+    """
+    Load snapshot, add nodes and edges, and filter to the largest connected component.
+    """
     with open(SNAPSHOT_PATH, encoding="utf-8") as f:
         json_data = json.load(f)
     json_data['edges'] = list(filter(lambda x: x['node1_policy'] and x['node2_policy'], json_data['edges']))
@@ -290,7 +328,7 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
         nodes[pub_key] = create_node(delta, max_number_of_block_to_respond)
 
     number_of_special_nodes = len(attackers) + len(victims) + \
-                              (len(attackers2) if attacker_node_type != NodeType.SOFT_GRIEFING else 0)
+                              (len(attackers2) if attacker_node_type != AttackerNodeType.SOFT_GRIEFING else 0)
     rand_numbers = random.sample(range(len(pub_key_to_create)), number_of_special_nodes)
     node_index = 0
     for attacker in attackers:
@@ -299,7 +337,7 @@ def generate_network_from_snapshot(attacker_node_type, delta, max_number_of_bloc
     for victim in victims:
         nodes[pub_key_to_create[rand_numbers[node_index]]] = victim
         node_index += 1
-    if attacker_node_type != NodeType.SOFT_GRIEFING:
+    if attacker_node_type != AttackerNodeType.SOFT_GRIEFING:
         for attacker2 in attackers2:
             nodes[pub_key_to_create[rand_numbers[node_index]]] = attacker2
             node_index += 1
@@ -368,10 +406,13 @@ def build_and_run_simulation(file_to_write, attacker_node_type, delta, max_numbe
 
 
 def run_multiple_simulation():
-    # network_topologies = [NetworkType.REDUNDANCY, NetworkType.SNAPSHOT]
+    """
+    Run simulation with all parameters we choose to test.
+    """
+    # Can add NetworkType.SNAPSHOT to the list to run on Snapshot
     network_topologies = [NetworkType.REDUNDANCY]
-    node_types = [NodeType.SOFT_GRIEFING, NodeType.SOFT_GRIEFING_BUSY_NETWORK, NodeType.SOFT_GRIEFING_DOS_ATTACK]
-    delta_node_type = NodeType.SOFT_GRIEFING_DOS_ATTACK
+    node_types = [AttackerNodeType.SOFT_GRIEFING, AttackerNodeType.SOFT_GRIEFING_BUSY_NETWORK, AttackerNodeType.SOFT_GRIEFING_DOS_ATTACK]
+    delta_node_type = AttackerNodeType.SOFT_GRIEFING_DOS_ATTACK
     deltas = [40, 70, 100]
     max_numbers_of_block_to_respond = [2, 6, 10]
     try:
