@@ -498,7 +498,7 @@ Bitcoin
 \lang english
 Payment Channels
 \lang hebrew
- דו-כיווניים בין משתמשים ברשתת כך שתשלומים נחתמים ע
+ דו-כיווניים בין משתמשים ברשת כך שתשלומים נחתמים ע
 \begin_inset Quotes erd
 \end_inset
 
@@ -1812,7 +1812,7 @@ penalty
 \begin_layout Quotation
 
 \size large
-בחרנו לממממש סימולציה של רשת 
+בחרנו לממש סימולציה של רשת 
 \lang english
 Lightning
 \lang hebrew
@@ -1870,7 +1870,7 @@ Dos attack
 \begin_layout Quotation
 
 \size large
-בחרנו למממש את הפרוטוקול על סימולציה של רשת 
+בחרנו לממש את הפרוטוקול על סימולציה של רשת 
 \lang english
 Lightning
 \lang hebrew
@@ -1894,7 +1894,7 @@ literal "false"
 Nodes
 \lang hebrew
  מפקידים לתוכו כסף, כאשר פרוטוקול זה מחייב זאת )אחרת בהעברה הראשונה לא נוכל
- לנעול את הכספים עבור העונש(.
+ לנעול את הכספים עבור הקנס(.
 \begin_inset Newline newline
 \end_inset
 
@@ -2717,11 +2717,16 @@ HTLC-GP
 
 \end_layout
 
+\begin_layout Paragraph*
+
+\bar under
+חיבור המידול לסימולציה:
+\end_layout
+
 \begin_layout Quotation
 
 \size large
-נרחיב על החיבור בין מידול הרשת לסימולציה.
- בחרנו להריץ את הסימולציה על 
+בחרנו להריץ את הסימולציה על 
 \lang english
 thread
 \lang hebrew
@@ -3170,38 +3175,6 @@ Dos
 :
 \bar default
 
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset Graphics
-	filename pasted19.png
-	scale 40
-
-\end_inset
-
-
-\begin_inset Newline newline
-\end_inset
-
-בגרף זה ניתן לראות בדומה למתקפה המקורית כי המותקף מקבל פחות טרנזאקציות ועל
- כן מרוויח פחות.
-\begin_inset Newline newline
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
-\begin_inset space ~
-\end_inset
-
-
 \begin_inset Graphics
 	filename pasted20.png
 	scale 40
@@ -3418,12 +3391,11 @@ Dos
 \end_inset
 
  על כמות הכספים שננעלים אצל הקורבן.
- ניתן לראות עלייה שמתאזנת בין 70 ל-100.
- כלומר נראה ש-
+ בניגוד לציפיות שלנו, כמות הכפסים הנעולים לא עולה ככל ש-
 \begin_inset Formula $\delta$
 \end_inset
 
- משפיעה על האפקטיביות של המתקפה אבל לא באופן חד משמעי.
+ עולה, אלא יורדת.
 \begin_inset Newline newline
 \end_inset
 
@@ -3431,12 +3403,7 @@ Dos
 \begin_inset Newline newline
 \end_inset
 
-בניגוד למה שהיינו מצפים, נראה שעברו יותר טרנזאקציות דרך הקורבן כאשר ה-
-\begin_inset Formula $\delta$
-\end_inset
-
- גדלה.
- במקרה זה התוצאות לא אידיאליות, אך עם זאת שהראינו כי אכן המתקפה יעילה, גם
+במקרה זה התוצאות לא אידיאליות, אך עם זאת שהראינו כי אכן המתקפה יעילה, גם
  עבור 
 \begin_inset Formula $\delta$
 \end_inset
